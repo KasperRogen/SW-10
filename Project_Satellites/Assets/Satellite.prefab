@@ -17,6 +17,7 @@ GameObject:
   - component: {fileID: -3517118940285680862}
   - component: {fileID: -951821776534324943}
   - component: {fileID: 5173547329983774672}
+  - component: {fileID: 8944547868409473418}
   m_Layer: 8
   m_Name: Satellite
   m_TagString: Satellite
@@ -111,6 +112,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   OrbitalPeriodInMinutes: 100.4
+  TargetPosition: {x: 0, y: 0, z: 0}
 --- !u!114 &1598705569782707086
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -251,3 +253,15 @@ LineRenderer:
     generateLightingData: 0
   m_UseWorldSpace: 1
   m_Loop: 0
+--- !u!114 &8944547868409473418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3793841215846522861}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 479c56885eb0aa84198789ef98590ff5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

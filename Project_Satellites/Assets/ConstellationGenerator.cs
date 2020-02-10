@@ -37,8 +37,10 @@ public class ConstellationGenerator : MonoBehaviour
                     Mathf.Sin(yAngle / SatellitesPerPlane * j) * constellationRadius, 
                     Mathf.Sin(angle) * constellationRadius);
                 Vector3 instantiationVector = (instantiationPos - transform.position).normalized * constellationAltitude;
-                Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
-
+                GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
+                satellite.GetComponent<SatelliteProperties>().SatID = j;
+                satellite.GetComponent<SatelliteProperties>().PlaneNum = 1;
+                satellite.GetComponent<SatelliteProperties>().SatsPerPlane = SatellitesPerPlane;
 
             }
 

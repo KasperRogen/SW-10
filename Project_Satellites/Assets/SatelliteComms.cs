@@ -15,11 +15,14 @@ public class SatelliteComms : MonoBehaviour
     List<Vector3> linerendererPositions = new List<Vector3>();
     LineRenderer lineRenderer;
 
+    int satID;
     Vector3 newPosition;
+    bool executeReceived;
 
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
+        satID = GetComponent<SatelliteProperties>().SatID;
     }
 
     private void Update()
@@ -54,6 +57,11 @@ public class SatelliteComms : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, Constants.ScaleToSize(CommRadius));
     }
 
+    GameObject NextSat()
+    {
+        return ReachableSats.Find(x => x.GetComponent<SatelliteProperties>().SatID == satID + 1 % x.GetComponent<SatelliteProperties>().SatsPerPlane);
+    }
+
     public void ReceiveMessage(Constants.Commands command, ConstellationPlan plan)
     {
         if (command != Constants.Commands.Generate)
@@ -61,6 +69,8 @@ public class SatelliteComms : MonoBehaviour
             Debug.LogError("Wrong command");
             return;
         }
+
+        executeReceived = false;
 
         Dictionary<int, float> fieldDeltaVPairs = new Dictionary<int, float>();
 
@@ -70,14 +80,27 @@ public class SatelliteComms : MonoBehaviour
             fieldDeltaVPairs.Add(i, requiredDeltaV);
         }
 
-        foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
+        if (!plan.fields.Any(x => x.satID == satID))
         {
-            if (pair.Value < plan.fields[pair.Key].deltaV)
+            foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
             {
-                plan.fields[pair.Key].deltaV = pair.Value;
-                newPosition = plan.fields[pair.Key].position;
-                break;
+                if (pair.Value < plan.fields[pair.Key].deltaV)
+                {
+                    plan.fields[pair.Key].satID = satID;
+                    plan.fields[pair.Key].deltaV = pair.Value;
+                    newPosition = plan.fields[pair.Key].position;
+                    break;
+                }
             }
+        }
+
+        if (plan.fields.TrueForAll(x => x.satID != -1))
+        {
+            ReceiveMessage(Constants.Commands.Execute);
+        }
+        else
+        {
+            NextSat().GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Generate, plan);
         }
     }
 
@@ -89,6 +112,13 @@ public class SatelliteComms : MonoBehaviour
             return;
         }
 
+        if (executeReceived)
+        {
+            return;
+        }
+
         GetComponent<SatelliteMovement>().TargetPosition = newPosition;
+        NextSat().GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Execute);
+        executeReceived = true;
     }
 }
