@@ -6,7 +6,7 @@ public class SatelliteMovement : MonoBehaviour
 {
 
     public float OrbitalPeriodInMinutes;
-
+    public Vector3 TargetPosition;
 
     GameObject Earth;
 
@@ -14,16 +14,24 @@ public class SatelliteMovement : MonoBehaviour
     void Start()
     {
         Earth = GameObject.FindGameObjectWithTag("Earth");
+        TargetPosition = transform.position;
     }
 
     // Update is called once per frame
     void Update()
     {
+        /*
         bool SimMinsToSecs = SimulationManager._instance.SimMinutesToSeconds;
 
         float orbitalPeriodInSeconds = OrbitalPeriodInMinutes * 60;
         float rotationAngle = (360 / (orbitalPeriodInSeconds / (SimMinsToSecs ? 60 : 1))) * Time.deltaTime;
         transform.RotateAround(Earth.transform.position, Vector3.up, rotationAngle);
+        */
+
+        if (Vector3.Distance(transform.position, TargetPosition) > 0.01f)
+        {
+            transform.position = Vector3.Lerp(transform.position, TargetPosition, 0.1f * Time.deltaTime);
+        }
     }
 }
 

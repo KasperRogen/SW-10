@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class SatelliteComms : MonoBehaviour
@@ -13,6 +14,8 @@ public class SatelliteComms : MonoBehaviour
 
     List<Vector3> linerendererPositions = new List<Vector3>();
     LineRenderer lineRenderer;
+
+    Vector3 newPosition;
 
     private void Start()
     {
@@ -51,14 +54,41 @@ public class SatelliteComms : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, Constants.ScaleToSize(CommRadius));
     }
 
-
-
-    public void ReceiveMessage()
+    public void ReceiveMessage(Constants.Commands command, ConstellationPlan plan)
     {
+        if (command != Constants.Commands.Generate)
+        {
+            Debug.LogError("Wrong command");
+            return;
+        }
 
+        Dictionary<int, float> fieldDeltaVPairs = new Dictionary<int, float>();
+
+        for (int i = 0; i < plan.fields.Count; i++)
+        {
+            float requiredDeltaV = Vector3.Distance(transform.position, plan.fields[i].position);
+            fieldDeltaVPairs.Add(i, requiredDeltaV);
+        }
+
+        foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
+        {
+            if (pair.Value < plan.fields[pair.Key].deltaV)
+            {
+                plan.fields[pair.Key].deltaV = pair.Value;
+                newPosition = plan.fields[pair.Key].position;
+                break;
+            }
+        }
     }
 
+    public void ReceiveMessage(Constants.Commands command)
+    {
+        if (command != Constants.Commands.Execute)
+        {
+            Debug.LogError("Wrong command");
+            return;
+        }
 
-
-
+        GetComponent<SatelliteMovement>().TargetPosition = newPosition;
+    }
 }

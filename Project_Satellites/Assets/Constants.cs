@@ -4,8 +4,10 @@ using UnityEngine;
 
 public static class Constants
 {
-
-
+    public enum Commands
+    {
+        Generate, Execute
+    }
 
     public static float ScaleToSize(float input)
     {
