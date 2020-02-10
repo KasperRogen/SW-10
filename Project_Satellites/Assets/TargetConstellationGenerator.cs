@@ -64,9 +64,15 @@ public class TargetConstellationGenerator : MonoBehaviour
             Instantiate(SatLocationPlaceholderPrefab, instantiationVector, Quaternion.identity);
         }
 
+        ConstellationPlan plan = new ConstellationPlan();
+
+
+
+        TargetPositions.ForEach(pos => plan.fields.Add(new ConstellationPlanField() { position = pos }));
+
 
         //Send the targetconstellation to random sat
-        Sats[Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().ReceiveMessage(TargetPositions);
+        Sats[Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Generate, plan);
     }
 
 
