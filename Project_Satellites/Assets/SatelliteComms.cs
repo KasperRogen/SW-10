@@ -53,7 +53,7 @@ public class SatelliteComms : MonoBehaviour
 
 
 
-    public void ReceiveMessage()
+    public void ReceiveMessage(List<Vector3> TargetConstellation)
     {
 
     }

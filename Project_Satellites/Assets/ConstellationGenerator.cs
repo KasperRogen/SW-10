@@ -18,7 +18,8 @@ public class ConstellationGenerator : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        float constellationAltitude = (GetComponent<SphereCollider>().radius * transform.localScale.x) + Constants.ScaleToSize(SatelliteAltitude);
+        Constants.EarthRadius = (GetComponent<SphereCollider>().radius * transform.localScale.x);
+        float constellationAltitude = Constants.EarthRadius + Constants.ScaleToSize(SatelliteAltitude);
         float constellationRadius = constellationAltitude / 2;
 
 

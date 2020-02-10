@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 2
   tags:
   - Earth
+  - Satellite
+  - LocationPlaceholder
   layers:
   - Default
   - TransparentFX

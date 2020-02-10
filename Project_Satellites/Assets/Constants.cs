@@ -5,7 +5,7 @@ using UnityEngine;
 public static class Constants
 {
 
-
+    public static float EarthRadius;
 
     public static float ScaleToSize(float input)
     {
