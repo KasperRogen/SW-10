@@ -9,6 +9,8 @@ public static class Constants
         Generate, Execute
     }
 
+    public static float EarthRadius;
+
     public static float ScaleToSize(float input)
     {
         return input / 1000000;
