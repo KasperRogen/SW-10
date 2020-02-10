@@ -66,9 +66,14 @@ public class TargetConstellationGenerator : MonoBehaviour
 
         ConstellationPlan plan = new ConstellationPlan();
 
+        plan.fields = new List<ConstellationPlanField>();
 
-
-        TargetPositions.ForEach(pos => plan.fields.Add(new ConstellationPlanField() { position = pos }));
+        foreach (Vector3 pos in TargetPositions)
+        {
+            ConstellationPlanField field = new ConstellationPlanField();
+            field.position = pos;
+            plan.fields.Add(field);
+        }
 
 
         //Send the targetconstellation to random sat

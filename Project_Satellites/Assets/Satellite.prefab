@@ -106,7 +106,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3793841215846522861}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d3adb2e195795d24093bdb4f84dbb54c, type: 3}
   m_Name: 
@@ -265,3 +265,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 479c56885eb0aa84198789ef98590ff5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  SatID: 0
+  PlaneNum: 0
+  SatsPerPlane: 0

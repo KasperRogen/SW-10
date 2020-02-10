@@ -59,7 +59,9 @@ public class SatelliteComms : MonoBehaviour
 
     GameObject NextSat()
     {
-        return ReachableSats.Find(x => x.GetComponent<SatelliteProperties>().SatID == satID + 1 % x.GetComponent<SatelliteProperties>().SatsPerPlane);
+        int NextSatId = (satID + 1) % GetComponent<SatelliteProperties>().SatsPerPlane;
+        Debug.Log(NextSatId);
+        return ReachableSats.Find(x => x.GetComponent<SatelliteProperties>().SatID == NextSatId);
     }
 
     public void ReceiveMessage(Constants.Commands command, ConstellationPlan plan)
@@ -80,7 +82,7 @@ public class SatelliteComms : MonoBehaviour
             fieldDeltaVPairs.Add(i, requiredDeltaV);
         }
 
-        if (!plan.fields.Any(x => x.satID == satID))
+        if (plan.fields.Any(x => x.satID == satID) == false)
         {
             foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
             {
@@ -115,10 +117,12 @@ public class SatelliteComms : MonoBehaviour
         if (executeReceived)
         {
             return;
+        } else
+        {
+            executeReceived = true;
         }
 
         GetComponent<SatelliteMovement>().TargetPosition = newPosition;
         NextSat().GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Execute);
-        executeReceived = true;
     }
 }
