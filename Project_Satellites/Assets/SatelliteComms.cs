@@ -10,7 +10,6 @@ public class SatelliteComms : MonoBehaviour
     [Min(0)] public float CommRadius;
 
     public List<GameObject> ReachableSats = new List<GameObject>();
-    List<LineRenderer> lineRenderers = new List<LineRenderer>();
 
     List<Vector3> linerendererPositions = new List<Vector3>();
     LineRenderer lineRenderer;
