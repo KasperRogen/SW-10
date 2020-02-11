@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class SatelliteProperties : MonoBehaviour
+public class SatelliteProperties
 {
     public int SatID;
     public int PlaneNum;
