@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-interface INode
+public interface INode
 {
     int ID { get; set; }
     List<INode> ReachableNodes { get; set; }

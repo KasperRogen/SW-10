@@ -14,21 +14,16 @@ public class SatelliteComms : MonoBehaviour
     List<Vector3> linerendererPositions = new List<Vector3>();
     LineRenderer lineRenderer;
 
-    int satID;
-    Vector3 newPosition;
-    bool executeReceived;
-    bool justChangedPlan;
+    public INode Node;
 
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
-        satID = GetComponent<SatelliteProperties>().SatID;
         GetComponents<SphereCollider>().ToList().Find(col => col.isTrigger).radius = (transform.localScale.x * CommRadius);
     }
 
     private void Update()
     {
-
         linerendererPositions.Clear();
 
         for (int i = 0; i < ReachableSats.Count; i++)
@@ -38,7 +33,6 @@ public class SatelliteComms : MonoBehaviour
         }
         lineRenderer.positionCount = linerendererPositions.Count;
         lineRenderer.SetPositions(linerendererPositions.ToArray());
-
     }
 
     private void OnTriggerEnter(Collider other)
@@ -46,11 +40,13 @@ public class SatelliteComms : MonoBehaviour
         if (other.isTrigger || other.gameObject.layer != gameObject.layer)
             return;
         ReachableSats.Add(other.gameObject);
+        UpdateReachableNodes();
     }
 
     private void OnTriggerExit(Collider other)
     {
         ReachableSats.Remove(other.gameObject);
+        UpdateReachableNodes();
     }
 
     private void OnDrawGizmosSelected()
@@ -58,81 +54,8 @@ public class SatelliteComms : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, Constants.ScaleToSize(CommRadius));
     }
 
-    GameObject NextSat()
+    private void UpdateReachableNodes()
     {
-        int NextSatId = (satID + 1) % GetComponent<SatelliteProperties>().SatsPerPlane;
-        return ReachableSats.Find(x => x.GetComponent<SatelliteProperties>().SatID == NextSatId);
-    }
-
-    public void ReceiveMessage(Constants.Commands command, ConstellationPlan plan)
-    {
-        if (command != Constants.Commands.Generate)
-        {
-            Debug.LogError("Wrong command");
-            return;
-        }
-
-        executeReceived = false;
-
-        Dictionary<int, float> fieldDeltaVPairs = new Dictionary<int, float>();
-
-        for (int i = 0; i < plan.fields.Count; i++)
-        {
-            float requiredDeltaV = Mathf.Pow(Vector3.Distance(transform.position, plan.fields[i].position), 3);
-            fieldDeltaVPairs.Add(i, requiredDeltaV);
-        }
-
-        if (plan.fields.Any(x => x.satID == satID) == false)
-        {
-            foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
-            {
-                //if (pair.Value < plan.fields[pair.Key].deltaV)
-                //{
-                //    plan.fields[pair.Key].satID = satID;
-                //    plan.fields[pair.Key].deltaV = pair.Value;
-                //    newPosition = plan.fields[pair.Key].position;
-                //    break;
-                //}
-                if (plan.TotalDeltaVWithChange(pair.Key, pair.Value) < plan.TotalDeltaV()){
-                    plan.fields[pair.Key].satID = satID;
-                    plan.fields[pair.Key].deltaV = pair.Value;
-                    newPosition = plan.fields[pair.Key].position;
-                    plan.lastEditedBy = satID;
-                    justChangedPlan = true;
-                    break;
-                }
-            }
-        }
-
-        if (plan.lastEditedBy == satID && justChangedPlan == false)
-        {
-            justChangedPlan = false;
-            ReceiveMessage(Constants.Commands.Execute);
-        }
-        else
-        {
-            justChangedPlan = false;
-            NextSat().GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Generate, plan);
-        }
-    }
-
-    public void ReceiveMessage(Constants.Commands command)
-    {
-        if (command != Constants.Commands.Execute)
-        {
-            Debug.LogError("Wrong command");
-            return;
-        }
-
-        if (executeReceived)
-        {
-            return;
-        } else
-        {
-            executeReceived = true;
-        }
-
-        GetComponent<SatelliteMovement>().TargetPosition = newPosition;
-        NextSat().GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Execute);
+        Node.ReachableNodes = ReachableSats.Select((x) => x.GetComponent<SatelliteComms>().Node).ToList();
     }
 }

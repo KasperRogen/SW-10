@@ -2,11 +2,16 @@
 using System.Collections.Generic;
 using System.Linq;
 
-class Node : INode
+public class Node : INode
 {
     public int ID { get; set; }
     public List<INode> ReachableNodes { get; set; }
     public Position TargetPosition { get; set; }
+
+    public Node(int ID)
+    {
+        this.ID = ID;
+    }
 
     public void Communicate(Constants.Commands command)
     {
@@ -38,21 +43,21 @@ class Node : INode
 
         Dictionary<int, float> fieldDeltaVPairs = new Dictionary<int, float>();
 
-        for (int i = 0; i < plan.fields.Count; i++)
+        for (int i = 0; i < plan.entries.Count; i++)
         {
-            float requiredDeltaV = Position.Distance(TargetPosition, plan.fields[i].Position);
+            float requiredDeltaV = Position.Distance(TargetPosition, plan.entries[i].Position);
             fieldDeltaVPairs.Add(i, requiredDeltaV);
         }
 
-        if (plan.fields.Any(x => x.satID == ID) == false)
+        if (plan.entries.Any(x => x.NodeID == ID) == false)
         {
             foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
             {
                 if (plan.TotalDeltaVWithChange(pair.Key, pair.Value) < plan.TotalDeltaV())
                 {
-                    plan.fields[pair.Key].satID = ID;
-                    plan.fields[pair.Key].deltaV = pair.Value;
-                    TargetPosition = plan.fields[pair.Key].Position;
+                    plan.entries[pair.Key].NodeID = ID;
+                    plan.entries[pair.Key].deltaV = pair.Value;
+                    TargetPosition = plan.entries[pair.Key].Position;
                     plan.lastEditedBy = ID;
                     justChangedPlan = true;
                     break;

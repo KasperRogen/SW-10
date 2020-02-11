@@ -73,20 +73,20 @@ public class TargetConstellationGenerator : MonoBehaviour
             Instantiate(SatLocationPlaceholderPrefab, instantiationVector, Quaternion.identity);
         }
 
-        ConstellationPlan plan = new ConstellationPlan();
-
-        plan.fields = new List<ConstellationPlanField>();
+        List<ConstellationPlanEntry> entries = new List<ConstellationPlanEntry>();
 
         foreach (Vector3 pos in TargetPositions)
         {
-            ConstellationPlanField field = new ConstellationPlanField();
-            field.position = pos;
-            plan.fields.Add(field);
+            Position position = new Position(pos.x, pos.y, pos.z);
+            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField<float>("DeltaV", (x, y) => x.CompareTo(y)) };
+            ConstellationPlanEntry entry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
+            entries.Add(entry);
         }
 
+        ConstellationPlan plan = new ConstellationPlan(entries);
 
         //Send the targetconstellation to random sat
-        Sats[Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Generate, plan);
+        Sats[Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node.Communicate(Constants.Commands.Generate, plan);
     }
 
 

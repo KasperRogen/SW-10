@@ -43,6 +43,8 @@ public class ConstellationGenerator : MonoBehaviour
                 satellite.GetComponent<SatelliteProperties>().SatsPerPlane = SatellitesPerPlane;
                 satellite.name = "Satellite " + j;
 
+                INode node = new Node(j);
+                satellite.GetComponent<SatelliteComms>().Node = node;
             }
 
         }
