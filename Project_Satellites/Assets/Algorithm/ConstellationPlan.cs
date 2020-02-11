@@ -4,7 +4,11 @@ public class ConstellationPlan
 {
     public int lastEditedBy;
     public List<ConstellationPlanField> fields;
-    private object mathf;
+
+    public ConstellationPlan(List<ConstellationPlanField> fields)
+    {
+        this.fields = fields;
+    }
 
     public float TotalDeltaV()
     {

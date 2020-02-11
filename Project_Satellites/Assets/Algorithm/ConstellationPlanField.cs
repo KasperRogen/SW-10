@@ -2,13 +2,14 @@
 
 public class ConstellationPlanField
 {
-    public Vector3 position;
+    public Position Position;
     public int satID;
     public float deltaV;
 
-    public ConstellationPlanField()
+    public ConstellationPlanField(Position position)
     {
+        Position = position;
         satID = -1;
-        deltaV = 200;
+        deltaV = float.MaxValue;
     }
 }
