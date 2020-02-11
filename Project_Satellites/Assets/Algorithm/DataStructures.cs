@@ -13,7 +13,7 @@ public class Position
         Z = z;
     }
 
-    public float Distance(Position a, Position b)
+    public static float Distance(Position a, Position b)
     {
         return (float)Math.Sqrt(Math.Pow((b.X - a.X), 2) + Math.Pow((b.Y - a.Y), 2) + Math.Pow((b.Z - a.Z), 2));
     }
