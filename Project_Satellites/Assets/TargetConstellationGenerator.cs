@@ -54,7 +54,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
             //angle += (Mathf.PI * 2f / Sats.Count) * i;
             angle = (360 / Sats.Count) * i;
-            angle += Random.Range(-50, 50);
+            angle += Random.Range(-5, 5);
 
 
             //Create the targetposition
@@ -66,7 +66,7 @@ public class TargetConstellationGenerator : MonoBehaviour
             Vector3 instantiationPos = Quaternion.Euler(0, angle, 0) * Vector3.forward;
 
             //Set it relative to the earth
-            Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude;
+            Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude * Random.Range(0.5f, 1f);
 
             //Store for propagation
             TargetPositions.Add(instantiationVector);
@@ -78,7 +78,7 @@ public class TargetConstellationGenerator : MonoBehaviour
         foreach (Vector3 pos in TargetPositions)
         {
             Position position = new Position(pos.x, pos.y, pos.z);
-            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", (x, y) => x.CompareTo(y)) };
+            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 100, (x, y) => x.CompareTo(y)) };
             ConstellationPlanEntry entry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
             entries.Add(entry);
         }

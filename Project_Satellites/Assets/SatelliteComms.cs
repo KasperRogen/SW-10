@@ -10,6 +10,7 @@ public class SatelliteComms : MonoBehaviour
     [Min(0)] public float CommRadius;
 
     public List<GameObject> ReachableSats = new List<GameObject>();
+    SatelliteMovement movement;
 
     List<Vector3> linerendererPositions = new List<Vector3>();
     LineRenderer lineRenderer;
@@ -20,10 +21,16 @@ public class SatelliteComms : MonoBehaviour
     {
         lineRenderer = GetComponent<LineRenderer>();
         GetComponents<SphereCollider>().ToList().Find(col => col.isTrigger).radius = (transform.localScale.x * CommRadius);
+        movement = GetComponent<SatelliteMovement>();
     }
 
     private void Update()
     {
+        if(Node.TargetPosition != null)
+        movement.TargetPosition = new Vector3(Node.TargetPosition.X, Node.TargetPosition.Y, Node.TargetPosition.Z);
+
+        Node.Position = new Position(transform.position.x, transform.position.y, transform.position.z);
+
         linerendererPositions.Clear();
 
         for (int i = 0; i < ReachableSats.Count; i++)

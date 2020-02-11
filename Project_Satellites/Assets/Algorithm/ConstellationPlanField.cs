@@ -53,9 +53,9 @@ public class ConstellationPlanField : IComparable
 
     CompareFunction compareFunction;
 
-    public ConstellationPlanField(string key, CompareFunction func)
+    public ConstellationPlanField(string key, float defaultValue, CompareFunction func)
     {
-        Key = key;
+        Key = key;        Value = defaultValue;
         compareFunction = func;
     }
 

@@ -8,6 +8,7 @@ public class Node : INode
     public List<INode> ReachableNodes { get; set; }
     public Position Position { get; set; }
     public Position TargetPosition { get; set; }
+    private Position _targetPosition;
 
     public Node(int ID)
     {
@@ -20,6 +21,8 @@ public class Node : INode
         {
             throw new Exception("Wrong command"); // Only accept Execute command
         }
+
+        TargetPosition = _targetPosition;
 
         if (executingPlan)
         {
@@ -58,7 +61,7 @@ public class Node : INode
                 {
                     plan.entries[pair.Key].NodeID = ID;
                     plan.entries[pair.Key].Fields["DeltaV"].Value = pair.Value;
-                    TargetPosition = plan.entries[pair.Key].Position;
+                    _targetPosition = plan.entries[pair.Key].Position;
                     plan.lastEditedBy = ID;
                     justChangedPlan = true;
                     break;
