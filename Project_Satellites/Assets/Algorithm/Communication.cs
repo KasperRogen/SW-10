@@ -1,14 +1,15 @@
-﻿using System.Collections;
+﻿/*
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 public class Communication : MonoBehaviour
 {
-    
+
     public List<GameObject> ReachableSats = new List<GameObject>();
 
-    
+
     int satID;
     Vector3 newPosition;
     bool executeReceived;
@@ -103,3 +104,4 @@ public class Communication : MonoBehaviour
         NextSat().GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Execute);
     }
 }
+*/

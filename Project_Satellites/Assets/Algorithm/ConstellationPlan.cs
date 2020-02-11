@@ -19,7 +19,7 @@ public class ConstellationPlan
 
         foreach(ConstellationPlanEntry entry in entries)
         {
-            values.Add((entry.Fields[key] as ConstellationPlanField).value);
+            values.Add((entry.Fields[key] as ConstellationPlanField).Value);
         }
 
         float oldSum, newSum;

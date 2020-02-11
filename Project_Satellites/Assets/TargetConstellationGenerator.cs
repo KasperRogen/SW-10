@@ -78,7 +78,7 @@ public class TargetConstellationGenerator : MonoBehaviour
         foreach (Vector3 pos in TargetPositions)
         {
             Position position = new Position(pos.x, pos.y, pos.z);
-            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField<float>("DeltaV", (x, y) => x.CompareTo(y)) };
+            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", (x, y) => x.CompareTo(y)) };
             ConstellationPlanEntry entry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
             entries.Add(entry);
         }

@@ -24,7 +24,7 @@ public class ConstellationPlanEntry : IComparable
 
         foreach(ConstellationPlanField CPF in fields)
         {
-            Fields.Add(CPF.key, CPF);
+            Fields.Add(CPF.Key, CPF);
         }
     
     
@@ -46,8 +46,8 @@ public class ConstellationPlanEntry : IComparable
 
 public class ConstellationPlanField : IComparable
 {
-    public string key { get; set; }
-    public float value { get; set; }
+    public string Key { get; set; }
+    public float Value { get; set; }
 
     public delegate int CompareFunction(float obj1, float obj2);
 
@@ -61,7 +61,7 @@ public class ConstellationPlanField : IComparable
 
     public int CompareTo(object obj)
     {
-        return compareFunction(this.value, (obj as ConstellationPlanField).value);
+        return compareFunction(this.Value, (obj as ConstellationPlanField).Value);
     }
 
 

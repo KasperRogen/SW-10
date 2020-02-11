@@ -4,6 +4,7 @@ public interface INode
 {
     int ID { get; set; }
     List<INode> ReachableNodes { get; set; }
+    Position Position { get; set; }
     Position TargetPosition { get; set; }
 
     void Communicate(Constants.Commands command);

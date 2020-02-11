@@ -6,6 +6,7 @@ public class Node : INode
 {
     public int ID { get; set; }
     public List<INode> ReachableNodes { get; set; }
+    public Position Position { get; set; }
     public Position TargetPosition { get; set; }
 
     public Node(int ID)
@@ -45,7 +46,7 @@ public class Node : INode
 
         for (int i = 0; i < plan.entries.Count; i++)
         {
-            float requiredDeltaV = Position.Distance(TargetPosition, plan.entries[i].Position);
+            float requiredDeltaV = Position.Distance(Position, plan.entries[i].Position);
             fieldDeltaVPairs.Add(i, requiredDeltaV);
         }
 
@@ -53,10 +54,10 @@ public class Node : INode
         {
             foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
             {
-                if (plan.TotalDeltaVWithChange(pair.Key, pair.Value) < plan.TotalDeltaV())
+                if (plan.ReduceBy("DeltaV", pair.Key, pair.Value))
                 {
                     plan.entries[pair.Key].NodeID = ID;
-                    plan.entries[pair.Key].deltaV = pair.Value;
+                    plan.entries[pair.Key].Fields["DeltaV"].Value = pair.Value;
                     TargetPosition = plan.entries[pair.Key].Position;
                     plan.lastEditedBy = ID;
                     justChangedPlan = true;
