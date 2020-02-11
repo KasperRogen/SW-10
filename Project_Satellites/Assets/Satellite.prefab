@@ -14,10 +14,10 @@ GameObject:
   - component: {fileID: 7316111071487503620}
   - component: {fileID: 7750723374356181069}
   - component: {fileID: 1598705569782707086}
-  - component: {fileID: -3517118940285680862}
   - component: {fileID: -951821776534324943}
   - component: {fileID: 5173547329983774672}
   - component: {fileID: 8944547868409473418}
+  - component: {fileID: -1588135803080123204}
   m_Layer: 8
   m_Name: Satellite
   m_TagString: Satellite
@@ -125,21 +125,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8f1f119667e8324ba4be109c0b4f710, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CommRadius: 5000000
+  CommRadius: 100
   ReachableSats: []
---- !u!135 &-3517118940285680862
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3793841215846522861}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Radius: 0.5
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &-951821776534324943
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -268,3 +255,16 @@ MonoBehaviour:
   SatID: 0
   PlaneNum: 0
   SatsPerPlane: 0
+--- !u!135 &-1588135803080123204
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3793841215846522861}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.25
+  m_Center: {x: 0, y: 0, z: 0}

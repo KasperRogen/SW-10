@@ -41,6 +41,7 @@ public class ConstellationGenerator : MonoBehaviour
                 satellite.GetComponent<SatelliteProperties>().SatID = j;
                 satellite.GetComponent<SatelliteProperties>().PlaneNum = 1;
                 satellite.GetComponent<SatelliteProperties>().SatsPerPlane = SatellitesPerPlane;
+                satellite.name = "Satellite " + j;
 
             }
 

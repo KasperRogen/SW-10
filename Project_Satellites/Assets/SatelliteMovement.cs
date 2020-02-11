@@ -30,7 +30,8 @@ public class SatelliteMovement : MonoBehaviour
 
         if (Vector3.Distance(transform.position, TargetPosition) > 0.01f)
         {
-            transform.position = Vector3.Lerp(transform.position, TargetPosition, 0.1f * Time.deltaTime);
+            Debug.DrawLine(transform.position, TargetPosition, Color.green);
+            transform.position = Vector3.MoveTowards(transform.position, TargetPosition, 1 * Time.deltaTime);
         }
     }
 }

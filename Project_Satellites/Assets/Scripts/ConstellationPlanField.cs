@@ -9,6 +9,6 @@ public class ConstellationPlanField
     public ConstellationPlanField()
     {
         satID = -1;
-        deltaV = float.MaxValue;
+        deltaV = 200;
     }
 }

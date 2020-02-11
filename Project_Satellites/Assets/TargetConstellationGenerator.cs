@@ -45,16 +45,25 @@ public class TargetConstellationGenerator : MonoBehaviour
         //Remove old location Placeholders
         GameObject.FindGameObjectsWithTag("LocationPlaceholder")?.ToList().ForEach(GO => Destroy(GO));
 
+        float angle = 0;
+
         for (int i = 0; i < Sats.Count; i++)
         {
             //Create random angle for position of Targetposition
-            float angle = UnityEngine.Random.Range(0, Mathf.PI * 2f);
-            
+            //float angle = UnityEngine.Random.Range(0, Mathf.PI * 2f);
+
+            //angle += (Mathf.PI * 2f / Sats.Count) * i;
+            angle = (360 / Sats.Count) * i;
+            angle += Random.Range(-50, 50);
+
+
             //Create the targetposition
-            Vector3 instantiationPos = new Vector3(
-                Mathf.Cos(angle) * constellationRadius,
-                0,
-                Mathf.Sin(angle) * constellationRadius);
+            //Vector3 instantiationPos = new Vector3(
+            //    Mathf.Cos(angle) * constellationRadius,
+            //    0,
+            //    Mathf.Sin(angle) * constellationRadius);
+
+            Vector3 instantiationPos = Quaternion.Euler(0, angle, 0) * Vector3.forward;
 
             //Set it relative to the earth
             Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude;

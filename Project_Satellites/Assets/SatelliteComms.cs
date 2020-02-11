@@ -18,11 +18,13 @@ public class SatelliteComms : MonoBehaviour
     int satID;
     Vector3 newPosition;
     bool executeReceived;
+    bool justChangedPlan;
 
     private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
         satID = GetComponent<SatelliteProperties>().SatID;
+        GetComponents<SphereCollider>().ToList().Find(col => col.isTrigger).radius = (transform.localScale.x * CommRadius);
     }
 
     private void Update()
@@ -60,7 +62,6 @@ public class SatelliteComms : MonoBehaviour
     GameObject NextSat()
     {
         int NextSatId = (satID + 1) % GetComponent<SatelliteProperties>().SatsPerPlane;
-        Debug.Log(NextSatId);
         return ReachableSats.Find(x => x.GetComponent<SatelliteProperties>().SatID == NextSatId);
     }
 
@@ -78,7 +79,7 @@ public class SatelliteComms : MonoBehaviour
 
         for (int i = 0; i < plan.fields.Count; i++)
         {
-            float requiredDeltaV = Vector3.Distance(transform.position, plan.fields[i].position);
+            float requiredDeltaV = Mathf.Pow(Vector3.Distance(transform.position, plan.fields[i].position), 3);
             fieldDeltaVPairs.Add(i, requiredDeltaV);
         }
 
@@ -86,22 +87,32 @@ public class SatelliteComms : MonoBehaviour
         {
             foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
             {
-                if (pair.Value < plan.fields[pair.Key].deltaV)
-                {
+                //if (pair.Value < plan.fields[pair.Key].deltaV)
+                //{
+                //    plan.fields[pair.Key].satID = satID;
+                //    plan.fields[pair.Key].deltaV = pair.Value;
+                //    newPosition = plan.fields[pair.Key].position;
+                //    break;
+                //}
+                if (plan.TotalDeltaVWithChange(pair.Key, pair.Value) < plan.TotalDeltaV()){
                     plan.fields[pair.Key].satID = satID;
                     plan.fields[pair.Key].deltaV = pair.Value;
                     newPosition = plan.fields[pair.Key].position;
+                    plan.lastEditedBy = satID;
+                    justChangedPlan = true;
                     break;
                 }
             }
         }
 
-        if (plan.fields.TrueForAll(x => x.satID != -1))
+        if (plan.lastEditedBy == satID && justChangedPlan == false)
         {
+            justChangedPlan = false;
             ReceiveMessage(Constants.Commands.Execute);
         }
         else
         {
+            justChangedPlan = false;
             NextSat().GetComponent<SatelliteComms>().ReceiveMessage(Constants.Commands.Generate, plan);
         }
     }
