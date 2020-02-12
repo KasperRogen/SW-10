@@ -5,10 +5,9 @@ using System.Linq;
 public class Node : INode
 {
     public int ID { get; set; }
-    public List<INode> ReachableNodes { get; set; }
+    public List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
     public Position Position { get; set; }
     public Position TargetPosition { get; set; }
-    private Position _targetPosition;
 
     public Node(int ID)
     {
@@ -22,7 +21,7 @@ public class Node : INode
             throw new Exception("Wrong command"); // Only accept Execute command
         }
 
-        TargetPosition = _targetPosition;
+        TargetPosition = intermediateTargetPosition;
 
         if (executingPlan)
         {
@@ -61,7 +60,7 @@ public class Node : INode
                 {
                     plan.entries[pair.Key].NodeID = ID;
                     plan.entries[pair.Key].Fields["DeltaV"].Value = pair.Value;
-                    _targetPosition = plan.entries[pair.Key].Position;
+                    intermediateTargetPosition = plan.entries[pair.Key].Position;
                     plan.lastEditedBy = ID;
                     justChangedPlan = true;
                     break;
@@ -83,6 +82,7 @@ public class Node : INode
 
     private bool executingPlan;
     private bool justChangedPlan;
+    private Position intermediateTargetPosition;
 
     private INode NextNode(List<INode> nodes)
     {
