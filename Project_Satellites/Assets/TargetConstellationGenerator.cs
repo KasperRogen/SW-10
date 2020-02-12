@@ -10,6 +10,7 @@ public class TargetConstellationGenerator : MonoBehaviour
     List<GameObject> Sats = new List<GameObject>();
     string ConstellationAltitudeInput = "781000";
 
+    public static float CurrentDeltaVSum;
 
     List<Vector3> TargetPositions = new List<Vector3>();
 
@@ -21,6 +22,8 @@ public class TargetConstellationGenerator : MonoBehaviour
         }
         GUI.TextField(new Rect(10, 10, 200, 20), "Target Altitude", 25);
         ConstellationAltitudeInput = GUI.TextField(new Rect(10, 30, 200, 20), ConstellationAltitudeInput, 25);
+
+        GUI.TextField(new Rect(10, 80, 200, 20), CurrentDeltaVSum.ToString(), 25);
     }
 
     void GenerateTargetConstellation()
@@ -68,7 +71,7 @@ public class TargetConstellationGenerator : MonoBehaviour
         foreach (Vector3 pos in TargetPositions)
         {
             Position position = new Position(pos.x, pos.y, pos.z);
-            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 100, (x, y) => x.CompareTo(y)) };
+            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 100, (x, y) => { return x.CompareTo(y); }) };
             ConstellationPlanEntry entry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
             entries.Add(entry);
         }

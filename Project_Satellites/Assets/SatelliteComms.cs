@@ -26,9 +26,7 @@ public class SatelliteComms : MonoBehaviour
         if (Node.TargetPosition != null)
             movement.TargetPosition = BackendHelpers.Vector3FromPosition(Node.TargetPosition);
 
-        Node.Position = new Position(transform.position.x, transform.position.y, transform.position.z);
-
-        
+        Node.Position = BackendHelpers.PositionFromVector3(transform.position);        
     }
 
     private void OnTriggerEnter(Collider other)
