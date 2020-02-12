@@ -12,34 +12,23 @@ public class SatelliteComms : MonoBehaviour
     public List<GameObject> ReachableSats = new List<GameObject>();
     SatelliteMovement movement;
 
-    List<Vector3> linerendererPositions = new List<Vector3>();
-    LineRenderer lineRenderer;
-
+    
     public INode Node;
 
     private void Start()
     {
-        lineRenderer = GetComponent<LineRenderer>();
         GetComponents<SphereCollider>().ToList().Find(col => col.isTrigger).radius = (transform.localScale.x * CommRadius);
         movement = GetComponent<SatelliteMovement>();
     }
 
     private void Update()
     {
-        if(Node.TargetPosition != null)
-        movement.TargetPosition = new Vector3(Node.TargetPosition.X, Node.TargetPosition.Y, Node.TargetPosition.Z);
+        if (Node.TargetPosition != null)
+            movement.TargetPosition = BackendHelpers.Vector3FromPosition(Node.TargetPosition);
 
         Node.Position = new Position(transform.position.x, transform.position.y, transform.position.z);
 
-        linerendererPositions.Clear();
-
-        for (int i = 0; i < ReachableSats.Count; i++)
-        {
-            linerendererPositions.Add(transform.position);
-            linerendererPositions.Add(ReachableSats[i].transform.position);
-        }
-        lineRenderer.positionCount = linerendererPositions.Count;
-        lineRenderer.SetPositions(linerendererPositions.ToArray());
+        
     }
 
     private void OnTriggerEnter(Collider other)
@@ -54,11 +43,6 @@ public class SatelliteComms : MonoBehaviour
     {
         ReachableSats.Remove(other.gameObject);
         UpdateReachableNodes();
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.DrawWireSphere(transform.position, Constants.ScaleToSize(CommRadius));
     }
 
     private void UpdateReachableNodes()
