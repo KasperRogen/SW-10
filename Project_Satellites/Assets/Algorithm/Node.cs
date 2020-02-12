@@ -11,7 +11,7 @@ public class Node : INode
 
 
     public int ID { get; set; }
-    public List<INode> ReachableNodes { get; set; }
+    public List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
     public Position Position { get; set; }
     public Position TargetPosition { get; set; }
     public NodeState State { get; set; }
@@ -58,6 +58,18 @@ public class Node : INode
             NextNode(ReachableNodes).Communicate(Constants.Commands.Execute);
         }).Start();
 
+        TargetPosition = intermediateTargetPosition;
+
+        if (executingPlan)
+        {
+            return; // Ignore Execute command if already executing which stops the execute communication loop
+        }
+        else
+        {
+            executingPlan = true;
+        }
+
+        NextNode(ReachableNodes).Communicate(Constants.Commands.Execute);
     }
 
     public void Communicate(Constants.Commands command, ConstellationPlan plan)
@@ -134,6 +146,7 @@ public class Node : INode
 
     private bool executingPlan;
     private bool justChangedPlan;
+    private Position intermediateTargetPosition;
 
     private INode NextNode(List<INode> nodes)
     {

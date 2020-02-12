@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BackendHelpers : MonoBehaviour
+public class BackendHelpers
 {
     public static Vector3 Vector3FromPosition(Position pos)
     {
