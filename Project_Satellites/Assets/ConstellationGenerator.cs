@@ -25,27 +25,28 @@ public class ConstellationGenerator : MonoBehaviour
 
         for (int i = 0; i < PlaneNum; i++)
         {
-
             float yAngle = Mathf.PI / PlaneNum * i;
 
             for(int j = 0; j < SatellitesPerPlane; j++)
             {
                 float angle = j * Mathf.PI * 2f / SatellitesPerPlane;
-                //float yAngle = j * Mathf.PI * 2f / SatellitesPerPlane;
+            
+
                 Vector3 instantiationPos = new Vector3(
                     Mathf.Cos(angle) * constellationRadius,
                     Mathf.Sin(yAngle / SatellitesPerPlane * j) * constellationRadius, 
                     Mathf.Sin(angle) * constellationRadius);
+                
+                //Create a vector from earth center to the desired position
                 Vector3 instantiationVector = (instantiationPos - transform.position).normalized * constellationAltitude;
+
                 GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
-                //satellite.GetComponent<SatelliteProperties>().SatID = j;
-                //satellite.GetComponent<SatelliteProperties>().PlaneNum = 1;
-                //satellite.GetComponent<SatelliteProperties>().SatsPerPlane = SatellitesPerPlane;
-                satellite.name = "Satellite " + j;
 
                 INode node = new Node(j);
-                node.Position = new Position(satellite.transform.position.x, satellite.transform.position.y, satellite.transform.position.z);
+                node.Position = BackendHelpers.PositionFromVector3(satellite.transform.position);
                 node.TargetPosition = node.Position;
+
+                satellite.name = "P(" + i + "), S(" + j + ")";
                 satellite.GetComponent<SatelliteComms>().Node = node;
             }
 
