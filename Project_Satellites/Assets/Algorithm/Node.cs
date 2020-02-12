@@ -32,7 +32,7 @@ public class Node : INode
             executingPlan = true;
         }
 
-        NextNode(ReachableNodes).Communicate(Constants.Commands.Execute);
+        router.NextHop(this).Communicate(Constants.Commands.Execute);
     }
 
     public void Communicate(Constants.Commands command, ConstellationPlan plan)
@@ -40,6 +40,15 @@ public class Node : INode
         if (command != Constants.Commands.Generate)
         {
             throw new Exception("Wrong command"); // Only accept Generate command
+        }
+
+        if (router == null)
+        {
+            router = new Router(plan);
+        }
+        else
+        {
+            router.UpdateNetworkMap(plan);
         }
 
         executingPlan = false;
@@ -52,13 +61,13 @@ public class Node : INode
             fieldDeltaVPairs.Add(i, requiredDeltaV);
         }
 
-        if (plan.entries.Any(x => x.NodeID == ID) == false)
+        if (plan.entries.Any(x => x.Node.ID == ID) == false)
         {
             foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
             {
                 if (plan.ReduceBy("DeltaV", pair.Key, pair.Value))
                 {
-                    plan.entries[pair.Key].NodeID = ID;
+                    plan.entries[pair.Key].Node = this;
                     plan.entries[pair.Key].Fields["DeltaV"].Value = pair.Value;
                     intermediateTargetPosition = plan.entries[pair.Key].Position;
                     plan.lastEditedBy = ID;
@@ -76,17 +85,12 @@ public class Node : INode
         else
         {
             justChangedPlan = false;
-            NextNode(ReachableNodes).Communicate(Constants.Commands.Generate, plan);
+            router.NextHop(this).Communicate(Constants.Commands.Generate, plan);
         }
     }
 
     private bool executingPlan;
     private bool justChangedPlan;
     private Position intermediateTargetPosition;
-
-    private INode NextNode(List<INode> nodes)
-    {
-        int nextNodeID = (ID + 1) % Constants.NodesPerCycle;
-        return nodes.Find((x) => x.ID == nextNodeID);
-    }
+    private IRouter router;
 }

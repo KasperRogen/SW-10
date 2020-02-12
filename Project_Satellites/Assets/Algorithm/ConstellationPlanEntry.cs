@@ -5,7 +5,7 @@ using System;
 public class ConstellationPlanEntry : IComparable
 {
     public Position Position;
-    public int NodeID;
+    public INode Node;
 
     public Dictionary<string, ConstellationPlanField> Fields = new Dictionary<string, ConstellationPlanField>();
 
@@ -18,7 +18,6 @@ public class ConstellationPlanEntry : IComparable
 
     {
         Position = position;
-        NodeID = -1;
 
         compareFunction = func;
 
