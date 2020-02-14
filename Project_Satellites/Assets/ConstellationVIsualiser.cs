@@ -19,6 +19,7 @@ public class ConstellationVisualiser : MonoBehaviour
     SatelliteComms comms;
     MeshRenderer meshRenderer;
 
+    Node.NodeState lastState = Node.NodeState.PASSIVE;
     
     private void Awake()
     {
@@ -57,27 +58,33 @@ public class ConstellationVisualiser : MonoBehaviour
     {
         if (comms == null || comms.Node == null)
             return;
-        switch (comms.Node.State)
-        {
-            case Node.NodeState.PASSIVE:
-                meshRenderer.material = PassiveMat;
-                targetPositionLineRenderer.material = PassiveMat;
-                break;
 
-            case Node.NodeState.PLANNING:
-                meshRenderer.material = LeaderMat;
-                targetPositionLineRenderer.material = LeaderMat;
-                break;
+        //if (comms.Node.State != lastState) { 
+            switch (comms.Node.State)
+            {
+                case Node.NodeState.PASSIVE:
+                    meshRenderer.material = PassiveMat;
+                    targetPositionLineRenderer.material = PassiveMat;
+                    break;
 
-            case Node.NodeState.EXECUTING:
+                case Node.NodeState.PLANNING:
+                    meshRenderer.material = LeaderMat;
+                    targetPositionLineRenderer.material = LeaderMat;
+                    break;
 
-                break;
+                case Node.NodeState.EXECUTING:
 
-            case Node.NodeState.OVERRIDE:
-                meshRenderer.material = OverrideMat;
-                targetPositionLineRenderer.material = OverrideMat;
-                break;
-        }
+                    break;
+
+                case Node.NodeState.OVERRIDE:
+
+                    meshRenderer.material = OverrideMat;
+                    targetPositionLineRenderer.material = OverrideMat;
+                    break;
+            }
+        //}
+
+        lastState = comms.Node.State;
 
         linerendererPositions.Clear();
 
@@ -90,13 +97,14 @@ public class ConstellationVisualiser : MonoBehaviour
         commLineRenderer.SetPositions(linerendererPositions.ToArray());
 
 
-        if(comms.Node.Plan != null) { 
+        if(comms.Node.Plan != null) 
+        { 
 
             Vector3 plannedposition = transform.position;
 
             foreach(ConstellationPlanEntry e in comms.Node.Plan.entries)
             {
-                if(e.NodeID == comms.Node.ID)
+                if(e.Node != null && e.Node.ID == comms.Node.ID)
                 {
                     plannedposition = BackendHelpers.Vector3FromPosition(e.Position);
                 }
@@ -105,8 +113,10 @@ public class ConstellationVisualiser : MonoBehaviour
             targetPositionLineRenderer.positionCount = 2;
             targetPositionLineRenderer.SetPositions(new Vector3[] { transform.position, plannedposition });
 
+            float DeltaVSum = comms.Node.Plan.entries.Sum(entry => entry.Fields["DeltaV"].Value);
 
-            TargetConstellationGenerator.CurrentDeltaVSum = comms.Node.Plan.entries.Sum(entry => entry.Fields["DeltaV"].Value);
+            if (DeltaVSum != TargetConstellationGenerator.CurrentDeltaVSum && DeltaVSum != 1100f)
+                TargetConstellationGenerator.CurrentDeltaVSum = DeltaVSum;
         }
 
 

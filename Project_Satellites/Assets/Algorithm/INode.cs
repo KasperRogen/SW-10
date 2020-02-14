@@ -12,6 +12,7 @@ public interface INode
     Position Position { get; set; }
     Position TargetPosition { get; set; }
 
+    void GenerateRouter();
     void Communicate(Constants.Commands command);
     void Communicate(Constants.Commands command, ConstellationPlan plan);
 

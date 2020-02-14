@@ -17,11 +17,7 @@ public class Node : INode
     public NodeState State { get; set; }
     public ConstellationPlan Plan { get; set; }
 
-    private Position _targetPosition;
-
-
-
-
+    private Position _targetPosition;
 
     public Node(int ID)
     {
@@ -30,74 +26,42 @@ public class Node : INode
     }
 
     public void Communicate(Constants.Commands command)
-    {
-        
+    {
+
+
         new Thread(delegate ()
-        {
-
-            
-            if (command != Constants.Commands.Execute)
-            {
-                throw new Exception("Wrong command"); // Only accept Execute command
-            }
-
-            State = Node.NodeState.EXECUTING;
-
-            TargetPosition = _targetPosition;
-
-            if (executingPlan)
-            {
-                return; // Ignore Execute command if already executing which stops the execute communication loop
-            }
-            else
-            {
-                executingPlan = true;
-            }
-
-
-            NextNode(ReachableNodes).Communicate(Constants.Commands.Execute);
+        {
+            if (command != Constants.Commands.Execute)
+            {
+                throw new Exception("Wrong command"); // Only accept Execute command
+            }            State = Node.NodeState.EXECUTING;            TargetPosition = _targetPosition;            if (executingPlan)            {                return; // Ignore Execute command if already executing which stops the execute communication loop
+            }            else            {                executingPlan = true;            }
+            if (router == null)
+            {
+                router = new Router(Plan);
+            }
+
+            router.NextHop(this).Communicate(Constants.Commands.Execute);
+            router.UpdateNetworkMap(Plan);
+
+
         }).Start();
+    }
 
-        TargetPosition = intermediateTargetPosition;
-
-        if (executingPlan)
-        {
-            return; // Ignore Execute command if already executing which stops the execute communication loop
-        }
-        else
-        {
-            executingPlan = true;
-        }
-
-        router.NextHop(this).Communicate(Constants.Commands.Execute);
+    public void GenerateRouter()
+    {
+        router = new Router(Plan);
     }
 
     public void Communicate(Constants.Commands command, ConstellationPlan plan)
-    {
-
-        if (router == null)
-        {
-            router = new Router(plan);
-        }
-        else
-        {
-            router.UpdateNetworkMap(plan);
-        }
-
+    {
         Plan = plan;
 
-        new Thread(delegate ()
-        {
-
-
-            if (command != Constants.Commands.Generate)
-            {
-                throw new Exception("Wrong command"); // Only accept Generate command
-            }
-
-
-            State = Node.NodeState.PLANNING;
-
+        new Thread(delegate ()        {
+            if (command != Constants.Commands.Generate)            {                throw new Exception("Wrong command"); // Only accept Generate command
+            }
+            State = Node.NodeState.PLANNING;
+
             executingPlan = false;
 
             Dictionary<int, float> fieldDeltaVPairs = new Dictionary<int, float>();
@@ -106,34 +70,70 @@ public class Node : INode
             {
                 float requiredDeltaV = Position.Distance(Position, plan.entries[i].Position);
                 fieldDeltaVPairs.Add(i, requiredDeltaV);
+            }
+
+
+
+            foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
+
+            {
+
+                if (plan.entries.Any(entry => entry.Node != null && entry.Node.ID == this.ID) && plan.entries.Any(entry => entry.Node == null)){
+                    break;
+                }
+
+                if (plan.ReduceBy("DeltaV", pair.Key, pair.Value))
+
+                {
+
+                    if (plan.entries.Any(entry => entry.Node != null && entry.Node.ID == this.ID))
+                    {
+                        //plan.entries.Find(entry => entry.Node.ID == this.ID).Fields["DeltaV"].Value = 100f;
+                        plan.entries.Find(entry => entry.Node.ID == this.ID).Node = null;
+                    }
+
+                    if (plan.entries[pair.Key].Node != null && plan.entries[pair.Key].Node.ID != ID)
+                    {
+                        State = NodeState.OVERRIDE;
+                    }
+
+
+
+                    plan.entries[pair.Key].Node = this;
+
+                    plan.entries[pair.Key].Fields["DeltaV"].Value = pair.Value;
+
+                    _targetPosition = plan.entries[pair.Key].Position;
+
+                    plan.lastEditedBy = ID;
+
+                    justChangedPlan = true;
+
+                    this.Plan = plan;
+
+                    break;
+
+                }
+
             }
-
-                foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
-                {
-                    if (plan.ReduceBy("DeltaV", pair.Key, pair.Value))
-                    {
-                        if(plan.entries[pair.Key].NodeID != ID && plan.entries[pair.Key].NodeID != -1)
-                        { 
-                            State = NodeState.OVERRIDE;
-                        }
-
-                        plan.entries[pair.Key].NodeID = ID;
-                        plan.entries[pair.Key].Fields["DeltaV"].Value = pair.Value;
-                        _targetPosition = plan.entries[pair.Key].Position;
-                        plan.lastEditedBy = ID;
-                        justChangedPlan = true;
-                        this.Plan = plan;
-                        break;
-                    }
-                }
-
+                        if(plan.entries.Any(entry => entry.Node != null && entry.Node.ID == this.ID) == false && plan.entries.Any(entry => entry.Node == null))
+            {
+                int index = plan.entries.IndexOf(plan.entries.Find(entry => entry.Node == null));
+                plan.entries[index].Node = this;
+                plan.entries[index].Fields["DeltaV"].Value = Position.Distance(Position, plan.entries[index].Position);
+                _targetPosition = plan.entries[index].Position;
+                plan.lastEditedBy = ID;
+                justChangedPlan = true;
+                this.Plan = plan;
+            }
 
             if (justChangedPlan)
             {
-                System.Threading.Thread.Sleep(1000);
-            } else
+                Thread.Sleep(1000);
+            }
+            else
             {
-                System.Threading.Thread.Sleep(250);
+                Thread.Sleep(250);
             }
 
 
@@ -147,14 +147,13 @@ public class Node : INode
             {
                 justChangedPlan = false;
                 State = Node.NodeState.PASSIVE;
-                NextNode(ReachableNodes).Communicate(Constants.Commands.Generate, plan);
+                router.NextHop(this).Communicate(Constants.Commands.Generate, plan);
             }
         }).Start();
-        
+
     }
 
     private bool executingPlan;
     private bool justChangedPlan;
-    private Position intermediateTargetPosition;
     private IRouter router;
 }

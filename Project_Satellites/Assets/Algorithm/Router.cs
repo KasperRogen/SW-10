@@ -7,24 +7,35 @@ public class Router : IRouter
 {
     Dictionary<INode, List<INode>> networkMap;
     Graph<INode, string> graph;
-    Dictionary<INode, uint> nodeToNodeIDMapping;
+    Dictionary<INode, uint> nodeToNodeIDMapping = new Dictionary<INode, uint>();
 
     public Router(ConstellationPlan plan)
     {
-        foreach (ConstellationPlanEntry entry in plan.entries)
-        {
-            networkMap.Add(entry.Node, new List<INode>());
-            nodeToNodeIDMapping.Add(entry.Node, 0);
-        }
+
+        networkMap = new Dictionary<INode, List<INode>>();
+        //if (plan.entries.TrueForAll(entry => entry.Node != null)) { 
+
+        //    foreach (ConstellationPlanEntry entry in plan.entries)
+        //    {
+        //        networkMap.Add(entry.Node, new List<INode>());
+        //        nodeToNodeIDMapping.Add(entry.Node, 0);
+        //    }
+
+
+        //}
+
 
         UpdateNetworkMap(plan);
+
     }
 
     public INode NextHop(INode source)
     {
-        List<INode> nodes = networkMap[source];
+        List<INode> nodes = new List<INode>(); 
+        
+        networkMap[source].ForEach(node => nodes.Add(node));
         nodes.Add(source);
-        nodes.OrderBy((x) => x.ID);
+        nodes = nodes.OrderBy((x) => x.ID).ToList();
 
         INode destination;
         int index = nodes.IndexOf(source);

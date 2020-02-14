@@ -5,6 +5,8 @@ using System.Linq;
 
 public class TargetConstellationGenerator : MonoBehaviour
 {
+
+    public int RandomSeed;
     public GameObject SatLocationPlaceholderPrefab;
 
     List<GameObject> Sats = new List<GameObject>();
@@ -28,6 +30,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
     void GenerateTargetConstellation()
     {
+        Random.InitState(RandomSeed);
         float constellationAltitude;
         float constellationRadius;
 
