@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 1598705569782707086}
   - component: {fileID: -951821776534324943}
   - component: {fileID: -1588135803080123204}
-  - component: {fileID: 1134267301926735435}
+  - component: {fileID: 3748765306295362653}
   m_Layer: 8
   m_Name: Satellite
   m_TagString: Satellite
@@ -155,7 +155,7 @@ SphereCollider:
   serializedVersion: 2
   m_Radius: 0.25
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &1134267301926735435
+--- !u!114 &3748765306295362653
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
