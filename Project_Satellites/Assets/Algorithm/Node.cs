@@ -119,10 +119,10 @@ public class Node : INode
                 plan.lastEditedBy = ID;
 
                 this.Plan = plan;
-                Thread.Sleep(1000);
+                Thread.Sleep(100);
             } else
             {
-                Thread.Sleep(250);
+                Thread.Sleep(25);
             }
 
 

@@ -21,7 +21,7 @@ public class SatelliteMovement : MonoBehaviour
         if (Vector3.Distance(transform.position, TargetPosition) > 0.01f)
         {
             Debug.DrawLine(transform.position, TargetPosition, Color.green);
-            transform.position = Vector3.MoveTowards(transform.position, TargetPosition, 1 * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, TargetPosition, 2 * Time.deltaTime);
         }
     }
 }

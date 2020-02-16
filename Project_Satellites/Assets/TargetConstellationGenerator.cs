@@ -2,14 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using System;
 
 public class TargetConstellationGenerator : MonoBehaviour
 {
-
+    public bool EnableAutotest = false;
+    bool autotestRunning = false;
+    ConstellationPlan plan = null;
     public int RandomSeed;
     public GameObject SatLocationPlaceholderPrefab;
 
     List<GameObject> Sats = new List<GameObject>();
+    List<INode> nodes = new List<INode>();
     string ConstellationAltitudeInput = "781000";
 
     public static float CurrentDeltaVSum;
@@ -28,9 +32,9 @@ public class TargetConstellationGenerator : MonoBehaviour
         GUI.TextField(new Rect(10, 80, 200, 20), CurrentDeltaVSum.ToString(), 25);
     }
 
-    void GenerateTargetConstellation()
+    public void GenerateTargetConstellation()
     {
-        Random.InitState(RandomSeed);
+        UnityEngine.Random.InitState(RandomSeed);
         float constellationAltitude;
         float constellationRadius;
 
@@ -43,6 +47,7 @@ public class TargetConstellationGenerator : MonoBehaviour
         //Set the constellation altitude based on the input textfield
         constellationAltitude = Constants.EarthRadius + Constants.ScaleToSize(constellationAltitude);
         constellationRadius = constellationAltitude / 2;
+
 
         //Get reference to satellites
         if (Sats.Count == 0)
@@ -57,12 +62,12 @@ public class TargetConstellationGenerator : MonoBehaviour
         {
             //Create random angle for position of Targetposition
             angle = (360 / Sats.Count) * i;
-            angle += Random.Range(-5, 5);
+            angle += UnityEngine.Random.Range(-5, 5);
 
             Vector3 instantiationPos = Quaternion.Euler(0, angle, 0) * Vector3.forward;
 
             //Set it relative to the earth
-            Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude * Random.Range(0.5f, 1f);
+            Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude * UnityEngine.Random.Range(0.5f, 1f);
 
             //Store for propagation
             TargetPositions.Add(instantiationVector);
@@ -79,17 +84,51 @@ public class TargetConstellationGenerator : MonoBehaviour
             entries.Add(entry);
         }
 
-        ConstellationPlan plan = new ConstellationPlan(entries);
+        plan = new ConstellationPlan(entries);
 
         //Send the targetconstellation to random sat
-        Sats[Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node.Communicate(Constants.Commands.Generate, plan);
+        Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node.Communicate(Constants.Commands.Generate, plan);
+
+        if (autotestRunning == false && EnableAutotest == true)
+            StartCoroutine(RestartGenerator());
+        
+
     }
 
 
+    IEnumerator RestartGenerator()
+    {
+        autotestRunning = true;
+        yield return new WaitForSeconds(5);
+
+        while (EnableAutotest)
+        {
+            if(nodes.Count == 0)
+                Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
+
+
+            if (plan != null && plan.entries.TrueForAll(entry => nodes.Any(node => Position.Distance(node.Position, entry.Position) < 0.1f))) {
+                int newSeed = RandomSeed;
+                do
+                {
+                    newSeed = (int)(DateTime.Now.DayOfYear * DateTime.Now.Minute * Time.time * UnityEngine.Random.Range(1, 5));
+                } while (RandomSeed == newSeed);
+
+                RandomSeed = newSeed;
+                GenerateTargetConstellation();
+            }
+            yield return new WaitForSeconds(1);
+        }
+        autotestRunning = false;
+    }
 
     // Start is called before the first frame update
     void Start()
     {
         Sats = GameObject.FindGameObjectsWithTag("Satellite").ToList();
+
+        Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
+
+        StartCoroutine(RestartGenerator());
     }
 }

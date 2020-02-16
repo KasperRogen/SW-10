@@ -150,6 +150,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4861c8be2a01ad14d82357388967de15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  EnableAutotest: 1
   RandomSeed: 5
   SatLocationPlaceholderPrefab: {fileID: 8787532262307284882, guid: 4aca84eaab82c8f479ef86d338fd9ef4,
     type: 3}
