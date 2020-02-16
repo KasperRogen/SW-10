@@ -53,7 +53,7 @@ public class ConstellationGenerator : MonoBehaviour
                 satellite.name = "P(" + i + "), S(" + j + ")";
                 satellite.GetComponent<SatelliteComms>().Node = node;
 
-                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 100, (x, y) => { return x.CompareTo(y); }) };
+                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
                 ConstellationPlanEntry entry = new ConstellationPlanEntry(node.Position, fields, (x, y) => 1);
                 entry.Node = node;
                 entries.Add(entry);

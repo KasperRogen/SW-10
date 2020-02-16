@@ -73,14 +73,15 @@ public class ConstellationVisualiser : MonoBehaviour
                     break;
 
                 case Node.NodeState.EXECUTING:
-
-                    break;
+                    meshRenderer.material = PassiveMat;
+                    targetPositionLineRenderer.material = PassiveMat;
+                break;
 
                 case Node.NodeState.OVERRIDE:
 
                     meshRenderer.material = OverrideMat;
                     targetPositionLineRenderer.material = OverrideMat;
-                    break;
+                break;
             }
         //}
 
