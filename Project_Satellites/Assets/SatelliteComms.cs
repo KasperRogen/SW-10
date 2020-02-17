@@ -29,19 +29,19 @@ public class SatelliteComms : MonoBehaviour
         Node.Position = BackendHelpers.PositionFromVector3(transform.position);        
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.isTrigger || other.gameObject.layer != gameObject.layer)
-            return;
-        ReachableSats.Add(other.gameObject);
-        UpdateReachableNodes();
-    }
+    //private void OnTriggerEnter(Collider other)
+    //{
+    //    if (other.isTrigger || other.gameObject.layer != gameObject.layer)
+    //        return;
+    //    ReachableSats.Add(other.gameObject);
+    //    UpdateReachableNodes();
+    //}
 
-    private void OnTriggerExit(Collider other)
-    {
-        ReachableSats.Remove(other.gameObject);
-        UpdateReachableNodes();
-    }
+    //private void OnTriggerExit(Collider other)
+    //{
+    //    ReachableSats.Remove(other.gameObject);
+    //    UpdateReachableNodes();
+    //}
 
     private void UpdateReachableNodes()
     {

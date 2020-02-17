@@ -13,16 +13,17 @@ public class Router : IRouter
     {
 
         networkMap = new Dictionary<INode, List<INode>>();
-        //if (plan.entries.TrueForAll(entry => entry.Node != null)) { 
+        if (plan.entries.TrueForAll(entry => entry.Node != null))
+        {
 
-        //    foreach (ConstellationPlanEntry entry in plan.entries)
-        //    {
-        //        networkMap.Add(entry.Node, new List<INode>());
-        //        nodeToNodeIDMapping.Add(entry.Node, 0);
-        //    }
+            foreach (ConstellationPlanEntry entry in plan.entries)
+            {
+                networkMap.Add(entry.Node, new List<INode>());
+                nodeToNodeIDMapping.Add(entry.Node, 0);
+            }
 
 
-        //}
+        }
 
 
         UpdateNetworkMap(plan);
