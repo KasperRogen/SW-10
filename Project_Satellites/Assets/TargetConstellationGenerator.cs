@@ -53,6 +53,8 @@ public class TargetConstellationGenerator : MonoBehaviour
         if (Sats.Count == 0)
             Sats = GameObject.FindGameObjectsWithTag("Satellite").ToList();
 
+
+
         //Remove old location Placeholders
         GameObject.FindGameObjectsWithTag("LocationPlaceholder")?.ToList().ForEach(GO => Destroy(GO));
 
@@ -67,7 +69,7 @@ public class TargetConstellationGenerator : MonoBehaviour
             Vector3 instantiationPos = Quaternion.Euler(0, angle, 0) * Vector3.forward;
 
             //Set it relative to the earth
-            Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude * UnityEngine.Random.Range(0.5f, 1f);
+            Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude * UnityEngine.Random.Range(0.6f, 1f);
 
             //Store for propagation
             TargetPositions.Add(instantiationVector);
@@ -87,7 +89,8 @@ public class TargetConstellationGenerator : MonoBehaviour
         plan = new ConstellationPlan(entries);
 
         //Send the targetconstellation to random sat
-        Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node.Communicate(Constants.Commands.Generate, plan);
+        INode targetSat = Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node;
+        targetSat.Communicate(Constants.Commands.Generate, plan, targetSat);
 
         if (autotestRunning == false && EnableAutotest == true)
             StartCoroutine(RestartGenerator());

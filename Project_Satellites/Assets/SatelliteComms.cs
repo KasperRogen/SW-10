@@ -9,7 +9,7 @@ public class SatelliteComms : MonoBehaviour
     [Header("Satellite Settings"), Space(10)]
     [Min(0)] public float CommRadius;
 
-    public List<GameObject> ReachableSats = new List<GameObject>();
+    public List<Vector3> ReachableSats = new List<Vector3>();
     SatelliteMovement movement;
 
     
@@ -43,8 +43,8 @@ public class SatelliteComms : MonoBehaviour
     //    UpdateReachableNodes();
     //}
 
-    private void UpdateReachableNodes()
-    {
-        Node.ReachableNodes = ReachableSats.Select((x) => x.GetComponent<SatelliteComms>().Node).ToList();
-    }
+    //private void UpdateReachableNodes()
+    //{
+    //    Node.ReachableNodes = ReachableSats.Select((x) => x.GetComponent<SatelliteComms>().Node).ToList();
+    //}
 }

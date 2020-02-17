@@ -11,6 +11,7 @@ public class ConstellationVisualiser : MonoBehaviour
     public Material LeaderMat;
     public Material OverrideMat;
     public Material CommsMat;
+    public Material ExecuteMat;
 
     List<Vector3> linerendererPositions = new List<Vector3>();
     LineRenderer commLineRenderer;
@@ -23,8 +24,11 @@ public class ConstellationVisualiser : MonoBehaviour
     
     private void Awake()
     {
-        GameObject commLineGO = Instantiate(new GameObject(), transform);
-        GameObject targetLineGO = Instantiate(new GameObject(), transform);
+        GameObject commLineGO = new GameObject();
+        GameObject targetLineGO = new GameObject();
+
+        commLineGO.transform.parent = this.transform;
+        targetLineGO.transform.parent = this.transform;
 
         commLineRenderer = commLineGO.AddComponent<LineRenderer>();
         targetPositionLineRenderer = targetLineGO.AddComponent<LineRenderer>();
@@ -56,6 +60,10 @@ public class ConstellationVisualiser : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+
+        comms.ReachableSats = comms.Node.router.NetworkMap?[comms.Node].Select(node => BackendHelpers.Vector3FromPosition(node.Position)).ToList();
+
+
         if (comms == null || comms.Node == null)
             return;
 
@@ -73,8 +81,8 @@ public class ConstellationVisualiser : MonoBehaviour
                     break;
 
                 case Node.NodeState.EXECUTING:
-                    meshRenderer.material = PassiveMat;
-                    targetPositionLineRenderer.material = PassiveMat;
+                    meshRenderer.material = ExecuteMat;
+                    targetPositionLineRenderer.material = ExecuteMat;
                 break;
 
                 case Node.NodeState.OVERRIDE:
@@ -89,10 +97,10 @@ public class ConstellationVisualiser : MonoBehaviour
 
         linerendererPositions.Clear();
 
-        for (int i = 0; i < comms.ReachableSats.Count; i++)
+        for (int i = 0; i < comms.ReachableSats?.Count; i++)
         {
             linerendererPositions.Add(transform.position);
-            linerendererPositions.Add(comms.ReachableSats[i].transform.position);
+            linerendererPositions.Add(comms.ReachableSats[i]);
         }
         commLineRenderer.positionCount = linerendererPositions.Count;
         commLineRenderer.SetPositions(linerendererPositions.ToArray());

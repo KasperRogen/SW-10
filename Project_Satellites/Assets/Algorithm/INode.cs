@@ -11,9 +11,10 @@ public interface INode
     List<INode> ReachableNodes { get; set; }
     Position Position { get; set; }
     Position TargetPosition { get; set; }
+    Router router { get; set; }
 
     void GenerateRouter();
-    void Communicate(Constants.Commands command);
-    void Communicate(Constants.Commands command, ConstellationPlan plan);
+    void Communicate(Constants.Commands command, INode Target);
+    void Communicate(Constants.Commands command, ConstellationPlan plan, INode Target);
 
 }
