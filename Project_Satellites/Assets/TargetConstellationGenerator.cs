@@ -7,6 +7,9 @@ using System;
 public class TargetConstellationGenerator : MonoBehaviour
 {
     public bool EnableAutotest = false;
+    public bool EnableManualDesign = false;
+    public LayerMask ManualDesignMask;
+
     bool autotestRunning = false;
     ConstellationPlan plan = null;
     public int RandomSeed;
@@ -17,6 +20,7 @@ public class TargetConstellationGenerator : MonoBehaviour
     string ConstellationAltitudeInput = "781000";
 
     public static float CurrentDeltaVSum;
+
 
     List<Vector3> TargetPositions = new List<Vector3>();
 
@@ -99,6 +103,13 @@ public class TargetConstellationGenerator : MonoBehaviour
     }
 
 
+    public static void Clear()
+    {
+        //Remove old location Placeholders
+        GameObject.FindGameObjectsWithTag("LocationPlaceholder")?.ToList().ForEach(GO => Destroy(GO));
+    }
+
+
     IEnumerator RestartGenerator()
     {
         autotestRunning = true;
@@ -133,5 +144,58 @@ public class TargetConstellationGenerator : MonoBehaviour
         Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
 
         StartCoroutine(RestartGenerator());
+    }
+
+    private void Update()
+    {
+
+
+        if (nodes.Count == 0)
+            Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
+
+
+        RaycastHit hit;
+
+        if (plan == null)
+            return;
+
+        if (Input.GetMouseButtonDown(0) && 
+            Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, ManualDesignMask) &&  
+            plan.entries.TrueForAll(entry => nodes.Any(node => Position.Distance(node.Position, entry.Position) < 0.1f))){
+
+            if(EnableManualDesign == false)
+            {
+                Clear();
+            }
+
+            if(GameObject.FindGameObjectsWithTag("LocationPlaceholder")?.ToList().Count < nodes.Count) { 
+                Instantiate(SatLocationPlaceholderPrefab, hit.point, Quaternion.identity);
+
+
+                EnableAutotest = false;
+                EnableManualDesign = true;
+
+            } else if(EnableManualDesign == true)
+            {
+                List<ConstellationPlanEntry> entries = new List<ConstellationPlanEntry>();
+
+                foreach (Vector3 pos in GameObject.FindGameObjectsWithTag("LocationPlaceholder")?.ToList().Select (loc => loc.transform.position))
+                {
+                    Position position = new Position(pos.x, pos.y, pos.z);
+                    List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
+                    ConstellationPlanEntry entry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
+                    entries.Add(entry);
+                }
+
+                plan = new ConstellationPlan(entries);
+
+                INode targetSat = Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node;
+                targetSat.Communicate(Constants.Commands.Generate, plan, targetSat);
+
+                EnableManualDesign = false;
+            }
+
+
+        }
     }
 }
