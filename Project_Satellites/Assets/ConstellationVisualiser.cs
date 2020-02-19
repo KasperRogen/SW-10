@@ -12,6 +12,7 @@ public class ConstellationVisualiser : MonoBehaviour
     public Material OverrideMat;
     public Material CommsMat;
     public Material ExecuteMat;
+    public Material DeadMat;
 
     List<Vector3> linerendererPositions = new List<Vector3>();
     LineRenderer commLineRenderer;
@@ -83,13 +84,17 @@ public class ConstellationVisualiser : MonoBehaviour
                 case Node.NodeState.EXECUTING:
                     meshRenderer.material = ExecuteMat;
                     targetPositionLineRenderer.material = ExecuteMat;
-                break;
+                    break;
 
                 case Node.NodeState.OVERRIDE:
 
                     meshRenderer.material = OverrideMat;
                     targetPositionLineRenderer.material = OverrideMat;
-                break;
+                    break;
+
+                case Node.NodeState.DEAD:
+                    meshRenderer.material = DeadMat;
+                    break;
             }
         //}
 

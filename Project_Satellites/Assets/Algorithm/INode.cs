@@ -12,9 +12,10 @@ public interface INode
     Position Position { get; set; }
     Position TargetPosition { get; set; }
     Router router { get; set; }
+    bool Active { get; set; }
 
     void GenerateRouter();
-    void Communicate(Constants.Commands command, INode Target);
-    void Communicate(Constants.Commands command, ConstellationPlan plan, INode Target);
+    bool Communicate(Constants.Commands command, INode Target);
+    bool Communicate(Constants.Commands command, ConstellationPlan plan, INode Target);
 
 }
