@@ -7,7 +7,7 @@ using System.Threading;
 public class Node : INode
 {
 
-    public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING };
+    public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD };
 
     public int ID { get; set; }
     public List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
@@ -16,16 +16,42 @@ public class Node : INode
     public ConstellationPlan Plan { get; set; }
     public NodeState State { get; set; }
     public Router router { get; set; }
+    public bool Active
+    {
+        get
+        {
+            return active;
+        }
+        set
+        {
+            active = value;
+
+            if (value)
+            {
+                State = NodeState.PASSIVE;
+            }
+            else
+            {
+                State = NodeState.DEAD;
+            }
+        }
+    }
+    private bool active;
 
     public Node(int ID)
     {
         this.ID = ID;
         State = Node.NodeState.PASSIVE;
+        Active = true;
     }
 
-    public void Communicate(Constants.Commands command, INode target)
+    public bool Communicate(Constants.Commands command, INode target)
     {
 
+        if (!Active)
+        {
+            return false;
+        }
 
         new Thread(delegate ()
         {
@@ -53,7 +79,7 @@ public class Node : INode
                 }
 
                 INode nextSeq = router.NextSequential(this);
-                nextSeq.Communicate(Constants.Commands.Execute, nextSeq);
+                TryCommunicate(Constants.Commands.Execute, nextSeq, nextSeq);
 
                 router.UpdateNetworkMap(Plan);
 
@@ -61,11 +87,13 @@ public class Node : INode
             else
             {
                 INode nextHop = router.NextHop(this, target);
-                nextHop.Communicate(command, target);
+                TryCommunicate(command, nextHop, target);
             }
 
 
         }).Start();
+
+        return true;
     }
 
     public void GenerateRouter()
@@ -90,8 +118,12 @@ public class Node : INode
         return newPlan;
     }
 
-    public void Communicate(Constants.Commands command, ConstellationPlan plan, INode target)
+    public bool Communicate(Constants.Commands command, ConstellationPlan plan, INode target)
     {
+        if (!Active)
+        {
+            return false;
+        }
 
         new Thread(delegate ()        {            if (command != Constants.Commands.Generate)            {                throw new Exception("Wrong command"); // Only accept Generate command
             }
@@ -169,10 +201,10 @@ public class Node : INode
                     State = Node.NodeState.PASSIVE;
                     INode nextSeq = router.NextSequential(this);
                     if (router.NetworkMap[this].Contains(nextSeq)){
-                        nextSeq.Communicate(Constants.Commands.Generate, plan, nextSeq);
+                        TryCommunicate(Constants.Commands.Generate, plan, nextSeq, nextSeq);
                     } else
                     {
-                        router.NextHop(this, nextSeq).Communicate(Constants.Commands.Generate, plan, nextSeq);
+                        TryCommunicate(Constants.Commands.Generate, plan, router.NextHop(this, nextSeq), nextSeq);
                     }
                     
                 }
@@ -183,11 +215,33 @@ public class Node : INode
                 Thread.Sleep(500);
                 State = Node.NodeState.PLANNING;
                 INode nextHop = router.NextHop(this, target);
-                nextHop.Communicate(command, plan, target);
+                TryCommunicate(command, plan, nextHop, target);
             }
 
         }).Start();
 
+        return true;
+    }
+
+    private void TryCommunicate(Constants.Commands command, ConstellationPlan plan, INode source, INode destination)
+    {
+        if (!source.Communicate(command, plan, destination))
+        {
+            FailureDetection();
+        }
+    }
+
+    private void TryCommunicate(Constants.Commands command, INode source, INode destination)
+    {
+        if (!source.Communicate(command, destination))
+        {
+            FailureDetection();
+        }
+    }
+
+    private void FailureDetection()
+    {
+        throw new NotImplementedException();
     }
 
     public void Communicate(Constants.Commands command, INode source, INode target, INode deadSat, bool isDead, bool isChecked)
