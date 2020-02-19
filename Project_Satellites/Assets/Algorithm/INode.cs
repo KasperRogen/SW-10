@@ -16,5 +16,6 @@ public interface INode
     void GenerateRouter();
     void Communicate(Constants.Commands command, INode Target);
     void Communicate(Constants.Commands command, ConstellationPlan plan, INode Target);
+    void Communicate(Constants.Commands command, INode source, INode target, INode deadSat, bool isDead, bool isChecked);
 
 }

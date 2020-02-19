@@ -190,6 +190,34 @@ public class Node : INode
 
     }
 
+    public void Communicate(Constants.Commands command, INode source, INode target, INode deadSat, bool isDead, bool isChecked)
+    {
+        new Thread(delegate ()
+        {
+            if (command != Constants.Commands.DetectFailure)
+            {
+                throw new Exception("Wrong command:: Expected DetectFailure command");
+            }
+
+            if (deadSat.ID == ID)
+            {
+                // return true
+            }
+            else if (target.ID != ID)
+            {
+                // Check if neighbour is dead
+
+                // check isChecked
+                router.NextHop(this, target).Communicate(Constants.Commands.DetectFailure, source, target, deadSat, isDead, isChecked);
+            }
+            else if (target.ID == ID)
+            {
+                // check if deadsat is actually dead
+            }
+        }).Start();
+  
+    }
+
     private bool executingPlan;
     private bool justChangedPlan;
 }
