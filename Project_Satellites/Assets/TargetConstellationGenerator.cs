@@ -73,7 +73,7 @@ public class TargetConstellationGenerator : MonoBehaviour
             Vector3 instantiationPos = Quaternion.Euler(0, angle, 0) * Vector3.forward;
 
             //Set it relative to the earth
-            Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude * UnityEngine.Random.Range(0.6f, 1f);
+            Vector3 instantiationVector = (instantiationPos - Vector3.zero).normalized * constellationAltitude * UnityEngine.Random.Range(1f, 1f);
 
             //Store for propagation
             TargetPositions.Add(instantiationVector);
