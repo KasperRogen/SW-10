@@ -4,8 +4,12 @@ using UnityEngine;
 using System.Linq;
 using System;
 
+
+
 public class TargetConstellationGenerator : MonoBehaviour
 {
+    public static TargetConstellationGenerator instance;
+
     public bool EnableAutotest = false;
     public bool EnableManualDesign = false;
     public LayerMask ManualDesignMask;
@@ -55,7 +59,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
         //Get reference to satellites
         if (Sats.Count == 0)
-            Sats = GameObject.FindGameObjectsWithTag("Satellite").ToList();
+            Sats = GameObject.FindGameObjectsWithTag("Satellite").Where(sat => sat.GetComponent<SatelliteComms>().Node.State != Node.NodeState.DEAD).ToList();
 
 
 
@@ -144,6 +148,8 @@ public class TargetConstellationGenerator : MonoBehaviour
         Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
 
         StartCoroutine(RestartGenerator());
+
+        instance = this;
     }
 
     private void Update()

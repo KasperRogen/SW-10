@@ -111,6 +111,19 @@ public class Router : IRouter
                 NetworkMap[entry.Node] = neighbors;
         }
 
+        UpdateGraph();
+    }
+
+    public void DeleteEdge(INode n1, INode n2)
+    {
+        NetworkMap[n1].Remove(n2);
+        NetworkMap[n2].Remove(n1);
+
+        UpdateGraph();
+    }
+
+    private void UpdateGraph()
+    {
         Graph<INode, string> updatedGraph = new Graph<INode, string>();
 
         foreach (KeyValuePair<INode, List<INode>> pair in NetworkMap)

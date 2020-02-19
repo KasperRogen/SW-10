@@ -6,7 +6,7 @@ using System.Threading;
 
 public class Node : INode
 {
-
+    
     public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD };
 
     public int ID { get; set; }
@@ -227,7 +227,7 @@ public class Node : INode
     {
         if (!source.Communicate(command, plan, destination))
         {
-            FailureDetection();
+            FailureDetection(source);
         }
     }
 
@@ -235,42 +235,81 @@ public class Node : INode
     {
         if (!source.Communicate(command, destination))
         {
-            FailureDetection();
+            FailureDetection(source);
         }
     }
 
-    private void FailureDetection()
+    private void FailureDetection(INode failedNode)
     {
-        throw new NotImplementedException();
+        router.DeleteEdge(this, failedNode);
+
+        INode neighbour = router.NetworkMap[failedNode][0];
+
+        router.NextHop(this, neighbour).Communicate(Constants.Commands.DetectFailure, this, neighbour, failedNode, false, false);
     }
 
-    public void Communicate(Constants.Commands command, INode source, INode target, INode deadSat, bool isDead, bool isChecked)
+    public bool Communicate(Constants.Commands command, INode source, INode target, INode deadNode, bool isDead, bool isChecked)
     {
+        if (!Active)
+        {
+            return false;
+        }
+
         new Thread(delegate ()
         {
+            Thread.Sleep(500);
+            router.DeleteEdge(source, deadNode);
+            
+            if (isChecked == true)
+            {
+                this.State = NodeState.PASSIVE;
+            }
+            else
+            {
+                this.State = NodeState.EXECUTING;
+            }
+
             if (command != Constants.Commands.DetectFailure)
             {
                 throw new Exception("Wrong command:: Expected DetectFailure command");
             }
 
-            if (deadSat.ID == ID)
+            if (deadNode.ID == ID) // do nothing
             {
-                // return true
+                return;
             }
-            else if (target.ID != ID)
+            else if (target.ID != ID) // check if other dead sat, otherwise relay.
             {
-                // Check if neighbour is dead
+                INode nextHopTarget = isChecked ? source : target;
+                bool response = router.NextHop(this, nextHopTarget).Communicate(Constants.Commands.DetectFailure, source, target, deadNode, isDead, isChecked);
 
-                // check isChecked
-                router.NextHop(this, target).Communicate(Constants.Commands.DetectFailure, source, target, deadSat, isDead, isChecked);
+                // Handle additional dead satellites
             }
             else if (target.ID == ID)
             {
-                // check if deadsat is actually dead
+                // Get response
+                bool response = router.NextHop(this, deadNode).Communicate(Constants.Commands.DetectFailure, source, target, deadNode, isDead, isChecked);
+
+                // Relay response opposite way
+                router.NextHop(this, source).Communicate(Constants.Commands.DetectFailure, source, target, deadNode, response, true);
+            }
+            else if (source.ID == ID)
+            {
+                if (isDead == true)
+                {
+                    TargetConstellationGenerator.instance.GenerateTargetConstellation();
+                }
+                else
+                {
+                    return;
+                }
             }
         }).Start();
+
+        return true;
   
     }
+
 
     private bool executingPlan;
     private bool justChangedPlan;
