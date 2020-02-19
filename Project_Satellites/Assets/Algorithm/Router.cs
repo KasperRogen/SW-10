@@ -4,7 +4,7 @@ using Dijkstra.NET.Graph;
 using Dijkstra.NET.ShortestPath;
 
 public class Router : IRouter
-{
+{
     public Dictionary<INode, List<INode>> NetworkMap { get; set; }
     Graph<INode, string> graph;
     Dictionary<INode, uint> nodeToNodeIDMapping = new Dictionary<INode, uint>();
@@ -12,70 +12,70 @@ public class Router : IRouter
     float satRange = 5f;
 
     public Router(ConstellationPlan plan)
-    {
-
+    {
+
         NetworkMap = new Dictionary<INode, List<INode>>();
-        if (plan.entries.TrueForAll(entry => entry.Node != null))
-        {
-
+        if (plan.entries.TrueForAll(entry => entry.Node != null))
+        {
+
             foreach (ConstellationPlanEntry entry in plan.entries)
             {
                 NetworkMap.Add(entry.Node, new List<INode>());
                 nodeToNodeIDMapping.Add(entry.Node, 0);
             }
+
 
-
-        }
-
-
+        }
+
+
         UpdateNetworkMap(plan);
 
-    }
-
-
-    public INode NextSequential(INode source)
-    {
-        List<INode> nodes = new List<INode>();
-        List<INode> lastNodes = new List<INode>();
-
-        NetworkMap[source].ForEach(node => nodes.Add(node));
-        nodes.Add(source);
-
-        do
-        {
-            lastNodes.Clear();
-            nodes.ForEach(node => lastNodes.Add(node));
-
-            List<INode> newNodes = new List<INode>();
-            nodes.ForEach(node => node.router.NetworkMap[node].ForEach(newNode => newNodes.Add(newNode)));
-            nodes.AddRange(newNodes);
-            
-            nodes = nodes.Distinct().ToList();
-            nodes = nodes.OrderBy((x) => x.ID).ToList();
-            lastNodes = lastNodes.Distinct().ToList();
-            lastNodes = lastNodes.OrderBy((x) => x.ID).ToList();
-
-            List<INode> diff = lastNodes.Except(nodes).ToList();
-
-        } while (nodes.TrueForAll(node => lastNodes.Contains(node)) == false);
-
-        nodes = nodes.OrderBy((x) => x.ID).ToList();
-
-        INode destination;
-        int index = nodes.IndexOf(source);
-
-        if (index == nodes.Count - 1)
-        {
-            destination = nodes[0];
-        }
-        else
-        {
-            destination = nodes[index + 1];
-        }
-
-        return destination;
-    }
-
+    }
+
+
+    public INode NextSequential(INode source)
+    {
+        List<INode> nodes = new List<INode>();
+        List<INode> lastNodes = new List<INode>();
+
+        NetworkMap[source].ForEach(node => nodes.Add(node));
+        nodes.Add(source);
+
+        do
+        {
+            lastNodes.Clear();
+            nodes.ForEach(node => lastNodes.Add(node));
+
+            List<INode> newNodes = new List<INode>();
+            nodes.ForEach(node => node.router.NetworkMap[node].ForEach(newNode => newNodes.Add(newNode)));
+            nodes.AddRange(newNodes);
+            
+            nodes = nodes.Distinct().ToList();
+            nodes = nodes.OrderBy((x) => x.ID).ToList();
+            lastNodes = lastNodes.Distinct().ToList();
+            lastNodes = lastNodes.OrderBy((x) => x.ID).ToList();
+
+            List<INode> diff = lastNodes.Except(nodes).ToList();
+
+        } while (nodes.TrueForAll(node => lastNodes.Contains(node)) == false);
+
+        nodes = nodes.OrderBy((x) => x.ID).ToList();
+
+        INode destination;
+        int index = nodes.IndexOf(source);
+
+        if (index == nodes.Count - 1)
+        {
+            destination = nodes[0];
+        }
+        else
+        {
+            destination = nodes[index + 1];
+        }
+
+        return destination;
+    }
+
     public INode NextHop(INode source, INode destination)
     {
         List<INode> nodes = new List<INode>(); 
@@ -101,7 +101,7 @@ public class Router : IRouter
             foreach (ConstellationPlanEntry innerEntry in plan.entries.Where((x) => x != entry))
             {
                 if (Position.Distance(entry.Position, innerEntry.Position) < satRange) // 100 = Range for Satellite communication
-                {
+                {
                     if (innerEntry.Node != null)
                     neighbors.Add(innerEntry.Node);
                 }
