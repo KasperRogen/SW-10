@@ -1,21 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+using System.Linq;
+
+using System.Threading;
+
 
 
 public class Node : INode
-{
-
+{
+
+
+
     public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING };
 
-    public int ID { get; set; }
-    public List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
-    public Position Position;
-    public Position TargetPosition { get; set; }
-    public ConstellationPlan Plan = new ConstellationPlan(new List<ConstellationPlanEntry>());
-    public NodeState State { get; set; }
-    public Router router { get; set; }
+    public override int ID { get; set; }
+    public override List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
+    public override Position Position { get; set; }
+    public override Position TargetPosition { get; set; }
+
+    public override ConstellationPlan Plan { get; set; }
+    public override NodeState State { get; set; }
+    public override Router router { get; set; }
 
 
 
@@ -30,18 +35,23 @@ public class Node : INode
         this.ID = ID;
         State = Node.NodeState.PASSIVE;
         this.Position = position;
-    }
-
+    }
+
+
+
     public override void Communicate(Constants.Commands command, INode target)
     {
 
 
-        new Thread(delegate ()
+        new Thread(delegate ()
+
         {
             if (command != Constants.Commands.Execute)
             {
                 throw new Exception("Wrong command"); // Only accept Execute command
-            }            if(target == this)
+            }
+
+            if(target == this)
             {
 
                 State = Node.NodeState.EXECUTING;
@@ -102,7 +112,11 @@ public class Node : INode
     public override void Communicate(Constants.Commands command, ConstellationPlan plan, INode target)
     {
 
-        new Thread(delegate ()        {            if (command != Constants.Commands.Generate)            {                throw new Exception("Wrong command"); // Only accept Generate command
+        new Thread(delegate ()
+        {
+            if (command != Constants.Commands.Generate)
+            {
+                throw new Exception("Wrong command"); // Only accept Generate command
             }
 
             if (target == this)
@@ -184,7 +198,8 @@ public class Node : INode
                         router.NextHop(this, nextSeq).Communicate(Constants.Commands.Generate, plan, nextSeq);
                     }
                     
-                }
+                }
+
 
             }
             else
@@ -210,12 +225,15 @@ public class Node : INode
         if(discoverID > LastDiscoverID)
         {
             CurrentKnownEdges.Clear();
+            LastDiscoverID = discoverID;
         }
 
 
 
         //List<Tuple<INode, INode>> temp = ReceivedEdgeSet.Except(CurrentKnownEdges, (x y) => return 1).ToList();
         //newKnowledge = temp.Count() > 0;
+
+        
 
         foreach (INode node in ReachableNodes)
         {

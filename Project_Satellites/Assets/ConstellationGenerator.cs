@@ -31,6 +31,8 @@ public class ConstellationGenerator : MonoBehaviour
         {
             float yAngle = Mathf.PI / PlaneNum * i;
 
+            List<Tuple<int, Position>> NodeProperties = new List<Tuple<int, Position>>();
+
             for(int j = 0; j < SatellitesPerPlane; j++)
             {
                 float angle = j * Mathf.PI * 2f / SatellitesPerPlane;
@@ -46,7 +48,8 @@ public class ConstellationGenerator : MonoBehaviour
 
                 GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
 
-                INode node = new Node(j, (BackendHelpers.PositionFromVector3(satellite.transform.position)));
+                NodeProperties.Add(new Tuple<int, Position>(j, BackendHelpers.PositionFromVector3(satellite.transform.position)));
+                INode node = new Node(j, BackendHelpers.PositionFromVector3(satellite.transform.position));
                 node.TargetPosition = node.Position;
 
                 satellite.name = "P(" + i + "), S(" + j + ")";

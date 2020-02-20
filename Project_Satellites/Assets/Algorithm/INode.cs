@@ -5,13 +5,14 @@ public abstract class INode
 {
 
 
-    public Node.NodeState State { get; set; }
-    public ConstellationPlan Plan { get; set; }
-    public int ID { get; set; }
-    public List<INode> ReachableNodes { get; set; }
-    public Position Position { get; set; }
-    public Position TargetPosition { get; set; }
-    public Router router { get; set; }
+    public abstract Node.NodeState State { get; set; }
+    public abstract ConstellationPlan Plan { get; set; }
+    public abstract int ID { get; set; }
+    public abstract List<INode> ReachableNodes { get; set; }
+    public abstract Position Position { get; set; }
+    public abstract Position TargetPosition { get; set; }
+    public abstract Router router { get; set; }
+    
 
     public abstract void Discover(List<Tuple<INode, INode>> ReceivedEdgeSet, INode sender, int discoverID);
     public abstract void GenerateRouter();
