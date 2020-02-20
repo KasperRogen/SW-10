@@ -190,7 +190,8 @@ public class TargetConstellationGenerator : MonoBehaviour
                 plan = new ConstellationPlan(entries);
 
                 INode targetSat = Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node;
-                targetSat.Communicate(Constants.Commands.Generate, plan, targetSat);
+                //targetSat.Communicate(Constants.Commands.Generate, plan, targetSat);
+                targetSat.Discover(new List<Tuple<INode, INode>>(), targetSat, 0);
 
                 EnableManualDesign = false;
             }

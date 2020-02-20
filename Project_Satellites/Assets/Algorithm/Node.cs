@@ -11,19 +11,28 @@ public class Node : INode
 
     public int ID { get; set; }
     public List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
-    public Position Position { get; set; }
+    public Position Position;
     public Position TargetPosition { get; set; }
-    public ConstellationPlan Plan { get; set; }
+    public ConstellationPlan Plan = new ConstellationPlan(new List<ConstellationPlanEntry>());
     public NodeState State { get; set; }
     public Router router { get; set; }
 
-    public Node(int ID)
+
+
+    List<Tuple<INode, INode>> EdgeSet;
+
+    List<Tuple<INode, INode>> CurrentKnownEdges = new List<Tuple<INode, INode>>();
+
+    private int LastDiscoverID = -1;
+
+    public Node(int ID, Position position)
     {
         this.ID = ID;
         State = Node.NodeState.PASSIVE;
+        this.Position = position;
     }
 
-    public void Communicate(Constants.Commands command, INode target)
+    public override void Communicate(Constants.Commands command, INode target)
     {
 
 
@@ -68,7 +77,7 @@ public class Node : INode
         }).Start();
     }
 
-    public void GenerateRouter()
+    public override void GenerateRouter()
     {
         router = new Router(Plan);
     }
@@ -90,7 +99,7 @@ public class Node : INode
         return newPlan;
     }
 
-    public void Communicate(Constants.Commands command, ConstellationPlan plan, INode target)
+    public override void Communicate(Constants.Commands command, ConstellationPlan plan, INode target)
     {
 
         new Thread(delegate ()        {            if (command != Constants.Commands.Generate)            {                throw new Exception("Wrong command"); // Only accept Generate command
@@ -189,6 +198,61 @@ public class Node : INode
         }).Start();
 
     }
+
+    
+
+    public override void Discover(List<Tuple<INode, INode>> ReceivedEdgeSet, INode sender, int discoverID)
+    {
+        bool newKnowledge = false;
+        bool alteredSet = false;
+
+
+        if(discoverID > LastDiscoverID)
+        {
+            CurrentKnownEdges.Clear();
+        }
+
+
+
+        //List<Tuple<INode, INode>> temp = ReceivedEdgeSet.Except(CurrentKnownEdges, (x y) => return 1).ToList();
+        //newKnowledge = temp.Count() > 0;
+
+        foreach (INode node in ReachableNodes)
+        {
+            Tuple<INode, INode> edge = new Tuple<INode, INode>(this, node);
+
+            edge = edge.Item1.ID > edge.Item2.ID ? new Tuple<INode, INode>(edge.Item2, edge.Item1) : edge;
+
+
+            if(ReceivedEdgeSet.Contains(edge) == false)
+            {
+                ReceivedEdgeSet.Add(edge);
+                alteredSet = true;
+            }
+        }
+
+        ReceivedEdgeSet = ReceivedEdgeSet.OrderBy(tuple => tuple.Item1.ID).ThenBy(tuple => tuple.Item2.ID).ToList();
+        CurrentKnownEdges = ReceivedEdgeSet;
+
+        if (alteredSet)
+        {
+            ReachableNodes.ForEach(node => node.Discover(ReceivedEdgeSet, this, discoverID));
+        } else if (newKnowledge)
+        {
+            ReachableNodes.Where(node => node.ID != sender.ID).ToList().ForEach(node => node.Discover(ReceivedEdgeSet, this, discoverID));
+        }
+
+
+
+
+    }
+
+
+    public override bool Equals(object obj)
+    {
+        return this.ID == (obj as INode).ID;
+    }
+
 
     private bool executingPlan;
     private bool justChangedPlan;

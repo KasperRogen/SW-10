@@ -46,8 +46,7 @@ public class ConstellationGenerator : MonoBehaviour
 
                 GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
 
-                INode node = new Node(j);
-                node.Position = BackendHelpers.PositionFromVector3(satellite.transform.position);
+                INode node = new Node(j, (BackendHelpers.PositionFromVector3(satellite.transform.position)));
                 node.TargetPosition = node.Position;
 
                 satellite.name = "P(" + i + "), S(" + j + ")";

@@ -5,7 +5,7 @@ using Dijkstra.NET.ShortestPath;
 
 public class Router : IRouter
 {
-    public Dictionary<INode, List<INode>> NetworkMap { get; set; }
+    public Dictionary<INode, List<INode>> NetworkMap = new Dictionary<INode, List<INode>>();
     Graph<INode, string> graph;
     Dictionary<INode, uint> nodeToNodeIDMapping = new Dictionary<INode, uint>();
 
@@ -76,7 +76,7 @@ public class Router : IRouter
         return destination;
     }
 
-    public INode NextHop(INode source, INode destination)
+    public override INode NextHop(INode source, INode destination)
     {
         List<INode> nodes = new List<INode>(); 
         
@@ -92,7 +92,7 @@ public class Router : IRouter
         return nodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
     }
 
-    public void UpdateNetworkMap(ConstellationPlan plan)
+    public override void UpdateNetworkMap(ConstellationPlan plan)
     {
         foreach (ConstellationPlanEntry entry in plan.entries)
         {
