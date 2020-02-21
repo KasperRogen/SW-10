@@ -4,8 +4,8 @@ using Dijkstra.NET.Graph;
 using Dijkstra.NET.ShortestPath;
 
 public class Router : IRouter
-{
-    public Dictionary<INode, List<INode>> NetworkMap { get; set; }
+{
+    public Dictionary<INode, List<INode>> networkMap;
     Graph<INode, string> graph;
     Dictionary<INode, uint> nodeToNodeIDMapping = new Dictionary<INode, uint>();
 
