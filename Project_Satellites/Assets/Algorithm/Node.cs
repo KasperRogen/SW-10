@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
+using System.Linq;
+using System.Threading;using System.Timers;
 
 
 public class Node : INode
 {
     
-    public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD };
+    public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT };
 
     public int ID { get; set; }
     public List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
@@ -43,8 +43,20 @@ public class Node : INode
         this.ID = ID;
         State = Node.NodeState.PASSIVE;
         Active = true;
+        timer = new System.Timers.Timer(5000);
+        timer.Elapsed += OnTimedEvent;
+        timer.AutoReset = true;
+        timer.Enabled = true;
     }
-
+    public bool Communicate(Constants.Commands command)
+    {
+        if (!Active)
+        {
+            return false;
+        }
+
+        return true;
+    }
     public bool Communicate(Constants.Commands command, INode target)
     {
 
@@ -310,7 +322,34 @@ public class Node : INode
   
     }
 
+    private void OnTimedEvent(Object source, ElapsedEventArgs e)
+    {
+        if (Active)
+        {
+            Heartbeat();
+        }
+    }
+
+    private void Heartbeat()
+    {
+        new Thread(delegate () {
+            NodeState previousState = State;
+            State = NodeState.HEARTBEAT;
+            Thread.Sleep(500);
+
+            foreach (INode node in router.NetworkMap[this].ToList()) // Should just communicate with reachable nodes instead of using networkmap
+            {
+                if (!node.Communicate(Constants.Commands.Heartbeat))
+                {
+                    FailureDetection(node);
+                }
+            }
+
+            State = previousState;
+        }).Start();
+    }
 
     private bool executingPlan;
     private bool justChangedPlan;
+    private System.Timers.Timer timer;
 }

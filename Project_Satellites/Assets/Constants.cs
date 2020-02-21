@@ -6,7 +6,7 @@ public static class Constants
 {
     public enum Commands
     {
-        Generate, Execute, DetectFailure
+        Generate, Execute, DetectFailure, Heartbeat
     }
 
     public static int NodesPerCycle = 11;

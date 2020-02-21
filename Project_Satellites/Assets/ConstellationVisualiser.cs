@@ -13,6 +13,7 @@ public class ConstellationVisualiser : MonoBehaviour
     public Material CommsMat;
     public Material ExecuteMat;
     public Material DeadMat;
+    public Material HeartbeatMat;
 
     List<Vector3> linerendererPositions = new List<Vector3>();
     LineRenderer commLineRenderer;
@@ -94,6 +95,10 @@ public class ConstellationVisualiser : MonoBehaviour
 
                 case Node.NodeState.DEAD:
                     meshRenderer.material = DeadMat;
+                    break;
+
+                case Node.NodeState.HEARTBEAT:
+                    meshRenderer.material = HeartbeatMat;
                     break;
             }
         //}
