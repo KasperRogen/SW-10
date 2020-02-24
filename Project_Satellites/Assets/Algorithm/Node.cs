@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;using System.Timers;
+using System.Threading;using System.Timers;
+
 
 
 public class Node : INode
@@ -9,20 +10,14 @@ public class Node : INode
     
     public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT };
 
-    public int ID { get; set; }
-    public List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
-    public Position Position { get; set; }
-    public Position TargetPosition { get; set; }
-    public ConstellationPlan Plan { get; set; }
-    public NodeState State { get; set; }
-    public Router router { get; set; }
-    public bool Active
-    {
-        get
-        {
-            return active;
-        }
-        set
+    public override int ID { get; set; }
+    public override List<INode> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
+    public override Position Position { get; set; }
+    public override Position TargetPosition { get; set; }
+
+    private bool active;
+
+    public override bool Active { get { return active; } set
         {
             active = value;
 
@@ -34,21 +29,33 @@ public class Node : INode
             {
                 State = NodeState.DEAD;
             }
-        }
+        } 
     }
-    private bool active;
 
-    public Node(int ID)
+    public override ConstellationPlan Plan { get; set; }
+    public override NodeState State { get; set; }
+    public override Router router { get; set; }
+
+
+
+    List<Tuple<INode, INode>> EdgeSet;
+
+    List<Tuple<INode, INode>> CurrentKnownEdges = new List<Tuple<INode, INode>>();
+
+    private int LastDiscoverID = -1;
+
+    public Node(int ID, Position position)
     {
         this.ID = ID;
         State = Node.NodeState.PASSIVE;
+        this.Position = position;
         Active = true;
-        timer = new System.Timers.Timer(5000);
+        timer = new System.Timers.Timer(15000);
         timer.Elapsed += OnTimedEvent;
         timer.AutoReset = true;
         timer.Enabled = true;
     }
-    public bool Communicate(Constants.Commands command)
+    public override bool Communicate(Constants.Commands command)
     {
         if (!Active)
         {
@@ -57,7 +64,7 @@ public class Node : INode
 
         return true;
     }
-    public bool Communicate(Constants.Commands command, INode target)
+    public override bool Communicate(Constants.Commands command, INode target)
     {
 
         if (!Active)
@@ -65,12 +72,16 @@ public class Node : INode
             return false;
         }
 
-        new Thread(delegate ()
+        new Thread(delegate ()
         {
+
+
             if (command != Constants.Commands.Execute)
             {
                 throw new Exception("Wrong command"); // Only accept Execute command
-            }            if(target == this)
+            }
+
+            if(target == this)
             {
 
                 State = Node.NodeState.EXECUTING;
@@ -108,7 +119,7 @@ public class Node : INode
         return true;
     }
 
-    public void GenerateRouter()
+    public override void GenerateRouter()
     {
         router = new Router(Plan);
     }
@@ -130,14 +141,18 @@ public class Node : INode
         return newPlan;
     }
 
-    public bool Communicate(Constants.Commands command, ConstellationPlan plan, INode target)
+    public override bool Communicate(Constants.Commands command, ConstellationPlan plan, INode target)
     {
-        if (!Active)
+        if (Active == false)
         {
             return false;
         }
 
-        new Thread(delegate ()        {            if (command != Constants.Commands.Generate)            {                throw new Exception("Wrong command"); // Only accept Generate command
+        new Thread(delegate ()
+        {
+            if (command != Constants.Commands.Generate)
+            {
+                throw new Exception("Wrong command"); // Only accept Generate command
             }
 
             if (target == this)
@@ -219,7 +234,8 @@ public class Node : INode
                         TryCommunicate(Constants.Commands.Generate, plan, router.NextHop(this, nextSeq), nextSeq);
                     }
                     
-                }
+                }
+
 
             }
             else
@@ -260,8 +276,14 @@ public class Node : INode
         router.NextHop(this, neighbour).Communicate(Constants.Commands.DetectFailure, this, neighbour, failedNode, false, false);
     }
 
-    public bool Communicate(Constants.Commands command, INode source, INode target, INode deadNode, bool isDead, bool isChecked)
+  
+    public override bool Communicate(Constants.Commands command, INode source, INode target, INode deadNode, bool isDead, bool isChecked)
     {
+        if (command != Constants.Commands.DetectFailure)
+        {
+            throw new Exception("Wrong command:: Expected DetectFailure command");
+        }
+
         if (!Active)
         {
             return false;
@@ -271,26 +293,23 @@ public class Node : INode
         {
             Thread.Sleep(500);
             router.DeleteEdge(source, deadNode);
-            
-            if (isChecked == true)
+
+            this.State = isChecked ? NodeState.PASSIVE : NodeState.EXECUTING;
+
+            if (source.ID == ID)
             {
-                this.State = NodeState.PASSIVE;
-            }
-            else
-            {
-                this.State = NodeState.EXECUTING;
+                if (isDead == true)
+                {
+                    TargetConstellationGenerator.instance.GenerateTargetConstellation();
+                    return;
+                }
+                else
+                {
+                    return;
+                }
             }
 
-            if (command != Constants.Commands.DetectFailure)
-            {
-                throw new Exception("Wrong command:: Expected DetectFailure command");
-            }
-
-            if (deadNode.ID == ID) // do nothing
-            {
-                return;
-            }
-            else if (target.ID != ID) // check if other dead sat, otherwise relay.
+            if (target.ID != ID) // check if other dead sat, otherwise relay.
             {
                 INode nextHopTarget = isChecked ? source : target;
                 bool response = router.NextHop(this, nextHopTarget).Communicate(Constants.Commands.DetectFailure, source, target, deadNode, isDead, isChecked);
@@ -299,22 +318,20 @@ public class Node : INode
             }
             else if (target.ID == ID)
             {
-                // Get response
-                bool response = router.NextHop(this, deadNode).Communicate(Constants.Commands.DetectFailure, source, target, deadNode, isDead, isChecked);
+                bool response;
+                if(router.NetworkMap[this].Contains(deadNode) == false)
+                {
+                    //link is broken, we cannot communicate
+                    response = true;
+                } else
+                {
+                    // Get response
+                    response = !router.NextHop(this, deadNode).Communicate(Constants.Commands.DetectFailure, source, target, deadNode, isDead, isChecked);
+                }
+
 
                 // Relay response opposite way
                 router.NextHop(this, source).Communicate(Constants.Commands.DetectFailure, source, target, deadNode, response, true);
-            }
-            else if (source.ID == ID)
-            {
-                if (isDead == true)
-                {
-                    TargetConstellationGenerator.instance.GenerateTargetConstellation();
-                }
-                else
-                {
-                    return;
-                }
             }
         }).Start();
 
@@ -347,6 +364,63 @@ public class Node : INode
 
             State = previousState;
         }).Start();
+    }
+
+    
+
+    public override void Discover(List<Tuple<INode, INode>> ReceivedEdgeSet, INode sender, int discoverID)
+    {
+        bool newKnowledge = false;
+        bool alteredSet = false;
+
+
+        if(discoverID > LastDiscoverID)
+        {
+            CurrentKnownEdges.Clear();
+            LastDiscoverID = discoverID;
+        }
+
+
+
+        //List<Tuple<INode, INode>> temp = ReceivedEdgeSet.Except(CurrentKnownEdges, (x y) => return 1).ToList();
+        //newKnowledge = temp.Count() > 0;
+
+        
+
+        foreach (INode node in ReachableNodes)
+        {
+            Tuple<INode, INode> edge = new Tuple<INode, INode>(this, node);
+
+            edge = edge.Item1.ID > edge.Item2.ID ? new Tuple<INode, INode>(edge.Item2, edge.Item1) : edge;
+
+
+            if(ReceivedEdgeSet.Contains(edge) == false)
+            {
+                ReceivedEdgeSet.Add(edge);
+                alteredSet = true;
+            }
+        }
+
+        ReceivedEdgeSet = ReceivedEdgeSet.OrderBy(tuple => tuple.Item1.ID).ThenBy(tuple => tuple.Item2.ID).ToList();
+        CurrentKnownEdges = ReceivedEdgeSet;
+
+        if (alteredSet)
+        {
+            ReachableNodes.ForEach(node => node.Discover(ReceivedEdgeSet, this, discoverID));
+        } else if (newKnowledge)
+        {
+            ReachableNodes.Where(node => node.ID != sender.ID).ToList().ForEach(node => node.Discover(ReceivedEdgeSet, this, discoverID));
+        }
+
+
+
+
+    }
+
+
+    public override bool Equals(object obj)
+    {
+        return this.ID == (obj as INode).ID;
     }
 
     private bool executingPlan;

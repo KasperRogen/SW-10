@@ -1,10 +1,9 @@
 ﻿using System.Collections.Generic;
 
-public interface IRouter
+public abstract class IRouter
 {
-    INode NextHop(INode source, INode target);
-    void UpdateNetworkMap(ConstellationPlan plan);
-    void DeleteEdge(INode n1, INode n2);
+    public abstract INode NextHop(INode source, INode target);
+    public abstract void UpdateNetworkMap(ConstellationPlan plan);
 
-    Dictionary<INode, List<INode>> NetworkMap { get; set; }
+    public Dictionary<INode, List<INode>> NetworkMap;
 }

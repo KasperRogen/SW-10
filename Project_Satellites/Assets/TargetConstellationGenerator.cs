@@ -4,8 +4,6 @@ using UnityEngine;
 using System.Linq;
 using System;
 
-
-
 public class TargetConstellationGenerator : MonoBehaviour
 {
     public static TargetConstellationGenerator instance;
@@ -42,7 +40,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
     public void GenerateTargetConstellation()
     {
-        UnityEngine.Random.InitState(RandomSeed);
+        System.Random r = new System.Random(RandomSeed);
         float constellationAltitude;
         float constellationRadius;
 
@@ -59,7 +57,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
         //Get reference to satellites
         if (Sats.Count == 0)
-            Sats = GameObject.FindGameObjectsWithTag("Satellite").Where(sat => sat.GetComponent<SatelliteComms>().Node.State != Node.NodeState.DEAD).ToList();
+            Sats = GameObject.FindGameObjectsWithTag("Satellite").ToList();
 
 
 

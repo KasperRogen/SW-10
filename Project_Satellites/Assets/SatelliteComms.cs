@@ -9,7 +9,7 @@ public class SatelliteComms : MonoBehaviour
     [Header("Satellite Settings"), Space(10)]
     [Min(0)] public float CommRadius;
 
-    public List<Vector3> ReachableSats = new List<Vector3>();
+    public List<Transform> ReachableSats = new List<Transform>();
     SatelliteMovement movement;
 
     
@@ -29,22 +29,22 @@ public class SatelliteComms : MonoBehaviour
         Node.Position = BackendHelpers.PositionFromVector3(transform.position);        
     }
 
-    //private void OnTriggerEnter(Collider other)
-    //{
-    //    if (other.isTrigger || other.gameObject.layer != gameObject.layer)
-    //        return;
-    //    ReachableSats.Add(other.gameObject);
-    //    UpdateReachableNodes();
-    //}
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.isTrigger || other.gameObject.layer != gameObject.layer)
+            return;
+        ReachableSats.Add(other.gameObject.transform);
+        UpdateReachableNodes();
+    }
 
-    //private void OnTriggerExit(Collider other)
-    //{
-    //    ReachableSats.Remove(other.gameObject);
-    //    UpdateReachableNodes();
-    //}
+    private void OnTriggerExit(Collider other)
+    {
+        ReachableSats.Remove(other.gameObject.transform);
+        UpdateReachableNodes();
+    }
 
-    //private void UpdateReachableNodes()
-    //{
-    //    Node.ReachableNodes = ReachableSats.Select((x) => x.GetComponent<SatelliteComms>().Node).ToList();
-    //}
+    private void UpdateReachableNodes()
+    {
+        Node.ReachableNodes = ReachableSats.Select((x) => x.GetComponent<SatelliteComms>().Node).ToList();
+    }
 }

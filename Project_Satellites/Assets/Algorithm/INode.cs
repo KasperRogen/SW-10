@@ -1,23 +1,23 @@
 ﻿using System;
 using System.Collections.Generic;
 
-public interface INode
+public abstract class INode
 {
 
 
-    Node.NodeState State { get; set; }
-    ConstellationPlan Plan { get; set; }
-    int ID { get; set; }
-    List<INode> ReachableNodes { get; set; }
-    Position Position { get; set; }
-    Position TargetPosition { get; set; }
-    Router router { get; set; }
-    bool Active { get; set; }
+    public abstract Node.NodeState State { get; set; }
+    public abstract ConstellationPlan Plan { get; set; }
+    public abstract int ID { get; set; }
+    public abstract List<INode> ReachableNodes { get; set; }
+    public abstract Position Position { get; set; }
+    public abstract Position TargetPosition { get; set; }
+    public abstract Router router { get; set; }
+    public abstract bool Active { get; set; }
 
-    void GenerateRouter();
-    bool Communicate(Constants.Commands command);
-    bool Communicate(Constants.Commands command, INode Target);
-    bool Communicate(Constants.Commands command, ConstellationPlan plan, INode Target);
-    bool Communicate(Constants.Commands command, INode source, INode target, INode deadSat, bool isDead, bool isChecked);
-
+    public abstract void Discover(List<Tuple<INode, INode>> ReceivedEdgeSet, INode sender, int discoverID);
+    public abstract void GenerateRouter();
+    public abstract bool Communicate(Constants.Commands command);
+    public abstract bool Communicate(Constants.Commands command, INode Target);
+    public abstract bool Communicate(Constants.Commands command, ConstellationPlan plan, INode Target);
+    public abstract bool Communicate(Constants.Commands detectFailure, INode node, INode neighbour, INode failedNode, bool v1, bool v2);
 }

@@ -24,6 +24,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
     Node.NodeState lastState = Node.NodeState.PASSIVE;
     
+
     private void Awake()
     {
         GameObject commLineGO = new GameObject();
@@ -63,7 +64,7 @@ public class ConstellationVisualiser : MonoBehaviour
     void Update()
     {
 
-        comms.ReachableSats = comms.Node.router.NetworkMap?[comms.Node].Select(node => BackendHelpers.Vector3FromPosition(node.Position)).ToList();
+        //comms.ReachableSats = comms.Node.router.NetworkMap?[comms.Node].Select(node => BackendHelpers.Vector3FromPosition(node.Position)).ToList();
 
 
         if (comms == null || comms.Node == null)
@@ -110,7 +111,7 @@ public class ConstellationVisualiser : MonoBehaviour
         for (int i = 0; i < comms.ReachableSats?.Count; i++)
         {
             linerendererPositions.Add(transform.position);
-            linerendererPositions.Add(comms.ReachableSats[i]);
+            linerendererPositions.Add(comms.ReachableSats[i].position);
         }
         commLineRenderer.positionCount = linerendererPositions.Count;
         commLineRenderer.SetPositions(linerendererPositions.ToArray());
