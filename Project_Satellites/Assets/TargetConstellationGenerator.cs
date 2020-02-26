@@ -96,7 +96,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
         //Send the targetconstellation to random sat
         INode targetSat = Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node;
-        targetSat.Communicate(Constants.Commands.Generate, plan, targetSat);
+        targetSat.Communicate(Constants.Commands.Generate, plan, targetSat.ID);
 
         if (autotestRunning == false && EnableAutotest == true)
             StartCoroutine(RestartGenerator());
@@ -123,7 +123,7 @@ public class TargetConstellationGenerator : MonoBehaviour
                 Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
 
 
-            if (plan != null && plan.entries.TrueForAll(entry => nodes.Any(node => Position.Distance(node.Position, entry.Position) < 0.1f))) {
+            if (plan != null && plan.Entries.TrueForAll(entry => nodes.Any(node => Position.Distance(node.Position, entry.Position) < 0.1f))) {
                 int newSeed = RandomSeed;
                 do
                 {
@@ -165,7 +165,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0) && 
             Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, ManualDesignMask) &&  
-            plan.entries.TrueForAll(entry => nodes.Any(node => Position.Distance(node.Position, entry.Position) < 0.1f))){
+            plan.Entries.TrueForAll(entry => nodes.Any(node => Position.Distance(node.Position, entry.Position) < 0.1f))){
 
             if(EnableManualDesign == false)
             {
@@ -194,7 +194,7 @@ public class TargetConstellationGenerator : MonoBehaviour
                 plan = new ConstellationPlan(entries);
 
                 INode targetSat = Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node;
-                targetSat.Communicate(Constants.Commands.Generate, plan, targetSat);
+                targetSat.Communicate(Constants.Commands.Generate, plan, targetSat.ID);
 
                 EnableManualDesign = false;
             }

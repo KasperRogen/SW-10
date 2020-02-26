@@ -49,7 +49,7 @@ public class ConstellationGenerator : MonoBehaviour
                 GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
 
                 NodeProperties.Add(new Tuple<int, Position>(j, BackendHelpers.PositionFromVector3(satellite.transform.position)));
-                INode node = new Node(j, BackendHelpers.PositionFromVector3(satellite.transform.position));
+                INode node = new Node((uint?)j, BackendHelpers.PositionFromVector3(satellite.transform.position));
                 node.TargetPosition = node.Position;
 
                 satellite.name = "P(" + i + "), S(" + j + ")";
@@ -57,7 +57,7 @@ public class ConstellationGenerator : MonoBehaviour
 
                 List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
                 ConstellationPlanEntry entry = new ConstellationPlanEntry(node.Position, fields, (x, y) => 1);
-                entry.Node = node;
+                entry.NodeID = node.ID;
                 entries.Add(entry);
                 nodes.Add(node);
             }

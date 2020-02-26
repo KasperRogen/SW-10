@@ -45,6 +45,6 @@ public class SatelliteComms : MonoBehaviour
 
     private void UpdateReachableNodes()
     {
-        Node.ReachableNodes = ReachableSats.Select((x) => x.GetComponent<SatelliteComms>().Node).ToList();
+        Node.ReachableNodes = ReachableSats.Select((x) => x.GetComponent<SatelliteComms>().Node.ID).ToList();
     }
 }

@@ -4,86 +4,66 @@ using Dijkstra.NET.Graph;
 using Dijkstra.NET.ShortestPath;
 
 public class Router : IRouter
-{
-    public Dictionary<INode, List<INode>> NetworkMap = new Dictionary<INode, List<INode>>();
-    Graph<INode, string> graph;
-    Dictionary<INode, uint> nodeToNodeIDMapping = new Dictionary<INode, uint>();
-
-    float satRange = 5f;
+{
+    public override Dictionary<uint?, List<uint?>> NetworkMap { get; set; }
+    
+    private Graph<uint?, string> graph;
+    private Dictionary<uint?, uint> nodeToNodeIDMapping = new Dictionary<uint?, uint>();
+    private float satRange = 5f;
 
     public Router(ConstellationPlan plan)
-    {
-
-        NetworkMap = new Dictionary<INode, List<INode>>();
-        if (plan.entries.TrueForAll(entry => entry.Node != null))
-        {
-
-            foreach (ConstellationPlanEntry entry in plan.entries)
-            {
-                NetworkMap.Add(entry.Node, new List<INode>());
-                nodeToNodeIDMapping.Add(entry.Node, 0);
-            }
-
-
-        }
-
-
-        UpdateNetworkMap(plan);
-
-    }
-
-
-    public INode NextSequential(INode source)
-    {
-        List<INode> nodes = new List<INode>();
-        List<INode> lastNodes = new List<INode>();
-
-        NetworkMap[source].ForEach(node => nodes.Add(node));
-        nodes.Add(source);
-
-        do
-        {
-            lastNodes.Clear();
-            nodes.ForEach(node => lastNodes.Add(node));
-
-            List<INode> newNodes = new List<INode>();
-            nodes.ForEach(node => node.router.NetworkMap[node].ForEach(newNode => newNodes.Add(newNode)));
-            nodes.AddRange(newNodes);
-            
-            nodes = nodes.Distinct().ToList();
-            nodes = nodes.OrderBy((x) => x.ID).ToList();
-            lastNodes = lastNodes.Distinct().ToList();
-            lastNodes = lastNodes.OrderBy((x) => x.ID).ToList();
-
-            List<INode> diff = lastNodes.Except(nodes).ToList();
-
-        } while (nodes.TrueForAll(node => lastNodes.Contains(node)) == false);
-
-        nodes = nodes.OrderBy((x) => x.ID).ToList();
-
-        INode destination;
-        int index = nodes.IndexOf(source);
-
-        if (index == nodes.Count - 1)
-        {
-            destination = nodes[0];
-        }
-        else
-        {
-            destination = nodes[index + 1];
-        }
-
-        return destination;
-    }
-
-    public override INode NextHop(INode source, INode destination)
     {
-        List<INode> nodes = new List<INode>(); 
+        NetworkMap = new Dictionary<uint?, List<uint?>>();
+
+        if (plan.Entries.TrueForAll(entry => entry.NodeID != null))
+        {
+            foreach (ConstellationPlanEntry entry in plan.Entries)
+            {
+                NetworkMap.Add(entry.NodeID, new List<uint?>());
+                nodeToNodeIDMapping.Add(entry.NodeID, 0);
+            }
+        }
+        UpdateNetworkMap(plan);
+    }
+    public uint? NextSequential(uint? source)
+    {
+        List<uint?> nodes = new List<uint?>();
+        List<uint?> lastNodes = new List<uint?>();
+        NetworkMap[source].ForEach(node => nodes.Add(node));
+        nodes.Add(source);
+        do
+        {
+            lastNodes.Clear();
+            nodes.ForEach(node => lastNodes.Add(node));
+            List<uint?> newNodes = new List<uint?>();
+            nodes.ForEach(node => node.router.NetworkMap[node].ForEach(newNode => newNodes.Add(newNode))); // *** What to do here? We can no longer access router after using NodeID.
+            nodes.AddRange(newNodes);
+            nodes = nodes.Distinct().ToList();
+            nodes = nodes.OrderBy((x) => x).ToList();
+            lastNodes = lastNodes.Distinct().ToList();
+            lastNodes = lastNodes.OrderBy((x) => x).ToList();
+            List<uint?> diff = lastNodes.Except(nodes).ToList();
+        } while (nodes.TrueForAll(node => lastNodes.Contains(node)) == false);
+        nodes = nodes.OrderBy((x) => x).ToList();
+        uint? destination;
+        int index = nodes.IndexOf(source);
+        if (index == nodes.Count - 1)
+        {
+            destination = nodes[0];
+        }
+        else
+        {
+            destination = nodes[index + 1];
+        }
+        return destination;
+    }
+    public override uint? NextHop(uint? source, uint? destination)
+    {
+        List<uint?> nodes = new List<uint?>(); 
         
         NetworkMap[source].ForEach(node => nodes.Add(node));
         nodes.Add(source);
-        nodes = nodes.OrderBy((x) => x.ID).ToList();
-
+        nodes = nodes.OrderBy((x) => x).ToList();
         
         ShortestPathResult result = graph.Dijkstra(nodeToNodeIDMapping[source], nodeToNodeIDMapping[destination]);
 
@@ -94,27 +74,27 @@ public class Router : IRouter
 
     public override void UpdateNetworkMap(ConstellationPlan plan)
     {
-        foreach (ConstellationPlanEntry entry in plan.entries)
+        foreach (ConstellationPlanEntry entry in plan.Entries)
         {
-            List<INode> neighbors = new List<INode>();
+            List<uint?> neighbors = new List<uint?>();
 
-            foreach (ConstellationPlanEntry innerEntry in plan.entries.Where((x) => x != entry))
+            foreach (ConstellationPlanEntry innerEntry in plan.Entries.Where((x) => x != entry))
             {
                 if (Position.Distance(entry.Position, innerEntry.Position) < satRange) // 100 = Range for Satellite communication
                 {
-                    if (innerEntry.Node != null)
-                    neighbors.Add(innerEntry.Node);
+                    if (innerEntry.NodeID != null)
+                    neighbors.Add(innerEntry.NodeID);
                 }
             }
 
-            if(entry.Node != null)
-                NetworkMap[entry.Node] = neighbors;
+            if(entry.NodeID != null)
+                NetworkMap[entry.NodeID] = neighbors;
         }
 
         UpdateGraph();
     }
 
-    public void DeleteEdge(INode n1, INode n2)
+    public void DeleteEdge(uint? n1, uint? n2)
     {
         NetworkMap[n1].Remove(n2);
         NetworkMap[n2].Remove(n1);
@@ -124,17 +104,17 @@ public class Router : IRouter
 
     private void UpdateGraph()
     {
-        Graph<INode, string> updatedGraph = new Graph<INode, string>();
+        Graph<uint?, string> updatedGraph = new Graph<uint?, string>();
 
-        foreach (KeyValuePair<INode, List<INode>> pair in NetworkMap)
+        foreach (KeyValuePair<uint?, List<uint?>> pair in NetworkMap)
         {
             uint nodeID = updatedGraph.AddNode(pair.Key);
             nodeToNodeIDMapping[pair.Key] = nodeID;
         }
 
-        foreach (KeyValuePair<INode, List<INode>> pair in NetworkMap)
+        foreach (KeyValuePair<uint?, List<uint?>> pair in NetworkMap)
         {
-            foreach (INode neighbor in pair.Value)
+            foreach (uint? neighbor in pair.Value)
             {
                 updatedGraph.Connect(nodeToNodeIDMapping[pair.Key], nodeToNodeIDMapping[neighbor], 1, "");
             }

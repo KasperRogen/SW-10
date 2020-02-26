@@ -2,7 +2,9 @@
 
 public class Position
 {
-    public float X, Y, Z;
+    public float X { get; set; }
+    public float Y { get; set; }
+    public float Z { get; set; }
 
     public Position(float x, float y, float z)
     {
@@ -13,6 +15,6 @@ public class Position
 
     public static float Distance(Position a, Position b)
     {
-        return (float)Math.Sqrt(Math.Pow((b.X - a.X), 2) + Math.Pow((b.Y - a.Y), 2) + Math.Pow((b.Z - a.Z), 2));
+        return (float)Math.Sqrt(Math.Pow(b.X - a.X, 2) + Math.Pow(b.Y - a.Y, 2) + Math.Pow(b.Z - a.Z, 2));
     }
 }
