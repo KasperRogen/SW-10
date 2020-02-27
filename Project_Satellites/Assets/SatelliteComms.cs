@@ -12,7 +12,7 @@ public class SatelliteComms : MonoBehaviour
     public List<Transform> ReachableSats = new List<Transform>();
     SatelliteMovement movement;
 
-    
+    [SerializeField]
     public INode Node;
 
     private void Start()
@@ -46,5 +46,15 @@ public class SatelliteComms : MonoBehaviour
     private void UpdateReachableNodes()
     {
         Node.ReachableNodes = ReachableSats.Select((x) => x.GetComponent<SatelliteComms>().Node.ID).ToList();
+    }
+
+    private void OnEnable()
+    {
+        SatManager._instance.satellites.Add(this);
+    }
+
+    private void OnDisable()
+    {
+        SatManager._instance.satellites.Remove(this);
     }
 }

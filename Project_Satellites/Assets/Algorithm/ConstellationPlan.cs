@@ -1,14 +1,15 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 
 public class ConstellationPlan
 {
-    public uint? LastEditedBy { get; set; }
-    public List<ConstellationPlanEntry> Entries { get; set; }
+    public uint? lastEditedBy;
+    public List<ConstellationPlanEntry> Entries;
 
     public ConstellationPlan(List<ConstellationPlanEntry> entries)
     {
-        LastEditedBy = null;
+        lastEditedBy = null;
         Entries = entries;
     }
 

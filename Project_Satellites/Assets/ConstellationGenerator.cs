@@ -33,24 +33,26 @@ public class ConstellationGenerator : MonoBehaviour
 
             List<Tuple<int, Position>> NodeProperties = new List<Tuple<int, Position>>();
 
-            for(int j = 0; j < SatellitesPerPlane; j++)
+            for(uint? j = 0; j < SatellitesPerPlane; j++)
             {
-                float angle = j * Mathf.PI * 2f / SatellitesPerPlane;
+                float angle = (int)j * Mathf.PI * 2f / SatellitesPerPlane;
             
 
                 Vector3 instantiationPos = new Vector3(
                     Mathf.Cos(angle) * constellationRadius,
-                    Mathf.Sin(yAngle / SatellitesPerPlane * j) * constellationRadius, 
+                    Mathf.Sin(yAngle / SatellitesPerPlane * (int)j) * constellationRadius, 
                     Mathf.Sin(angle) * constellationRadius);
                 
                 //Create a vector from earth center to the desired position
                 Vector3 instantiationVector = (instantiationPos - transform.position).normalized * constellationAltitude;
 
                 GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
+                CommsSim sim = satellite.AddComponent<CommsSim>();
 
-                NodeProperties.Add(new Tuple<int, Position>(j, BackendHelpers.PositionFromVector3(satellite.transform.position)));
-                INode node = new Node((uint?)j, BackendHelpers.PositionFromVector3(satellite.transform.position));
+                NodeProperties.Add(new Tuple<int, Position>((int)j, BackendHelpers.PositionFromVector3(satellite.transform.position)));
+                INode node = new Node(j, BackendHelpers.PositionFromVector3(satellite.transform.position));
                 node.TargetPosition = node.Position;
+                node.CommsModule = sim;
 
                 satellite.name = "P(" + i + "), S(" + j + ")";
                 satellite.GetComponent<SatelliteComms>().Node = node;

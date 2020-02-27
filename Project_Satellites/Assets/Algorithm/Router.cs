@@ -36,7 +36,8 @@ public class Router : IRouter
             lastNodes.Clear();
             nodes.ForEach(node => lastNodes.Add(node));
             List<uint?> newNodes = new List<uint?>();
-            nodes.ForEach(node => node.router.NetworkMap[node].ForEach(newNode => newNodes.Add(newNode))); // *** What to do here? We can no longer access router after using NodeID.
+            //TODO: NEED TO ACCESS ROUTER FROM NODE??
+            //nodes.ForEach(node => node.router.NetworkMap[node].ForEach(newNode => newNodes.Add(newNode))); // *** What to do here? We can no longer access router after using NodeID.
             nodes.AddRange(newNodes);
             nodes = nodes.Distinct().ToList();
             nodes = nodes.OrderBy((x) => x).ToList();

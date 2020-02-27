@@ -11,11 +11,11 @@ public abstract class INode
     public abstract Position TargetPosition { get; set; }
     public abstract Router Router { get; set; }
     public abstract bool Active { get; set; }
+    public ICommunicate CommsModule { get; set; }
+    public List<Tuple<uint?, uint?>> KnownEdges { get; set; }
+    public bool executingPlan;
+    public bool justChangedPlan;
 
-    public abstract void Discover(List<Tuple<uint?, uint?>> receivedEdgeSet, uint? sender, int discoverID);
     public abstract void GenerateRouter();
-    public abstract bool Communicate(Constants.Commands command);
-    public abstract bool Communicate(Constants.Commands command, uint? destination);
-    public abstract bool Communicate(Constants.Commands command, ConstellationPlan plan, uint? destination);
-    public abstract bool Communicate(Constants.Commands command, uint? node, uint? neighbour, uint? failedNode, bool v1, bool v2);
+    public abstract void Communicate(Request message);
 }

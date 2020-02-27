@@ -4,11 +4,7 @@ using UnityEngine;
 
 public static class Constants
 {
-    public enum Commands
-    {
-        Generate, Execute, DetectFailure, Heartbeat
-    }
-
+    
     public static int NodesPerCycle = 11;
 
     public static float EarthRadius;
