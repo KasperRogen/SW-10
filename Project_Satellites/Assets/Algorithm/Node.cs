@@ -63,15 +63,39 @@ public class Node : INode
 
     public override void Communicate(Request request)
     {
-        switch (request.Command)
-        {
-            case Request.Commands.Generate:
-                PlanGenerator.GeneratePlan(this, request as PlanRequest);
-            break;
+        new Thread(() => {
 
-            case Request.Commands.Execute:
-                PlanExecuter.ExecutePlan(this, request as PlanRequest);
-            break;
-        }
+            if (request.DestinationID != ID)
+            {
+                Thread.Sleep(500);
+                if (Router.NetworkMap[ID].Contains(request.DestinationID))
+                {
+                    CommsModule.Send(request.DestinationID, request);
+                }
+                else
+                {
+                    uint? nextHop = Router.NextHop(ID, request.DestinationID);
+
+                    if (nextHop == null)
+                        throw new Exception("CANNOT FIND THE GUY");
+
+                    CommsModule.Send(nextHop, request);
+                }
+                return;
+            }
+
+            switch (request.Command)
+            {
+                case Request.Commands.Generate:
+                    PlanGenerator.GeneratePlan(this, request as PlanRequest);
+                    break;
+
+                case Request.Commands.Execute:
+                    PlanExecuter.ExecutePlan(this, request as PlanRequest);
+                    break;
+            }
+
+        }).Start();
+        
     }
 }

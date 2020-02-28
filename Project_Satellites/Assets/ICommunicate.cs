@@ -4,6 +4,6 @@ using UnityEngine;
 
 public interface ICommunicate
 {
-    void Send(Request request);
+    void Send(uint? nextHop, Request request);
     void Receive(Request request);
 }

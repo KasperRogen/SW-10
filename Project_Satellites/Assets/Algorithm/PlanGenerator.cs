@@ -86,7 +86,7 @@ public class PlanGenerator
                     request.DestinationID = myNode.ID;
                     request.SourceID = myNode.ID;
 
-                    myNode.CommsModule.Send(request);
+                    myNode.CommsModule.Send(myNode.ID, request);
                 }
                 else
                 {
@@ -96,26 +96,18 @@ public class PlanGenerator
                     if (myNode.Router.NetworkMap[myNode.ID].Contains(nextSeq))
                     {
                         request.DestinationID = nextSeq;
-                        myNode.CommsModule.Send(request);
+                        myNode.CommsModule.Send(nextSeq, request);
                     }
                     else
                     {
-                        throw new NotImplementedException();
-                        //TODO: Fix routing, currently can only send to destiantion
-                        //router.NextHop(this, nextSeq).Communicate(Constants.Commands.Generate, plan, nextSeq);
+                        uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+                        request.DestinationID = nextSeq;
+                        myNode.CommsModule.Send(nextHop, request);
                     }
 
                 }
 
 
-            }
-            else
-            {
-                Thread.Sleep(500);
-                myNode.State = Node.NodeState.PLANNING;
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, request.DestinationID);
-                request.DestinationID = nextHop;
-                myNode.CommsModule.Send(request);
             }
 
         }).Start();

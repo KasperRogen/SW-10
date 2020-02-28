@@ -40,17 +40,18 @@ public class PlanExecuter : MonoBehaviour
 
                 uint? nextSeq = myNode.Router.NextSequential(myNode.ID);
                 request.DestinationID = nextSeq;
-                myNode.CommsModule.Send(request);
+                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+                myNode.CommsModule.Send(nextHop, request);
 
                 myNode.Router.UpdateNetworkMap(request.Plan);
 
             }
-            else
-            {
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, request.DestinationID);
-                request.DestinationID = nextHop;
-                myNode.CommsModule.Send(request);
-            }
+            //else TODO: DO WE NEED THIS BIT?
+            //{
+            //    uint? nextHop = myNode.Router.NextHop(myNode.ID, request.DestinationID);
+            //    request.DestinationID = nextHop;
+            //    myNode.CommsModule.Send(request);
+            //}
 
 
         }).Start();

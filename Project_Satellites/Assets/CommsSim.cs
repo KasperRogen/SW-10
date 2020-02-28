@@ -17,13 +17,13 @@ public class CommsSim : MonoBehaviour, ICommunicate
         comms.Node.Communicate(request);
     }
 
-    public void Send(Request request)
+    public void Send(uint? nextHop, Request request)
     {
-        SatelliteComms destination = SatManager._instance.satellites.Find(sat => sat.Node.ID == request.DestinationID);
-        
-        if(Position.Distance(comms.Node.Position, destination.Node.Position) < comms.CommRadius)
+        SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
+
+        if(Position.Distance(comms.Node.Position, hop.Node.Position) < comms.CommRadius)
         {
-            destination.Node.CommsModule.Receive(request);
+            hop.Node.CommsModule.Receive(request);
         }
     }
 
