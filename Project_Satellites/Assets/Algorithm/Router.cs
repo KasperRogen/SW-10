@@ -76,7 +76,8 @@ public class Router : IRouter
 
         IEnumerable<uint> path = result.GetPath();
         int a = path.Count();
-        return nodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
+        uint? nextHop = nodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
+        return nextHop;
     }
 
     public override void UpdateNetworkMap(ConstellationPlan plan)

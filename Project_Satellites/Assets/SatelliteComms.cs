@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using TMPro;
 using UnityEngine;
 
 public class SatelliteComms : MonoBehaviour
@@ -19,6 +20,7 @@ public class SatelliteComms : MonoBehaviour
     {
         GetComponents<SphereCollider>().ToList().Find(col => col.isTrigger).radius = (transform.localScale.x * CommRadius);
         movement = GetComponent<SatelliteMovement>();
+        GetComponentInChildren<TextMeshPro>().text = Node.ID.ToString();
     }
 
     private void Update()

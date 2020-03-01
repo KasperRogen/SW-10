@@ -65,6 +65,35 @@ public class Node : INode
     {
         new Thread(() => {
 
+            
+
+            switch (request.Command)
+            {
+                case Request.Commands.Generate:
+                    PlanGenerator.GeneratePlan(this, request as PlanRequest);
+                    break;
+
+                case Request.Commands.Execute:
+                    PlanExecuter.ExecutePlan(this, request as PlanRequest);
+                    break;
+
+                case Request.Commands.Heartbeat:
+                    Heartbeat.RespondToHeartbeat(this, request);
+                    break;
+                
+                case Request.Commands.Ping:
+                    Ping.RespondToPing(this, request);
+                    break;
+
+                case Request.Commands.DetectFailure:
+                    FailureDetection.DetectFailure(this, request as DetectFailureRequest);
+                    break;
+
+                default:
+                    throw new NotImplementedException(request.Command.ToString() + " was not implemented.");
+            }
+
+
             if (request.DestinationID != ID)
             {
                 Thread.Sleep(500);
@@ -84,16 +113,6 @@ public class Node : INode
                 return;
             }
 
-            switch (request.Command)
-            {
-                case Request.Commands.Generate:
-                    PlanGenerator.GeneratePlan(this, request as PlanRequest);
-                    break;
-
-                case Request.Commands.Execute:
-                    PlanExecuter.ExecutePlan(this, request as PlanRequest);
-                    break;
-            }
 
         }).Start();
         

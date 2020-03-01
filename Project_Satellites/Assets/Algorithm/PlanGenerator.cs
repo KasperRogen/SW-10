@@ -12,6 +12,10 @@ public class PlanGenerator
     {
         new Thread(delegate ()
         {
+
+            if (request.DestinationID != myNode.ID)
+                return;
+
             if (request.Command != Request.Commands.Generate)
             {
                 throw new Exception("Wrong command"); // Only accept Generate command

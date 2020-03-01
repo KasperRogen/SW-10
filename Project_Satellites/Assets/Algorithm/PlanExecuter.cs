@@ -13,6 +13,10 @@ public class PlanExecuter : MonoBehaviour
         new Thread(delegate ()
 
         {
+
+            if (request.DestinationID != myNode.ID)
+                return;
+
             if (request.Command != Request.Commands.Execute)
             {
                 throw new Exception("Wrong command"); // Only accept Execute command

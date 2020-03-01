@@ -8,7 +8,7 @@ public class Request
 
     public enum Commands
     {
-        Generate, Execute, DetectFailure, Heartbeat
+        Generate, Execute, DetectFailure, Heartbeat, Ping
     }
 
     public uint? SourceID { get; set; }
@@ -26,6 +26,7 @@ public class DiscoveryRequest: Request
 {
     public List<Tuple<uint?, uint?>> EdgeSet { get; set; }
 }
+
 
 public class DetectFailureRequest: Request
 {
