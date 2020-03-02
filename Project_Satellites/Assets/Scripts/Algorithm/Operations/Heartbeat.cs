@@ -45,9 +45,13 @@ public class Heartbeat
         {
             if (request.DestinationID != myNode.ID)
                 return;
+
+            Thread.Sleep(500);
             Response response = new Response();
             response.DestinationID = request.SourceID;
+            response.SourceID = myNode.ID;
             response.ResponseCode = Response.ResponseCodes.OK;
+            response.MessageIdentifer = request.MessageIdentifer;
             myNode.CommsModule.Send(response.DestinationID, response);
         }).Start();
 

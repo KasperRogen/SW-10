@@ -35,32 +35,37 @@ public class Router : IRouter
 
         do
         {
+            //Store the nodes i could reach before this pass
             lastNodes.Clear();
             nodes.ForEach(node => lastNodes.Add(node));
             List<uint?> newNodes = new List<uint?>();
-            //TODO: NEED TO ACCESS ROUTER FROM NODE??
 
+            //Add the nodes my nodes can reach as nodes i can reach
             foreach(uint? node in nodes)
             {
                 NetworkMap[node].ForEach(newNode => newNodes.Add(newNode));
             }
             nodes.AddRange(newNodes);
+            
             nodes = nodes.Distinct().ToList();
             nodes = nodes.OrderBy((x) => x).ToList();
             lastNodes = lastNodes.Distinct().ToList();
             lastNodes = lastNodes.OrderBy((x) => x).ToList();
-            List<uint?> diff = lastNodes.Except(nodes).ToList();
+
+            //Repeat the process untill no new nodes were added in a pass
         } while (nodes.TrueForAll(node => lastNodes.Contains(node)) == false);
         nodes = nodes.OrderBy((x) => x).ToList();
         uint? destination;
-        int index = nodes.IndexOf(source);
-        if (index == nodes.Count - 1)
+
+        //If i am last node in the list, take the first index
+        if (source == nodes[nodes.Count-1])
         {
             destination = nodes[0];
         }
         else
         {
-            destination = nodes[index + 1];
+            //Else take the next
+            destination = nodes[nodes.IndexOf(source) +1];
         }
         return destination;
     }

@@ -26,7 +26,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Send(uint? nextHop, Request request)
     {
-        Debug.Log(request.SourceID + " -> " + nextHop + " : " + request.Command.ToString());
+        Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID);
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
@@ -77,7 +77,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Send(uint? nextHop, Response response)
     {
-        Debug.Log(response.SourceID + " -> " + nextHop);
+        Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : Response" + "\t dst: " + response.DestinationID);
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
