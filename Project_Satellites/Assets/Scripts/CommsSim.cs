@@ -64,8 +64,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
             Thread.Sleep(timeout);
             if (tcs.Task.IsCompleted == false)
-                OnResponseReceived -= GetResponse;
-            tcs.SetResult(null);
+                tcs.SetResult(null);
         }).Start();
 
         await tcs.Task;
