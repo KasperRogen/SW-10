@@ -142,22 +142,37 @@ public class ConstellationVisualiser : MonoBehaviour
             commLineRenderes[id].GetComponent<LineRenderer>().material = CommsActiveMat;
             lastActiveComm = id;
         }
-        else if (lastActiveComm != null)
+        else if (lastActiveComm != null && commLineRenderes.ContainsKey(lastActiveComm))
         {
             commLineRenderes[lastActiveComm].GetComponent<LineRenderer>().material = CommsMat;
         }
 
         // Remove all non-reachable links, then update position
-        foreach (var commLine in commLineRenderes)
+        for (int i = commLineRenderes.Count - 1; i >= 0; i--)
         {
-            if (reachableSatsID.Contains(commLine.Key) == false)
+            uint? key = commLineRenderes.ElementAt(i).Key;
+            
+            if (reachableSatsID.Contains(key) == false)
             {
-                Destroy(commLine.Value);
-                commLineRenderes.Remove(commLine.Key);
+                Destroy(commLineRenderes[key]);
+                commLineRenderes.Remove(key);
             }
-
-            commLine.Value.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+            else
+            {
+                commLineRenderes[key].GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+            }
         }
+
+        //foreach (var commLine in commLineRenderes)
+        //{
+            //if (reachableSatsID.Contains(commLine.Key) == false)
+            //{
+            //    Destroy(commLine.Value);
+            //    commLineRenderes.Remove(commLine.Key);
+            //}
+
+            //commLine.Value.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+        //}
 
         if(comms.Node.GeneratingPlan != null) 
         { 
