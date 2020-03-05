@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -20,21 +19,11 @@ public class PlanGenerator
             } 
             else {
                 myNode.executingPlan = false;
-                myNode.Plan = request.Plan;
                 myNode.State = Node.NodeState.PLANNING;
-
-
-                Dictionary<int, float> fieldDeltaVPairs = new Dictionary<int, float>();
-
-                //Calculate cost of each location in target constellation
-                for (int i = 0; i < request.Plan.Entries.Count; i++)
-                {
-                    float requiredDeltaV = Position.Distance(myNode.Position, request.Plan.Entries[i].Position);
-                    fieldDeltaVPairs.Add(i, requiredDeltaV);
-                }
 
                 ConstellationPlan newPlan = null;
 
+                // Phase 1: All locations are taken one by one by a node
                 //If this node currently has no location in the target constellation
                 if (request.Plan.Entries.Any(entry => entry.NodeID == myNode.ID) == false)
                 {
@@ -46,33 +35,45 @@ public class PlanGenerator
 
                     newPlan = TakeSlot(myNode, request.Plan, request.Plan.Entries.IndexOf(slotToTake), Position.Distance(slotToTake.Position, myNode.Position));
                 }
+                // Phase 2: Nodes can swap locations if it optimises the cost
                 //TODO: Fix problem with requirering knowledge about all nodes in order to "trade" with them
-                //else if (plan.entries.Any(entry => entry.Node == null) == false)
-                //{
+                else if (request.Plan.Entries.Any(entry => entry.NodeID == null) == false)
+                {
+                    Dictionary<int, float> fieldDeltaVPairs = new Dictionary<int, float>();
 
-                //    foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
-                //    {
-                //        if (plan.ReduceBy("DeltaV", pair.Key, pair.Value, this))
-                //        {
-                //            if (plan.entries[pair.Key].Node != null && plan.entries[pair.Key].Node.ID != ID)
-                //            {
-                //                State = NodeState.OVERRIDE;
-                //            }
+                    //Calculate cost of each location in target constellation
+                    for (int i = 0; i < request.Plan.Entries.Count; i++)
+                    {
+                        if (request.Plan.Entries[i].NodeID != myNode.ID) // Exclude location that current node has taken.
+                        {
+                            float requiredDeltaV = Position.Distance(myNode.Position, request.Plan.Entries[i].Position);
+                            fieldDeltaVPairs.Add(i, requiredDeltaV);
+                        }
+                    }
 
-                //            newPlan = TakeSlot(plan, pair.Key, pair.Value);
-                //            break;
-                //        }
-                //    }
-                //}
+                    foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value))
+                    {
+                        if (request.Plan.TrySwapNodes(myNode.ID, myNode.Position, request.Plan.Entries[pair.Key].NodeID, request.Plan.Entries[pair.Key].Position, out newPlan))
+                        {
+                            newPlan.LastEditedBy = myNode.ID;
+                            myNode.State = Node.NodeState.OVERRIDE;
+                            break;
+                        }
+                        else
+                        {
+                            newPlan = null;
+                        }
+                    }
+                }
 
                 //If we have made any changes to the plan
                 if (newPlan != null && newPlan != request.Plan)
                 {
                     request.Plan = newPlan;
                     myNode.justChangedPlan = true;
-                    request.Plan.lastEditedBy = myNode.ID;
+                    request.Plan.LastEditedBy = myNode.ID;
 
-                    myNode.Plan = request.Plan;
+                    myNode.GeneratingPlan = request.Plan;
                     Thread.Sleep(1000);
                 }
                 else
@@ -83,10 +84,8 @@ public class PlanGenerator
                 //If we were the last node to edit the plan, and we didn't edit the plan in the current pass
                 //We know the plan has taken an entire revolution without being changed, hence is at optimum,
                 //Start executing the plan
-                if (request.Plan.lastEditedBy == myNode.ID && myNode.justChangedPlan == false)
+                if (request.Plan.LastEditedBy == myNode.ID && myNode.justChangedPlan == false)
                 {
-                    myNode.State = Node.NodeState.EXECUTING;
-
                     request.Command = Request.Commands.Execute;
                     request.DestinationID = myNode.ID;
                     request.SourceID = myNode.ID;
@@ -114,17 +113,10 @@ public class PlanGenerator
                         request.DestinationID = nextSeq;
                         myNode.CommsModule.Send(nextHop, request);
                     }
-
                 }
-
-
             }
-
         }).Start();
-
     }
-
-
 
     /// <summary> Used for finding and "taking" optimal spot for given satellite
     /// <para>Functions as part of GeneratePlan method</para>
@@ -149,6 +141,4 @@ public class PlanGenerator
 
         return newPlan;
     }
-
-
 }

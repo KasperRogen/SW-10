@@ -34,6 +34,7 @@ public class PlanExecuter : MonoBehaviour
                 }
                 else
                 {
+                    myNode.ActivePlan = request.Plan;
                     myNode.executingPlan = true;
                 }
 

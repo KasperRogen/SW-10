@@ -67,7 +67,7 @@ public class ConstellationGenerator : MonoBehaviour
         }
 
         ConstellationPlan plan = new ConstellationPlan(entries);
-        nodes.ForEach(node => { node.Plan = plan; node.GenerateRouter(); });
+        nodes.ForEach(node => { node.ActivePlan = plan; node.GenerateRouter(); });
     }
 
 

@@ -30,7 +30,8 @@ public class Node : INode
             }
         }
     }
-    public override ConstellationPlan Plan { get; set; }
+    public override ConstellationPlan ActivePlan { get; set; }
+    public override ConstellationPlan GeneratingPlan { get; set; }
     public override NodeState State { get; set; }
     public override Router Router { get; set; }
 
@@ -51,7 +52,7 @@ public class Node : INode
    
     public override void GenerateRouter()
     {
-        Router = new Router(Plan);
+        Router = new Router(ActivePlan);
     }
 
 
