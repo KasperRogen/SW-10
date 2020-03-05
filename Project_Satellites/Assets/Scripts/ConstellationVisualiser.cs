@@ -174,12 +174,12 @@ public class ConstellationVisualiser : MonoBehaviour
             //commLine.Value.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
         //}
 
-        if(comms.Node.Plan != null) 
+        if(comms.Node.GeneratingPlan != null) 
         { 
 
             Vector3 plannedposition = transform.position;
 
-            foreach(ConstellationPlanEntry e in comms.Node.Plan.Entries)
+            foreach(ConstellationPlanEntry e in comms.Node.GeneratingPlan.Entries)
             {
                 if(e.NodeID != null && e.NodeID == comms.Node.ID)
                 {
@@ -190,7 +190,7 @@ public class ConstellationVisualiser : MonoBehaviour
             targetPositionLineRenderer.positionCount = 2;
             targetPositionLineRenderer.SetPositions(new Vector3[] { transform.position, plannedposition });
 
-            float DeltaVSum = comms.Node.Plan.Entries.Sum(entry => entry.Fields["DeltaV"].Value);
+            float DeltaVSum = comms.Node.GeneratingPlan.Entries.Sum(entry => entry.Fields["DeltaV"].Value);
 
             if (DeltaVSum != TargetConstellationGenerator.CurrentDeltaVSum && DeltaVSum != 1100f)
                 TargetConstellationGenerator.CurrentDeltaVSum = DeltaVSum;
