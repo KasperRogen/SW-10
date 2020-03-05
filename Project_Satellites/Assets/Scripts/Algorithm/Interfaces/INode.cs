@@ -5,7 +5,8 @@ using System.Numerics;
 public abstract class INode
 {
     public abstract Node.NodeState State { get; set; }
-    public abstract ConstellationPlan Plan { get; set; }
+    public abstract ConstellationPlan ActivePlan { get; set; }
+    public abstract ConstellationPlan GeneratingPlan { get; set; }
     public abstract uint? ID { get; set; }
     public abstract List<uint?> ReachableNodes { get; set; }
     public abstract Vector3 Position { get; set; }

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System;
+
+[Serializable]
 using System.Numerics;
 
 public class ConstellationPlanEntry : IComparable
@@ -29,5 +31,10 @@ public class ConstellationPlanEntry : IComparable
     public int CompareTo(object obj)
     {
         return compareFunction(this, obj as ConstellationPlanEntry);
+    }
+
+    public override string ToString()
+    {
+        return $"{{Position: {Position}, NodeID: {NodeID}}}";
     }
 }

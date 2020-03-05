@@ -11,15 +11,18 @@ public class ConstellationVisualiser : MonoBehaviour
     public Material LeaderMat;
     public Material OverrideMat;
     public Material CommsMat;
+    public Material CommsActiveMat;
     public Material ExecuteMat;
     public Material DeadMat;
     public Material HeartbeatMat;
 
-    List<Vector3> linerendererPositions = new List<Vector3>();
-    LineRenderer commLineRenderer;
+    Dictionary<uint?, GameObject> commLineRenderes = new Dictionary<uint?, GameObject>();
+    uint? lastActiveComm;
+
     LineRenderer targetPositionLineRenderer;
 
     SatelliteComms comms;
+    CommsSim commsSim;
     MeshRenderer meshRenderer;
 
     Node.NodeState lastState = Node.NodeState.PASSIVE;
@@ -27,13 +30,10 @@ public class ConstellationVisualiser : MonoBehaviour
 
     private void Awake()
     {
-        GameObject commLineGO = new GameObject();
         GameObject targetLineGO = new GameObject();
 
-        commLineGO.transform.parent = this.transform;
         targetLineGO.transform.parent = this.transform;
 
-        commLineRenderer = commLineGO.AddComponent<LineRenderer>();
         targetPositionLineRenderer = targetLineGO.AddComponent<LineRenderer>();
 
     }
@@ -42,20 +42,18 @@ public class ConstellationVisualiser : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        commLineRenderer.startWidth = 0.025f;
-        commLineRenderer.endWidth = 0.025f;
-        commLineRenderer.material = CommsMat;
+        //commLineRenderer.startWidth = 0.025f;
+        //commLineRenderer.endWidth = 0.025f;
+        //commLineRenderer.material = CommsMat;
 
         targetPositionLineRenderer.startWidth = 0.1f;
         targetPositionLineRenderer.endWidth = 0.1f;
         targetPositionLineRenderer.material = PassiveMat;
         
-
         comms = GetComponent<SatelliteComms>();
+        commsSim = GetComponent<CommsSim>();
 
         meshRenderer = GetComponent<MeshRenderer>();
-
-
     }
 
 
@@ -106,23 +104,67 @@ public class ConstellationVisualiser : MonoBehaviour
 
         lastState = comms.Node.State;
 
-        linerendererPositions.Clear();
+        List<uint?> reachableSatsID = new List<uint?>();
 
+        // Create a gameobject with a linerendere for each reachable sat if not already added
         for (int i = 0; i < comms.ReachableSats?.Count; i++)
         {
-            linerendererPositions.Add(transform.position);
-            linerendererPositions.Add(comms.ReachableSats[i].position);
+            uint? id = comms.ReachableSats[i].GetComponent<SatelliteComms>().Node.ID;
+            reachableSatsID.Add(id);
+
+            if (commLineRenderes.ContainsKey(id) == false)
+            {
+                GameObject commlineGO = new GameObject();
+                commlineGO.transform.parent = this.transform;
+                LineRenderer lineRenderer = commlineGO.AddComponent<LineRenderer>();
+
+                lineRenderer.startWidth = 0.025f;
+                lineRenderer.endWidth = 0.025f;
+                lineRenderer.material = CommsMat;
+
+                lineRenderer.positionCount = 2;
+                lineRenderer.SetPosition(0, this.transform.position);
+                lineRenderer.SetPosition(1, comms.ReachableSats[i].transform.position);
+
+                commLineRenderes.Add(id, commlineGO);
+            }
+            else
+            {
+                commLineRenderes[id].GetComponent<LineRenderer>().SetPosition(1, comms.ReachableSats[i].position);
+            }
+            
         }
-        commLineRenderer.positionCount = linerendererPositions.Count;
-        commLineRenderer.SetPositions(linerendererPositions.ToArray());
 
+        // Turn active communication link on and off 
+        if (commsSim.ActiveCommSat != null && commLineRenderes.ContainsKey(commsSim.ActiveCommSat.Node.ID))
+        {
+            uint? id = commsSim.ActiveCommSat.Node.ID;
+            commLineRenderes[id].GetComponent<LineRenderer>().material = CommsActiveMat;
+            lastActiveComm = id;
+        }
+        else if (lastActiveComm != null)
+        {
+            commLineRenderes[lastActiveComm].GetComponent<LineRenderer>().material = CommsMat;
+        }
 
-        if(comms.Node.Plan != null) 
+        // Remove all non-reachable links, then update position
+        foreach (var commLine in commLineRenderes)
+        {
+            if (reachableSatsID.Contains(commLine.Key) == false)
+            {
+                Destroy(commLine.Value);
+                commLineRenderes.Remove(commLine.Key);
+            }
+
+            commLine.Value.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+        }
+
+        if(comms.Node.GeneratingPlan != null) 
         { 
 
             Vector3 plannedposition = transform.position;
 
-            foreach(ConstellationPlanEntry e in comms.Node.Plan.Entries)
+            foreach(ConstellationPlanEntry e in comms.Node.GeneratingPlan.Entries)
             {
                 if(e.NodeID != null && e.NodeID == comms.Node.ID)
                 {
@@ -133,15 +175,12 @@ public class ConstellationVisualiser : MonoBehaviour
             targetPositionLineRenderer.positionCount = 2;
             targetPositionLineRenderer.SetPositions(new Vector3[] { transform.position, plannedposition });
 
-            float DeltaVSum = comms.Node.Plan.Entries.Sum(entry => entry.Fields["DeltaV"].Value);
+            float DeltaVSum = comms.Node.GeneratingPlan.Entries.Sum(entry => entry.Fields["DeltaV"].Value);
 
             if (DeltaVSum != TargetConstellationGenerator.CurrentDeltaVSum && DeltaVSum != 1100f)
                 TargetConstellationGenerator.CurrentDeltaVSum = DeltaVSum;
         }
-
-
     }
-
 
     private void OnDrawGizmosSelected()
     {
