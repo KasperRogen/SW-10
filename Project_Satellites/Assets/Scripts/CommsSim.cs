@@ -10,10 +10,11 @@ public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
 
-
+    SatManager satMan;
     private void Start()
     {
         comms = GetComponent<SatelliteComms>();
+        satMan = GameObject.FindGameObjectWithTag("SatelliteManager").GetComponent<SatManager>();
     }
 
     public void Receive(Request request)
@@ -32,7 +33,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         
 
-        if (Position.Distance(comms.Node.Position, hop.Node.Position) < comms.CommRadius)
+        if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
             request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
             hop.Node.CommsModule.Receive(request);
@@ -75,13 +76,37 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     }
 
+    public List<uint?> Discover()
+    {
+
+        List<SatelliteComms> commsList = new List<SatelliteComms>();
+
+        foreach (SatelliteComms sat in satMan.satellites)
+        {
+            if (sat.Node.ID == comms.Node.ID)
+                continue;
+
+            float dist = System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position);
+            float range = Constants.ScaleToSize(comms.CommRadius);
+            if (dist < Constants.ScaleToSize(comms.CommRadius))
+                commsList.Add(sat);
+        }
+
+        
+        if (commsList.Contains(comms))
+        {
+            commsList.Remove(comms);
+        }
+        return commsList.Select(col => col.Node.ID).ToList();
+    }
+
     public void Send(uint? nextHop, Response response)
     {
         Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : Response" + "\t dst: " + response.DestinationID);
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
-        if (Position.Distance(comms.Node.Position, hop.Node.Position) < comms.CommRadius)
+        if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
             hop.Node.CommsModule.Receive(response);
         }
@@ -101,6 +126,14 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Receive(Response response)
     {
+
+        if (response.GetType() == typeof(FailureDetectionResponse))
+        {
+            (response as FailureDetectionResponse).DeadEdges.ForEach(edge => comms.Node.Router.DeleteEdge(edge.Item1, edge.Item2));
+        }
+
+
+
         if(response.DestinationID == comms.Node.ID)
         {
             OnResponseReceived?.Invoke(this, new ResponseEventArgs(response));

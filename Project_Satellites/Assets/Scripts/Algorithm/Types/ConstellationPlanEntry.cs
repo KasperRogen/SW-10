@@ -1,9 +1,10 @@
 ﻿using System.Collections.Generic;
 using System;
+using System.Numerics;
 
 public class ConstellationPlanEntry : IComparable
 {
-    public Position Position { get; set; }
+    public Vector3 Position { get; set; }
     public uint? NodeID { get; set; }
     public Dictionary<string, ConstellationPlanField> Fields { get; set; }
 
@@ -11,7 +12,7 @@ public class ConstellationPlanEntry : IComparable
 
     private CompareFunction compareFunction;
 
-    public ConstellationPlanEntry(Position position, List<ConstellationPlanField> fields, CompareFunction func)
+    public ConstellationPlanEntry(Vector3 position, List<ConstellationPlanField> fields, CompareFunction func)
     {
         Position = position;
         NodeID = null;

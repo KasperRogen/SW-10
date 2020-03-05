@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading;using System.Timers;
 
 public class Node : INode
@@ -8,8 +9,8 @@ public class Node : INode
     public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT };
     public override uint? ID { get; set; }
     public override List<uint?> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
-    public override Position Position { get; set; }
-    public override Position TargetPosition { get; set; }
+    public override Vector3 Position { get; set; }
+    public override Vector3 TargetPosition { get; set; }
     public override bool Active
     {
         get 
@@ -40,7 +41,7 @@ public class Node : INode
     private System.Timers.Timer timer;
     private bool active;
 
-    public Node(uint? ID, Position position)
+    public Node(uint? ID, Vector3 position)
     {
         this.ID = ID;
         State = Node.NodeState.PASSIVE;
@@ -87,6 +88,10 @@ public class Node : INode
 
                 case Request.Commands.DetectFailure:
                     FailureDetection.DetectFailure(this, request as DetectFailureRequest);
+                    break;
+
+                case Request.Commands.Discover:
+                    Discovery.Discover(this, request as DiscoveryRequest);
                     break;
 
                 default:

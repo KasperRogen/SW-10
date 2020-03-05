@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Numerics;
 
 public class ConstellationPlan
 {
@@ -33,7 +34,7 @@ public class ConstellationPlan
 
         values[index] = testValue;
         int oldIndex = Entries.IndexOf(oldSlot);
-        values[oldIndex] = Position.Distance(Entries[index].Position, Entries[oldIndex].Position);
+        values[oldIndex] = Vector3.Distance(Entries[index].Position, Entries[oldIndex].Position);
 
         newSum = values.Sum();
 

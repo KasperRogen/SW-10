@@ -10,4 +10,5 @@ public interface ICommunicate
     Task<Response> SendAsync(uint? nextHop, Request request, int timeout);
     void Send(uint? nextHop, Response response);
     void Receive(Response response);
+    List<uint?> Discover();
 }

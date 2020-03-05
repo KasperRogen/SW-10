@@ -31,7 +31,7 @@ public class ConstellationGenerator : MonoBehaviour
         {
             float yAngle = Mathf.PI / PlaneNum * i;
 
-            List<Tuple<int, Position>> NodeProperties = new List<Tuple<int, Position>>();
+            List<Tuple<int, Vector3>> NodeProperties = new List<Tuple<int, Vector3>>();
 
             for(uint? j = 0; j < SatellitesPerPlane; j++)
             {
@@ -49,8 +49,8 @@ public class ConstellationGenerator : MonoBehaviour
                 GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
                 CommsSim sim = satellite.AddComponent<CommsSim>();
 
-                NodeProperties.Add(new Tuple<int, Position>((int)j, BackendHelpers.PositionFromVector3(satellite.transform.position)));
-                INode node = new Node(j, BackendHelpers.PositionFromVector3(satellite.transform.position));
+                NodeProperties.Add(new Tuple<int, Vector3>((int)j, satellite.transform.position));
+                INode node = new Node(j, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
                 node.TargetPosition = node.Position;
                 node.CommsModule = sim;
 

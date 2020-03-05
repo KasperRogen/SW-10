@@ -14,11 +14,6 @@ public class SatManager : MonoBehaviour
         _instance = this;
 
 
-        new Thread(() =>
-        {
-            Thread.Sleep(5000);
-            Heartbeat.CheckHeartbeat(satellites[0].Node);
-        }).Start();
     }
 
 }

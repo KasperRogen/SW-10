@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
+using System;
 
 public class FailureDetection
 {
@@ -13,9 +14,8 @@ public class FailureDetection
     public async static void DetectFailure(INode myNode, DetectFailureRequest request)
     {
         //Update router, ensure we don't try to route through the bad connection
-        myNode.Router.DeleteEdge(request.SourceID, request.NodeToCheck); //Should we do this already?
 
-        myNode.State = request.isDead == null ? Node.NodeState.EXECUTING : Node.NodeState.PASSIVE;
+        request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
 
 
         
@@ -40,14 +40,16 @@ public class FailureDetection
                 ping.Command = Request.Commands.Ping;
                 Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000);
 
-                Response requestResponse;
+                FailureDetectionResponse requestResponse;
                 if (pingResponse == null || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
                 {
-                    myNode.Router.DeleteEdge(myNode.ID, request.NodeToCheck);
-                    requestResponse = new Response(myNode.ID, request.SourceID, Response.ResponseCodes.ERROR, request.MessageIdentifer);
+                    Tuple<uint?, uint?> deadEdge = new Tuple<uint?, uint?>(myNode.ID, request.NodeToCheck);
+                    request.DeadEdges.Add(deadEdge);
+                    request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
+                    requestResponse = new FailureDetectionResponse(myNode.ID, request.SourceID, Response.ResponseCodes.ERROR, request.MessageIdentifer, request.DeadEdges);
                 } else
                 {
-                    requestResponse = new Response(myNode.ID, request.SourceID, Response.ResponseCodes.ERROR, request.MessageIdentifer);
+                    requestResponse = new FailureDetectionResponse(myNode.ID, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer, request.DeadEdges);
                 }
 
                 uint? nextResponseHop = myNode.Router.NextHop(myNode.ID, requestResponse.DestinationID);
@@ -78,14 +80,24 @@ public class FailureDetection
             Command = Request.Commands.DetectFailure,
             DestinationID = neighbourID,
             SourceID = myNode.ID,
-            NodeToCheck = failedNode
+            NodeToCheck = failedNode,
+            DeadEdges = new List<System.Tuple<uint?, uint?>> {new System.Tuple<uint?, uint?>(myNode.ID, failedNode) }
         };
 
         Response response = await myNode.CommsModule.SendAsync(nextHop, request, 15000);
 
         if(response.ResponseCode == Response.ResponseCodes.ERROR)
         {
-            TargetConstellationGenerator.instance.GenerateTargetConstellation();
+            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(10, 7.152f);
+            PlanRequest recoveryRequest = new PlanRequest
+            {
+                SourceID = myNode.ID,
+                DestinationID = myNode.ID,
+                Command = Request.Commands.Generate,
+                Plan = RecoveryPlan,
+            };
+
+            myNode.CommsModule.Send(myNode.ID, recoveryRequest);
             return;
         }
 

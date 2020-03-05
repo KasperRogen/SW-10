@@ -126,7 +126,7 @@ public class ConstellationVisualiser : MonoBehaviour
             {
                 if(e.NodeID != null && e.NodeID == comms.Node.ID)
                 {
-                    plannedposition = BackendHelpers.Vector3FromPosition(e.Position);
+                    plannedposition = BackendHelpers.UnityVectorFromNumerics(e.Position);
                 }
             }
 

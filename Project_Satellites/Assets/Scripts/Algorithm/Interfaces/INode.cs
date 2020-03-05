@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 
 public abstract class INode
 {
@@ -7,8 +8,8 @@ public abstract class INode
     public abstract ConstellationPlan Plan { get; set; }
     public abstract uint? ID { get; set; }
     public abstract List<uint?> ReachableNodes { get; set; }
-    public abstract Position Position { get; set; }
-    public abstract Position TargetPosition { get; set; }
+    public abstract Vector3 Position { get; set; }
+    public abstract Vector3 TargetPosition { get; set; }
     public abstract Router Router { get; set; }
     public abstract bool Active { get; set; }
     public ICommunicate CommsModule { get; set; }

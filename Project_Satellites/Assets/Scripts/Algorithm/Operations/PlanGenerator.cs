@@ -2,8 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
-using UnityEngine;
 
 public class PlanGenerator
 {
@@ -29,7 +29,7 @@ public class PlanGenerator
                 //Calculate cost of each location in target constellation
                 for (int i = 0; i < request.Plan.Entries.Count; i++)
                 {
-                    float requiredDeltaV = Position.Distance(myNode.Position, request.Plan.Entries[i].Position);
+                    float requiredDeltaV = Vector3.Distance(myNode.Position, request.Plan.Entries[i].Position);
                     fieldDeltaVPairs.Add(i, requiredDeltaV);
                 }
 
@@ -40,11 +40,11 @@ public class PlanGenerator
                 {
                     ConstellationPlanEntry slotToTake = request.Plan.Entries.Where(entry => entry.NodeID == null) //Only allow satellite to take free locations
                     .Aggregate((CurrentBest, currentTest) => //Iterate each entry
-                    Position.Distance(currentTest.Position, myNode.Position) <=  //This entry currently being tested to improve over current best
-                    Position.Distance(CurrentBest.Position, myNode.Position) ?  //current best 
+                    Vector3.Distance(currentTest.Position, myNode.Position) <=  //This entry currently being tested to improve over current best
+                    Vector3.Distance(CurrentBest.Position, myNode.Position) ?  //current best 
                     currentTest : CurrentBest); //return best candidate of currenttest and currentbest
 
-                    newPlan = TakeSlot(myNode, request.Plan, request.Plan.Entries.IndexOf(slotToTake), Position.Distance(slotToTake.Position, myNode.Position));
+                    newPlan = TakeSlot(myNode, request.Plan, request.Plan.Entries.IndexOf(slotToTake), Vector3.Distance(slotToTake.Position, myNode.Position));
                 }
                 //TODO: Fix problem with requirering knowledge about all nodes in order to "trade" with them
                 //else if (plan.entries.Any(entry => entry.Node == null) == false)

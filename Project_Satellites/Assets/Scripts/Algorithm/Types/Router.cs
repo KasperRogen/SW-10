@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using Dijkstra.NET.Graph;
 using Dijkstra.NET.ShortestPath;
 
@@ -93,7 +94,7 @@ public class Router : IRouter
 
             foreach (ConstellationPlanEntry innerEntry in plan.Entries.Where((x) => x != entry))
             {
-                if (Position.Distance(entry.Position, innerEntry.Position) < satRange) // 100 = Range for Satellite communication
+                if (Vector3.Distance(entry.Position, innerEntry.Position) < satRange) // 100 = Range for Satellite communication
                 {
                     if (innerEntry.NodeID != null)
                     neighbors.Add(innerEntry.NodeID);
@@ -109,7 +110,10 @@ public class Router : IRouter
 
     public void DeleteEdge(uint? n1, uint? n2)
     {
+        if(NetworkMap[n1].Contains(n2))
         NetworkMap[n1].Remove(n2);
+
+        if(NetworkMap[n2].Contains(n1))
         NetworkMap[n2].Remove(n1);
 
         UpdateGraph();

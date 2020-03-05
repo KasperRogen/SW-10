@@ -8,7 +8,7 @@ public class Request
 
     public enum Commands
     {
-        Generate, Execute, DetectFailure, Heartbeat, Ping
+        Generate, Execute, DetectFailure, Heartbeat, Ping, Discover
     }
 
     public uint? SourceID { get; set; }
@@ -31,5 +31,5 @@ public class DiscoveryRequest: Request
 public class DetectFailureRequest: Request
 {
     public uint? NodeToCheck { get; set; }
-    public bool? isDead { get; set; }
+    public List<Tuple<uint?, uint?>> DeadEdges { get; set; }
 }

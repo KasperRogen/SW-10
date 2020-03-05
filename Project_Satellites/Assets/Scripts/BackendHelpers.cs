@@ -4,13 +4,13 @@ using UnityEngine;
 
 public class BackendHelpers
 {
-    public static Vector3 Vector3FromPosition(Position pos)
+    public static UnityEngine.Vector3 UnityVectorFromNumerics(System.Numerics.Vector3 pos)
     {
-        return new Vector3(pos.X, pos.Y, pos.Z);
+        return new UnityEngine.Vector3(pos.X, pos.Y, pos.Z);
     }
 
-    public static Position PositionFromVector3(Vector3 pos)
+    public static System.Numerics.Vector3 NumericsVectorFromUnity(UnityEngine.Vector3 pos)
     {
-        return new Position(pos.x, pos.y, pos.z);
+        return new System.Numerics.Vector3(pos.x, pos.y, pos.z);
     }
 }

@@ -6,29 +6,45 @@ using UnityEngine;
 
 public class Discovery
 {
-    //TODO: THIS IS OLD AF, WILL NOT WORK.
+
+    public static void StartDiscovery(INode myNode)
+    {
+        DiscoveryRequest discoveryRequest = new DiscoveryRequest()
+        {
+            Command = Request.Commands.Discover,
+            DestinationID = myNode.ID,
+            SourceID = myNode.ID,
+            EdgeSet = new List<Tuple<uint?, uint?>>()
+        };
+
+        myNode.CommsModule.Send(myNode.ID, discoveryRequest);
+    }
 
 
-    //TODO: Avoid responding to same discovery message repeatedly
-
-
-
-    /// <summary>THIS DOES NOT WORK, IT NEEDS TO BE REWRITTEN
+    /// <summary>procedure for updating network map for the entire network
     /// <para>  </para>
     /// </summary>
-    public void Discover(INode MyNode, DiscoveryRequest request)
+    public static void Discover(INode MyNode, DiscoveryRequest request)
     {
         bool newKnowledge = false;
         bool alteredSet = false;
 
+        //Request all nodes reachable by the commsModule
+        List<uint?> ReachableNodes = MyNode.CommsModule.Discover();
 
-        foreach (uint? node in MyNode.ReachableNodes)
+        //Add any new nodes to my networkmap
+        ReachableNodes.Except(MyNode.Router.NetworkMap[MyNode.ID]).ToList().ForEach(node =>
+        MyNode.Router.NetworkMap[MyNode.ID].Add(node));
+
+        foreach (uint? node in MyNode.Router.NetworkMap[MyNode.ID])
         {
+            //Create an edge to each of my neighbours
             Tuple<uint?, uint?> edge = new Tuple<uint?, uint?>(MyNode.ID, node);
 
+            //order the edge
             edge = edge.Item1 > edge.Item2 ? new Tuple<uint?, uint?>(edge.Item2, edge.Item1) : edge;
 
-
+            //Only add it to the list if it doesn't already exist
             if (request.EdgeSet.Contains(edge) == false)
             {
                 request.EdgeSet.Add(edge);
@@ -41,33 +57,26 @@ public class Discovery
 
         if (alteredSet)
         {
-            foreach(uint? node in MyNode.ReachableNodes)
+            request.SourceID = MyNode.ID;
+            foreach (uint? node in MyNode.Router.NetworkMap[MyNode.ID])
             {
-                request.SourceID = MyNode.ID;
                 request.DestinationID = node;
-                //TODO: Set this up with new comms system
-                //node.Communicate(request);
+                uint? nextHop = MyNode.Router.NextHop(MyNode.ID, node);
+                MyNode.CommsModule.Send(nextHop, request);
             }
         }
         else if (newKnowledge)
         {
             uint? SenderID = request.SourceID;
-            foreach (uint? node in MyNode.ReachableNodes)
+            request.SourceID = MyNode.ID;
+            foreach (uint? node in MyNode.Router.NetworkMap[MyNode.ID])
             {
                 if(node != SenderID) { 
-                    request.SourceID = MyNode.ID;
                     request.DestinationID = node;
-                    //TODO: set this up with new comms system
-                    //node.Communicate(request);
+                    uint? nextHop = MyNode.Router.NextHop(MyNode.ID, node);
+                    MyNode.CommsModule.Send(nextHop, request);
                 }
             }
         }
-
-
-
-
     }
-
-
-
 }

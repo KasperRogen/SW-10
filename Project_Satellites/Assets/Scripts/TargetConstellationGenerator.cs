@@ -4,9 +4,12 @@ using UnityEngine;
 using System.Linq;
 using System;
 
+
 public class TargetConstellationGenerator : MonoBehaviour
 {
     public static TargetConstellationGenerator instance;
+
+
 
     public bool EnableAutotest = false;
     public bool EnableManualDesign = false;
@@ -83,12 +86,12 @@ public class TargetConstellationGenerator : MonoBehaviour
         }
 
         List<ConstellationPlanEntry> entries = new List<ConstellationPlanEntry>();
-
+            
         foreach (Vector3 pos in TargetPositions)
         {
-            Position position = new Position(pos.x, pos.y, pos.z);
+            Vector3 position = new Vector3(pos.x, pos.y, pos.z);
             List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
-            ConstellationPlanEntry entry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
+            ConstellationPlanEntry entry = new ConstellationPlanEntry(BackendHelpers.NumericsVectorFromUnity(position), fields, (x, y) => 1);
             entries.Add(entry);
         }
 
@@ -127,7 +130,7 @@ public class TargetConstellationGenerator : MonoBehaviour
                 Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
 
 
-            if (plan != null && plan.Entries.TrueForAll(entry => nodes.Any(node => Position.Distance(node.Position, entry.Position) < 0.1f))) {
+            if (plan != null && plan.Entries.TrueForAll(entry => nodes.Any(node => System.Numerics.Vector3.Distance(node.Position, entry.Position) < 0.1f))) {
                 int newSeed = RandomSeed;
                 do
                 {
@@ -169,7 +172,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
         if (Input.GetMouseButtonDown(0) && 
             Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, ManualDesignMask) &&  
-            plan.Entries.TrueForAll(entry => nodes.Any(node => Position.Distance(node.Position, entry.Position) < 0.1f))){
+            plan.Entries.TrueForAll(entry => nodes.Any(node => System.Numerics.Vector3.Distance(node.Position, entry.Position) < 0.1f))){
 
             if(EnableManualDesign == false)
             {
@@ -189,7 +192,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
                 foreach (Vector3 pos in GameObject.FindGameObjectsWithTag("LocationPlaceholder")?.ToList().Select (loc => loc.transform.position))
                 {
-                    Position position = new Position(pos.x, pos.y, pos.z);
+                    System.Numerics.Vector3 position = new System.Numerics.Vector3(pos.x, pos.y, pos.z);
                     List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
                     ConstellationPlanEntry entry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
                     entries.Add(entry);

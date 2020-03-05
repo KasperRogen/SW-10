@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -22,12 +23,29 @@ public class Response
 
     }
 
+
+
+
     public ResponseCodes ResponseCode { get; set; }
     public uint? SourceID { get; set; }
     public uint? DestinationID { get; set; }
     public string MessageIdentifer { get; set; }
 
 
+}
 
 
+public class FailureDetectionResponse : Response
+{
+
+    public List<Tuple<uint?, uint?>> DeadEdges { get; set; }
+
+    public FailureDetectionResponse(uint? _sourceID, uint? _destinationID, Response.ResponseCodes _responsecode, string _messageIdentifier, List<Tuple<uint?, uint?>> _deadEdges)
+    {
+        this.SourceID = _sourceID;
+        this.DestinationID = _destinationID;
+        this.ResponseCode = _responsecode;
+        this.MessageIdentifer = _messageIdentifier;
+        this.DeadEdges = _deadEdges;
+    }
 }
