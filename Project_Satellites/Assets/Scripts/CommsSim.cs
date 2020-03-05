@@ -10,6 +10,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
 
+    public SatelliteComms ActiveCommSat = null;
+
 
     private void Start()
     {
@@ -29,13 +31,16 @@ public class CommsSim : MonoBehaviour, ICommunicate
         Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID);
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
-
-        
-
+       
         if (Position.Distance(comms.Node.Position, hop.Node.Position) < comms.CommRadius)
         {
+            ActiveCommSat = hop;
+            Thread.Sleep(250);
+            ActiveCommSat = null;
+
             request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
             hop.Node.CommsModule.Receive(request);
+
         }
     }
 
@@ -114,7 +119,10 @@ public class CommsSim : MonoBehaviour, ICommunicate
             }).Start();
             
         }
+    }
 
+    private void VisualiseComms()
+    {
         
     }
 }
