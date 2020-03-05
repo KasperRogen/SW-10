@@ -24,7 +24,7 @@ public class ConstellationPlanEntry : IComparable
         Position = position;
         NodeID = null;
         Fields = new Dictionary<string, ConstellationPlanField>();
-
+        
         foreach (ConstellationPlanField field in fields)
         {
             Fields.Add(field.Key, field);
