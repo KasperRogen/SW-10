@@ -1,9 +1,14 @@
 ﻿using System.Collections.Generic;
 using System;
 
-[Serializable]
 using System.Numerics;
 
+
+
+using System.Runtime.Serialization;
+
+
+[Serializable]
 public class ConstellationPlanEntry : IComparable
 {
     public Vector3 Position { get; set; }

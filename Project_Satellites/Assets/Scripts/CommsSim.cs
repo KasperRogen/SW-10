@@ -9,11 +9,9 @@ using System.Threading;
 public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
-
-    SatManager satMan;
     public SatelliteComms ActiveCommSat = null;
 
-
+    SatManager satMan;
     private void Start()
     {
         comms = GetComponent<SatelliteComms>();
@@ -40,11 +38,9 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
             ActiveCommSat = hop;
             Thread.Sleep(250);
-            ActiveCommSat = null;
-
             request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
             hop.Node.CommsModule.Receive(request);
-
+            ActiveCommSat = null;
         }
     }
 
@@ -100,11 +96,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
                 commsList.Add(sat);
         }
 
-        
-        if (commsList.Contains(comms))
-        {
-            commsList.Remove(comms);
-        }
+
         return commsList.Select(col => col.Node.ID).ToList();
     }
 
@@ -155,10 +147,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
             }).Start();
             
         }
-    }
 
-    private void VisualiseComms()
-    {
         
     }
 }

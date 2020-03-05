@@ -26,7 +26,8 @@ public class ConstellationVisualiser : MonoBehaviour
     MeshRenderer meshRenderer;
 
     Node.NodeState lastState = Node.NodeState.PASSIVE;
-    
+
+    public List<Transform> reachableSats = new List<Transform>();
 
     private void Awake()
     {
@@ -49,7 +50,7 @@ public class ConstellationVisualiser : MonoBehaviour
         targetPositionLineRenderer.startWidth = 0.1f;
         targetPositionLineRenderer.endWidth = 0.1f;
         targetPositionLineRenderer.material = PassiveMat;
-        
+
         comms = GetComponent<SatelliteComms>();
         commsSim = GetComponent<CommsSim>();
 
@@ -62,6 +63,16 @@ public class ConstellationVisualiser : MonoBehaviour
     void Update()
     {
 
+        foreach (uint? node in comms.Node.Router.NetworkMap[comms.Node.ID])
+        {
+            Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.GetComponent<SatelliteComms>().Node.ID == node).transform;
+            if (reachableSats.Contains(nodeTransform) == false)
+            {
+                reachableSats.Add(nodeTransform);
+            }
+        }
+
+        
         //comms.ReachableSats = comms.Node.router.NetworkMap?[comms.Node].Select(node => BackendHelpers.Vector3FromPosition(node.Position)).ToList();
 
 
@@ -69,37 +80,37 @@ public class ConstellationVisualiser : MonoBehaviour
             return;
 
         //if (comms.Node.State != lastState) { 
-            switch (comms.Node.State)
-            {
-                case Node.NodeState.PASSIVE:
-                    meshRenderer.material = PassiveMat;
-                    targetPositionLineRenderer.material = PassiveMat;
-                    break;
+        switch (comms.Node.State)
+        {
+            case Node.NodeState.PASSIVE:
+                meshRenderer.material = PassiveMat;
+                targetPositionLineRenderer.material = PassiveMat;
+                break;
 
-                case Node.NodeState.PLANNING:
-                    meshRenderer.material = LeaderMat;
-                    targetPositionLineRenderer.material = LeaderMat;
-                    break;
+            case Node.NodeState.PLANNING:
+                meshRenderer.material = LeaderMat;
+                targetPositionLineRenderer.material = LeaderMat;
+                break;
 
-                case Node.NodeState.EXECUTING:
-                    meshRenderer.material = ExecuteMat;
-                    targetPositionLineRenderer.material = ExecuteMat;
-                    break;
+            case Node.NodeState.EXECUTING:
+                meshRenderer.material = ExecuteMat;
+                targetPositionLineRenderer.material = ExecuteMat;
+                break;
 
-                case Node.NodeState.OVERRIDE:
+            case Node.NodeState.OVERRIDE:
 
-                    meshRenderer.material = OverrideMat;
-                    targetPositionLineRenderer.material = OverrideMat;
-                    break;
+                meshRenderer.material = OverrideMat;
+                targetPositionLineRenderer.material = OverrideMat;
+                break;
 
-                case Node.NodeState.DEAD:
-                    meshRenderer.material = DeadMat;
-                    break;
+            case Node.NodeState.DEAD:
+                meshRenderer.material = DeadMat;
+                break;
 
-                case Node.NodeState.HEARTBEAT:
-                    meshRenderer.material = HeartbeatMat;
-                    break;
-            }
+            case Node.NodeState.HEARTBEAT:
+                meshRenderer.material = HeartbeatMat;
+                break;
+        }
         //}
 
         lastState = comms.Node.State;
@@ -107,9 +118,9 @@ public class ConstellationVisualiser : MonoBehaviour
         List<uint?> reachableSatsID = new List<uint?>();
 
         // Create a gameobject with a linerendere for each reachable sat if not already added
-        for (int i = 0; i < comms.ReachableSats?.Count; i++)
+        for (int i = 0; i < reachableSats?.Count; i++)
         {
-            uint? id = comms.ReachableSats[i].GetComponent<SatelliteComms>().Node.ID;
+            uint? id = reachableSats[i].GetComponent<SatelliteComms>().Node.ID;
             reachableSatsID.Add(id);
 
             if (commLineRenderes.ContainsKey(id) == false)
@@ -124,15 +135,15 @@ public class ConstellationVisualiser : MonoBehaviour
 
                 lineRenderer.positionCount = 2;
                 lineRenderer.SetPosition(0, this.transform.position);
-                lineRenderer.SetPosition(1, comms.ReachableSats[i].transform.position);
+                lineRenderer.SetPosition(1, reachableSats[i].transform.position);
 
                 commLineRenderes.Add(id, commlineGO);
             }
             else
             {
-                commLineRenderes[id].GetComponent<LineRenderer>().SetPosition(1, comms.ReachableSats[i].position);
+                commLineRenderes[id].GetComponent<LineRenderer>().SetPosition(1, reachableSats[i].position);
             }
-            
+
         }
 
         // Turn active communication link on and off 
@@ -150,8 +161,15 @@ public class ConstellationVisualiser : MonoBehaviour
         // Remove all non-reachable links, then update position
         for (int i = commLineRenderes.Count - 1; i >= 0; i--)
         {
+            if (comms.Node.Active == false)
+            {
+                Destroy(commLineRenderes.ElementAt(i).Value);
+                commLineRenderes.Remove(commLineRenderes.ElementAt(i).Key);
+                continue;
+            }
+
             uint? key = commLineRenderes.ElementAt(i).Key;
-            
+
             if (reachableSatsID.Contains(key) == false)
             {
                 Destroy(commLineRenderes[key]);
@@ -165,23 +183,23 @@ public class ConstellationVisualiser : MonoBehaviour
 
         //foreach (var commLine in commLineRenderes)
         //{
-            //if (reachableSatsID.Contains(commLine.Key) == false)
-            //{
-            //    Destroy(commLine.Value);
-            //    commLineRenderes.Remove(commLine.Key);
-            //}
-
-            //commLine.Value.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+        //if (reachableSatsID.Contains(commLine.Key) == false)
+        //{
+        //    Destroy(commLine.Value);
+        //    commLineRenderes.Remove(commLine.Key);
         //}
 
-        if(comms.Node.GeneratingPlan != null) 
-        { 
+        //commLine.Value.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+        //}
+
+        if (comms.Node.GeneratingPlan != null)
+        {
 
             Vector3 plannedposition = transform.position;
 
-            foreach(ConstellationPlanEntry e in comms.Node.GeneratingPlan.Entries)
+            foreach (ConstellationPlanEntry e in comms.Node.GeneratingPlan.Entries)
             {
-                if(e.NodeID != null && e.NodeID == comms.Node.ID)
+                if (e.NodeID != null && e.NodeID == comms.Node.ID)
                 {
                     plannedposition = BackendHelpers.UnityVectorFromNumerics(e.Position);
                 }

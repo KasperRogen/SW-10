@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using UnityEngine;
+using System.Numerics;
 
 public class PlanGenerator
 {
@@ -46,7 +46,7 @@ public class PlanGenerator
                     {
                         if (request.Plan.Entries[i].NodeID != myNode.ID) // Exclude location that current node has taken.
                         {
-                            float requiredDeltaV = Position.Distance(myNode.Position, request.Plan.Entries[i].Position);
+                            float requiredDeltaV = Vector3.Distance(myNode.Position, request.Plan.Entries[i].Position);
                             fieldDeltaVPairs.Add(i, requiredDeltaV);
                         }
                     }

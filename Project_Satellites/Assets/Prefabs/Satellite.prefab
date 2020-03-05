@@ -334,7 +334,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8f1f119667e8324ba4be109c0b4f710, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CommRadius: 5000000
+  CommRadius: 100000000
   ReachableSats: []
 --- !u!54 &-951821776534324943
 Rigidbody:
