@@ -1,6 +1,5 @@
 ﻿using System;
 
-[Serializable]
 public class ConstellationPlanField : IComparable
 {
     public string Key { get; set; }
@@ -17,5 +16,10 @@ public class ConstellationPlanField : IComparable
     public int CompareTo(object obj)
     {
         return compareFunction(this.Value, (obj as ConstellationPlanField).Value);
+    }
+
+    public ConstellationPlanField DeepCopy()
+    {
+        return new ConstellationPlanField(string.Copy(Key), Value, compareFunction);
     }
 }

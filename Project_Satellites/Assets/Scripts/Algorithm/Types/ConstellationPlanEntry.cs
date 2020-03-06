@@ -1,14 +1,8 @@
 ﻿using System.Collections.Generic;
 using System;
-
 using System.Numerics;
+using System.Linq;
 
-
-
-using System.Runtime.Serialization;
-
-
-[Serializable]
 public class ConstellationPlanEntry : IComparable
 {
     public Vector3 Position { get; set; }
@@ -41,5 +35,12 @@ public class ConstellationPlanEntry : IComparable
     public override string ToString()
     {
         return $"{{Position: {Position}, NodeID: {NodeID}}}";
+    }
+
+    public ConstellationPlanEntry DeepCopy()
+    {
+        ConstellationPlanEntry copy = new ConstellationPlanEntry(Position, Fields.Values.ToList().ConvertAll(x => x.DeepCopy()), compareFunction);
+        copy.NodeID = NodeID;
+        return copy;
     }
 }

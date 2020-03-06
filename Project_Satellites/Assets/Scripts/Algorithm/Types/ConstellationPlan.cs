@@ -1,13 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Collections.Generic;
 using System.Numerics;
 
-[Serializable]
 public class ConstellationPlan
 {
-    public uint? LastEditedBy;
-    public List<ConstellationPlanEntry> Entries;
+    public uint? LastEditedBy { get; set; }
+    public List<ConstellationPlanEntry> Entries { get; set; }
 
     public ConstellationPlan(List<ConstellationPlanEntry> entries)
     {
@@ -21,7 +19,7 @@ public class ConstellationPlan
     /// <returns></returns>
     public bool TrySwapNodes(uint? nodeID1, Vector3 nodePosition1, uint? nodeID2, Vector3 nodePosition2, out ConstellationPlan newPlan)
     {
-        ConstellationPlan planCopy = Clone.DeepClone(this); // Make a copy of the plan to avoid the method having side effects.
+        ConstellationPlan planCopy = DeepCopy(); // Make a copy of the plan to avoid the method having side effects.
         ConstellationPlanEntry entry1 = planCopy.Entries.Find(x => x.NodeID == nodeID1);
         ConstellationPlanEntry entry2 = planCopy.Entries.Find(x => x.NodeID == nodeID2);
         entry1.NodeID = nodeID2;
@@ -41,5 +39,12 @@ public class ConstellationPlan
             newPlan = null;
             return false;
         }
+    }
+
+    public ConstellationPlan DeepCopy()
+    {
+        ConstellationPlan copy = new ConstellationPlan(Entries.ConvertAll(x => x.DeepCopy()));
+        copy.LastEditedBy = LastEditedBy;
+        return copy;
     }
 }
