@@ -15,6 +15,8 @@ public abstract class INode
     public abstract bool Active { get; set; }
     public ICommunicate CommsModule { get; set; }
     public List<Tuple<uint?, uint?>> KnownEdges { get; set; }
+
+    public bool IsBusy { get; set; }
     public bool executingPlan;
     public bool justChangedPlan;
 

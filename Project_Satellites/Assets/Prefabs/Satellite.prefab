@@ -334,7 +334,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f8f1f119667e8324ba4be109c0b4f710, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  CommRadius: 100000000
+  CommRadius: 5000000
   ReachableSats: []
 --- !u!54 &-951821776534324943
 Rigidbody:
@@ -385,3 +385,4 @@ MonoBehaviour:
   ExecuteMat: {fileID: 2100000, guid: cef5b1e2bb7134b4f8833a0fe4cd2248, type: 2}
   DeadMat: {fileID: 2100000, guid: e7c6bfff95568e849b150776ea78b2e4, type: 2}
   HeartbeatMat: {fileID: 2100000, guid: 02800e17d1e1135468ce7414458d6f18, type: 2}
+  reachableSats: []

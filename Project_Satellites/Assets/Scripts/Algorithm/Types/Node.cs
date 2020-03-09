@@ -36,10 +36,6 @@ public class Node : INode
     public override NodeState State { get; set; }
     public override Router Router { get; set; }
 
-    private List<Tuple<uint?, uint?>> EdgeSet;
-    private List<Tuple<uint?, uint?>> CurrentKnownEdges = new List<Tuple<uint?, uint?>>();
-    private int LastDiscoverID = -1;
-    private System.Timers.Timer timer;
     private bool active;
 
     public Node(uint? ID, Vector3 position)
@@ -48,6 +44,7 @@ public class Node : INode
         State = Node.NodeState.PASSIVE;
         Position = position;
         Active = true;
+        KnownEdges = new List<Tuple<uint?, uint?>>();
     }
    
    
@@ -67,8 +64,8 @@ public class Node : INode
     {
         new Thread(() => {
 
-            
 
+            IsBusy = true;
             switch (request.Command)
             {
                 case Request.Commands.Generate:
@@ -116,10 +113,9 @@ public class Node : INode
 
                     CommsModule.Send(nextHop, request);
                 }
-                return;
             }
-
-
+            IsBusy = false;
+            CommsModule.FetchNextRequest();
         }).Start();
         
     }

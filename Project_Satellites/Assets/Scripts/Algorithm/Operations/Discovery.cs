@@ -32,9 +32,13 @@ public class Discovery
         //Request all nodes reachable by the commsModule
         List<uint?> ReachableNodes = MyNode.CommsModule.Discover();
 
-        //Add any new nodes to my networkmap
-        ReachableNodes.Except(MyNode.Router.NetworkMap[MyNode.ID]).ToList().ForEach(node =>
-        MyNode.Router.NetworkMap[MyNode.ID].Add(node));
+        MyNode.Router.NetworkMap[MyNode.ID].AddRange(ReachableNodes);
+        MyNode.Router.NetworkMap[MyNode.ID] = MyNode.Router.NetworkMap[MyNode.ID].Distinct().ToList();
+
+        if (MyNode.Router.NetworkMap[MyNode.ID].Contains(MyNode.ID)) { 
+            
+            int i = 2;
+        }
 
         foreach (uint? node in MyNode.Router.NetworkMap[MyNode.ID])
         {
@@ -49,11 +53,15 @@ public class Discovery
             {
                 request.EdgeSet.Add(edge);
                 alteredSet = true;
+            } else if(MyNode.KnownEdges.Contains(edge) == false)
+            {
+                MyNode.KnownEdges.Add(edge);
+                newKnowledge = true;
             }
         }
 
         request.EdgeSet = request.EdgeSet.OrderBy(tuple => tuple.Item1).ThenBy(tuple => tuple.Item2).ToList();
-        MyNode.KnownEdges = request.EdgeSet;
+        //MyNode.KnownEdges = request.EdgeSet;
 
         if (alteredSet)
         {
@@ -77,6 +85,9 @@ public class Discovery
                     MyNode.CommsModule.Send(nextHop, request);
                 }
             }
+        } else
+        {
+            int a = 2;
         }
     }
 }

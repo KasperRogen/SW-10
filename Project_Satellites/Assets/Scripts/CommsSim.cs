@@ -9,6 +9,7 @@ using System.Threading;
 public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
+    List<Request> requestList = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
 
     SatManager satMan;
@@ -23,7 +24,15 @@ public class CommsSim : MonoBehaviour, ICommunicate
         if (comms.Node.Active == false)
             return;
 
-        comms.Node.Communicate(request);
+        if(comms.Node.IsBusy == false)
+        {
+            comms.Node.Communicate(request);
+        } else
+        {
+            requestList.Add(request);
+        }
+
+        
     }
 
     public void Send(uint? nextHop, Request request)
@@ -149,5 +158,13 @@ public class CommsSim : MonoBehaviour, ICommunicate
         }
 
         
+    }
+
+    public void FetchNextRequest()
+    {
+        if(requestList.Count > 0) { 
+            comms.Node.Communicate(requestList[0]);
+            requestList.RemoveAt(0);
+        }
     }
 }
