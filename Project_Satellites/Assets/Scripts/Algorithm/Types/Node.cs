@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading;using System.Timers;
-
 public class Node : INode
 {
     public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT };
@@ -11,6 +10,7 @@ public class Node : INode
     public override List<uint?> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
     public override Vector3 Position { get; set; }
     public override Vector3 TargetPosition { get; set; }
+
     public override bool Active
     {
         get 
@@ -36,10 +36,6 @@ public class Node : INode
     public override NodeState State { get; set; }
     public override Router Router { get; set; }
 
-    private List<Tuple<uint?, uint?>> EdgeSet;
-    private List<Tuple<uint?, uint?>> CurrentKnownEdges = new List<Tuple<uint?, uint?>>();
-    private int LastDiscoverID = -1;
-    private System.Timers.Timer timer;
     private bool active;
 
     public Node(uint? ID, Vector3 position)
@@ -48,7 +44,23 @@ public class Node : INode
         State = Node.NodeState.PASSIVE;
         Position = position;
         Active = true;
+        MainThread();
     }
+    private void MainThread()
+    {
+        new Thread(() =>
+        {
+            while (true)
+            {
+                Thread.Sleep(1000);
+                Request request = CommsModule.FetchNextRequest();
+                if(request != null)
+                {
+                    Communicate(request);
+                }
+            }
+        }).Start();
+    }
    
    
     public override void GenerateRouter()
@@ -65,10 +77,10 @@ public class Node : INode
 
     public override void Communicate(Request request)
     {
-        new Thread(() => {
-
-            
-
+        new Thread(() =>
+        {
+            ThreadCount++;
+            IsBusy = true;
             switch (request.Command)
             {
                 case Request.Commands.Generate:
@@ -82,7 +94,7 @@ public class Node : INode
                 case Request.Commands.Heartbeat:
                     Heartbeat.RespondToHeartbeat(this, request);
                     break;
-                
+
                 case Request.Commands.Ping:
                     Ping.RespondToPing(this, request);
                     break;
@@ -102,7 +114,6 @@ public class Node : INode
 
             if (request.DestinationID != ID)
             {
-                Thread.Sleep(500);
                 if (Router.NetworkMap[ID].Contains(request.DestinationID))
                 {
                     CommsModule.Send(request.DestinationID, request);
@@ -116,11 +127,11 @@ public class Node : INode
 
                     CommsModule.Send(nextHop, request);
                 }
-                return;
             }
+            IsBusy = false;
 
-
+            ThreadCount--;
         }).Start();
-        
+            
     }
 }

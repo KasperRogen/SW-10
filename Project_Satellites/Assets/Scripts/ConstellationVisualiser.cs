@@ -63,10 +63,10 @@ public class ConstellationVisualiser : MonoBehaviour
     void Update()
     {
 
+        reachableSats.Clear();
         //TODO: THIS IS INSANELY EXPENSIVE. SHOULD BE IMPROVED
         foreach (uint? node in comms.Node.Router.NetworkMap[comms.Node.ID])
         {
-            reachableSats.Clear();
             Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.GetComponent<SatelliteComms>().Node.ID == node).transform;
             reachableSats.Add(nodeTransform);
         }
