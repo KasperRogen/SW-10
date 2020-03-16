@@ -11,5 +11,5 @@ public interface ICommunicate
     void Send(uint? nextHop, Response response);
     void Receive(Response response);
     List<uint?> Discover();
-    void FetchNextRequest();
+    Request FetchNextRequest();
 }

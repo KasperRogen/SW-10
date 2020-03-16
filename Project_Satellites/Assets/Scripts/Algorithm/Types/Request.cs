@@ -24,7 +24,7 @@ public class PlanRequest : Request
 
 public class DiscoveryRequest: Request
 {
-    public List<Tuple<uint?, uint?>> EdgeSet { get; set; }
+    public Dictionary<uint?, List<uint?>> EdgeSet { get; set; }
 }
 
 

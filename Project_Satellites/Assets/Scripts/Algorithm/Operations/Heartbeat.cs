@@ -43,6 +43,7 @@ public class Heartbeat
     {
         new Thread(() =>
         {
+            myNode.ThreadCount++;
             if (request.DestinationID != myNode.ID)
                 return;
 
@@ -53,6 +54,8 @@ public class Heartbeat
             response.ResponseCode = Response.ResponseCodes.OK;
             response.MessageIdentifer = request.MessageIdentifer;
             myNode.CommsModule.Send(response.DestinationID, response);
+
+            myNode.ThreadCount--;
         }).Start();
 
     }

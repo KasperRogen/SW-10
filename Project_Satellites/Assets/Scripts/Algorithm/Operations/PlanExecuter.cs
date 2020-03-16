@@ -14,46 +14,60 @@ public class PlanExecuter : MonoBehaviour
     public static void ExecutePlan(INode myNode, PlanRequest request)
     {
 
-        new Thread(delegate ()
+
+        if (request.DestinationID != myNode.ID)
         {
 
-            if (request.DestinationID != myNode.ID) { 
-                
-                return;
-            
-            } else {
+            return;
 
-                myNode.State = Node.NodeState.EXECUTING;
+        }
+        else
+        {
 
-                //Set my targetposition to the position i was assigned in the plan
-                myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
+            myNode.State = Node.NodeState.EXECUTING;
 
-                if (myNode.executingPlan)
-                {
-                    return; // Ignore Execute command if already executing which stops the execute communication loop
-                }
-                else
-                {
-                    myNode.ActivePlan = request.Plan;
-                    myNode.executingPlan = true;
-                }
+            //Set my targetposition to the position i was assigned in the plan
+            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
 
-                if (myNode.Router == null)
-                {
-                    myNode.Router = new Router(request.Plan);
-                }
-
-                uint? nextSeq = myNode.Router.NextSequential(myNode.ID);
-                request.DestinationID = nextSeq;
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-                myNode.CommsModule.Send(nextHop, request);
-
-                myNode.Router.UpdateNetworkMap(request.Plan);
-
+            if (myNode.executingPlan)
+            {
+                return; // Ignore Execute command if already executing which stops the execute communication loop
+            }
+            else
+            {
+                myNode.executingPlan = true;
             }
 
+            if (myNode.Router == null)
+            {
+                myNode.Router = new Router(request.Plan);
+            }
 
-        }).Start();
+            PlanRequest newRequest = new PlanRequest
+            {
+                Command = request.Command,
+                DestinationID = request.DestinationID,
+                SourceID = request.SourceID,
+                MessageIdentifer = request.MessageIdentifer,
+                Plan = request.Plan
+            };
+
+            uint? nextSeq = myNode.Router.NextSequential(myNode.ID);
+
+            newRequest.SourceID = myNode.ID;
+            newRequest.DestinationID = nextSeq;
+            uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+            myNode.CommsModule.Send(nextHop, newRequest);
+
+
+            myNode.ActivePlan = newRequest.Plan;
+
+            myNode.Router.UpdateNetworkMap(newRequest.Plan);
+
+
+
+        }
+
     }
 
 }

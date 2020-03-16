@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading;using System.Timers;
-
 public class Node : INode
 {
     public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT };
@@ -11,6 +10,7 @@ public class Node : INode
     public override List<uint?> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
     public override Vector3 Position { get; set; }
     public override Vector3 TargetPosition { get; set; }
+
     public override bool Active
     {
         get 
@@ -44,8 +44,23 @@ public class Node : INode
         State = Node.NodeState.PASSIVE;
         Position = position;
         Active = true;
-        KnownEdges = new List<Tuple<uint?, uint?>>();
+        MainThread();
     }
+    private void MainThread()
+    {
+        new Thread(() =>
+        {
+            while (true)
+            {
+                Thread.Sleep(1000);
+                Request request = CommsModule.FetchNextRequest();
+                if(request != null)
+                {
+                    Communicate(request);
+                }
+            }
+        }).Start();
+    }
    
    
     public override void GenerateRouter()
@@ -62,9 +77,9 @@ public class Node : INode
 
     public override void Communicate(Request request)
     {
-        new Thread(() => {
-
-
+        new Thread(() =>
+        {
+            ThreadCount++;
             IsBusy = true;
             switch (request.Command)
             {
@@ -79,7 +94,7 @@ public class Node : INode
                 case Request.Commands.Heartbeat:
                     Heartbeat.RespondToHeartbeat(this, request);
                     break;
-                
+
                 case Request.Commands.Ping:
                     Ping.RespondToPing(this, request);
                     break;
@@ -99,7 +114,6 @@ public class Node : INode
 
             if (request.DestinationID != ID)
             {
-                Thread.Sleep(500);
                 if (Router.NetworkMap[ID].Contains(request.DestinationID))
                 {
                     CommsModule.Send(request.DestinationID, request);
@@ -115,8 +129,9 @@ public class Node : INode
                 }
             }
             IsBusy = false;
-            CommsModule.FetchNextRequest();
+
+            ThreadCount--;
         }).Start();
-        
+            
     }
 }

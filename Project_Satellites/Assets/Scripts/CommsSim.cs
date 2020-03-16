@@ -9,8 +9,10 @@ using System.Threading;
 public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
+    public int requestlistcount;
     List<Request> requestList = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
+    public int nodethreads;
 
     SatManager satMan;
     private void Start()
@@ -19,20 +21,20 @@ public class CommsSim : MonoBehaviour, ICommunicate
         satMan = GameObject.FindGameObjectWithTag("SatelliteManager").GetComponent<SatManager>();
     }
 
+    private void Update()
+    {
+        nodethreads = comms.Node.ThreadCount;
+    }
+
     public void Receive(Request request)
     {
+
         if (comms.Node.Active == false)
             return;
 
-        if(comms.Node.IsBusy == false)
-        {
-            comms.Node.Communicate(request);
-        } else
-        {
-            requestList.Add(request);
-        }
+        requestList.Add(request);
+        requestlistcount = requestList.Count;
 
-        
     }
 
     public void Send(uint? nextHop, Request request)
@@ -41,7 +43,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
-        
+
 
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
@@ -56,14 +58,14 @@ public class CommsSim : MonoBehaviour, ICommunicate
     public async Task<Response> SendAsync(uint? nextHop, Request request, int timeout)
     {
 
-        
+
 
         var tcs = new TaskCompletionSource<Response>();
 
 
         void GetResponse(object sender, ResponseEventArgs e)
         {
-            if(e.Response.MessageIdentifer == request.MessageIdentifer)
+            if (e.Response.MessageIdentifer == request.MessageIdentifer)
             {
                 OnResponseReceived -= GetResponse;
                 tcs.SetResult(e.Response);
@@ -73,19 +75,21 @@ public class CommsSim : MonoBehaviour, ICommunicate
         OnResponseReceived += GetResponse;
 
         Send(nextHop, request);
-        
+
         new Thread(() =>
         {
+            comms.Node.ThreadCount++;
             Thread.Sleep(timeout);
             if (tcs.Task.IsCompleted == false)
                 tcs.SetResult(null);
+            comms.Node.ThreadCount--;
         }).Start();
 
         await tcs.Task;
 
         return tcs.Task.Result;
 
-        
+
 
     }
 
@@ -101,7 +105,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
             float dist = System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position);
             float range = Constants.ScaleToSize(comms.CommRadius);
-            if (dist < Constants.ScaleToSize(comms.CommRadius))
+            if (dist < range)
                 commsList.Add(sat);
         }
 
@@ -118,6 +122,9 @@ public class CommsSim : MonoBehaviour, ICommunicate
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
             hop.Node.CommsModule.Receive(response);
+            ActiveCommSat = hop;
+            Thread.Sleep(250);
+            ActiveCommSat = null;
         }
     }
 
@@ -143,28 +150,36 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
 
 
-        if(response.DestinationID == comms.Node.ID)
+        if (response.DestinationID == comms.Node.ID)
         {
             OnResponseReceived?.Invoke(this, new ResponseEventArgs(response));
-        } else
+        }
+        else
         {
-            new Thread(() => 
+            new Thread(() =>
             {
+                comms.Node.ThreadCount++;
                 Thread.Sleep(250);
                 uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
                 Send(nextHop, response);
+                comms.Node.ThreadCount--;
             }).Start();
-            
+
         }
 
-        
+
     }
 
-    public void FetchNextRequest()
+
+    public Request FetchNextRequest()
     {
-        if(requestList.Count > 0) { 
-            comms.Node.Communicate(requestList[0]);
+        if (requestList.Count > 0)
+        {
+            Request request = requestList[0];
             requestList.RemoveAt(0);
+            return request;
         }
+
+        return null;
     }
 }
