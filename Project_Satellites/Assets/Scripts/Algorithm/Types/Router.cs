@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using Dijkstra.NET.Graph;
@@ -90,19 +91,35 @@ public class Router : IRouter
     {
         foreach (ConstellationPlanEntry entry in plan.Entries)
         {
-            List<uint?> neighbors = new List<uint?>();
+            List<Tuple<uint?, float>> neighbors = new List<Tuple<uint?, float>>();
 
             foreach (ConstellationPlanEntry innerEntry in plan.Entries.Where((x) => x != entry))
             {
-                if (Vector3.Distance(entry.Position, innerEntry.Position) < satRange) // 100 = Range for Satellite communication
-                {
+                float dist = Vector3.Distance(entry.Position, innerEntry.Position);
+                if (dist < satRange) // 100 = Range for Satellite communication
+                {
+
                     if (innerEntry.NodeID != null)
-                    neighbors.Add(innerEntry.NodeID);
+                    neighbors.Add(new Tuple<uint?, float>(innerEntry.NodeID, dist));
                 }
             }
 
+            //Order sats by distance to myself
+            neighbors = neighbors.OrderBy(sat => sat.Item2).ToList();
+
+            int desiredSatNum = 2;
+
             if(entry.NodeID != null)
-                NetworkMap[entry.NodeID] = neighbors;
+            {
+                if (neighbors.Count > 2)
+                {
+                    NetworkMap[entry.NodeID] = neighbors.GetRange(0, desiredSatNum).Select(sat => sat.Item1).ToList();
+                } else
+                {
+                    NetworkMap[entry.NodeID] = neighbors.Select(sat => sat.Item1).ToList();
+                }
+            }
+                
         }
 
         UpdateGraph();
