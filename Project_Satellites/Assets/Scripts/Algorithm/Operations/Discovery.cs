@@ -64,7 +64,7 @@ public class Discovery
         if (alteredSet || newKnowledge)
         {
             request.SourceID = MyNode.ID;
-            request.DestinationID = MyNode.Router.NextSequential(MyNode.ID);
+            request.DestinationID = MyNode.Router.NextSequential(MyNode.ID, request.SenderID);
             uint? nextHop = MyNode.Router.NextHop(MyNode.ID, request.DestinationID);
             MyNode.CommsModule.Send(nextHop, request);
         }

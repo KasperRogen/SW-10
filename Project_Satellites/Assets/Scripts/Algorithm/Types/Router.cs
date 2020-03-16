@@ -26,13 +26,17 @@ public class Router : IRouter
         }
         UpdateNetworkMap(plan);
     }
+    // Returns next sequential neighbour node based on who sent a request.
+    // The other neighbour is then returned in order to send the message "forward".
+    public uint? NextSequential(uint? source, uint? sender)
+    {
+        return NetworkMap[source].Where(x => x != sender).ToList()[0];
+    }
+
+    // Returns next sequential neighbour node based on current plan.
+    // Always sends clockwise or counterclockwise (cant remember which one).
     public uint? NextSequential(uint? source, ConstellationPlan plan)
     {
-        Vector3 Vb = new Vector3(0, -1, 0);
-        Vector3 Va = new Vector3(1, 0, 0);
-        Vector3 Vn = new Vector3(0, 0, 1);
-        double angle = System.Math.Atan2(Vector3.Dot(Vector3.Cross(Vb, Va), Vn), Vector3.Dot(Va, Vb));
-
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
         ConstellationPlanEntry sourceEntry = plan.Entries.Single(x => x.NodeID == source);
         List<ConstellationPlanEntry> neighbourEntries = plan.Entries.Where(x => NetworkMap[source].Contains(x.NodeID)).ToList();

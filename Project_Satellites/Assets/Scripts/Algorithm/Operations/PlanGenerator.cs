@@ -66,14 +66,8 @@ public class PlanGenerator
                 }
             }
 
-            PlanRequest newRequest = new PlanRequest()
-            {
-                Command = request.Command,
-                MessageIdentifer = request.MessageIdentifer,
-                Plan = request.Plan,
-                SourceID = request.SourceID,
-                DestinationID = request.DestinationID
-            };
+            PlanRequest newRequest = request.DeepCopy();
+            newRequest.SenderID = myNode.ID;
 
                 //If we have made any changes to the plan
             if (newPlan != null && newPlan != newRequest.Plan)
@@ -104,7 +98,7 @@ public class PlanGenerator
                 myNode.State = Node.NodeState.PASSIVE;
 
                 //Pass the plan to the next sequential node
-                uint? nextSeq = myNode.Router.NextSequential(myNode.ID);
+                uint? nextSeq = myNode.Router.NextSequential(myNode.ID, request.SenderID);
                 newRequest.DestinationID = nextSeq;
 
                 if (myNode.Router.NetworkMap[myNode.ID].Contains(nextSeq))
