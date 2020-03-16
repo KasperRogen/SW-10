@@ -26,49 +26,19 @@ public class Router : IRouter
         }
         UpdateNetworkMap(plan);
     }
-    public uint? NextSequential(uint? source)
+    public uint? NextSequential(uint? source, ConstellationPlan plan)
     {
-        List<uint?> nodes = new List<uint?>();
-        List<uint?> lastNodes = new List<uint?>();
-        NetworkMap[source].ForEach(node => nodes.Add(node));
-        nodes.Add(source);
+        Vector3 Vb = new Vector3(0, -1, 0);
+        Vector3 Va = new Vector3(1, 0, 0);
+        Vector3 Vn = new Vector3(0, 0, 1);
+        double angle = System.Math.Atan2(Vector3.Dot(Vector3.Cross(Vb, Va), Vn), Vector3.Dot(Va, Vb));
 
-
-        do
-        {
-            //Store the nodes i could reach before this pass
-            lastNodes.Clear();
-            nodes.ForEach(node => lastNodes.Add(node));
-            List<uint?> newNodes = new List<uint?>();
-
-            //Add the nodes my nodes can reach as nodes i can reach
-            foreach(uint? node in nodes)
-            {
-                NetworkMap[node].ForEach(newNode => newNodes.Add(newNode));
-            }
-            nodes.AddRange(newNodes);
-            
-            nodes = nodes.Distinct().ToList();
-            nodes = nodes.OrderBy((x) => x).ToList();
-            lastNodes = lastNodes.Distinct().ToList();
-            lastNodes = lastNodes.OrderBy((x) => x).ToList();
-
-            //Repeat the process untill no new nodes were added in a pass
-        } while (nodes.TrueForAll(node => lastNodes.Contains(node)) == false);
-        nodes = nodes.OrderBy((x) => x).ToList();
-        uint? destination;
-
-        //If i am last node in the list, take the first index
-        if (source == nodes[nodes.Count-1])
-        {
-            destination = nodes[0];
-        }
-        else
-        {
-            //Else take the next
-            destination = nodes[nodes.IndexOf(source) +1];
-        }
-        return destination;
+        // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
+        ConstellationPlanEntry sourceEntry = plan.Entries.Single(x => x.NodeID == source);
+        List<ConstellationPlanEntry> neighbourEntries = plan.Entries.Where(x => NetworkMap[source].Contains(x.NodeID)).ToList();
+        Vector3 normalVector = Vector3.Normalize(Vector3.Cross(neighbourEntries[0].Position, neighbourEntries[1].Position));
+        List<double> angles = neighbourEntries.Select(x => BackendHelpers.NumericsVectorSignedAngle(sourceEntry.Position, x.Position, normalVector)).ToList();
+        return neighbourEntries[angles.IndexOf(angles.Max())].NodeID;
     }
     public override uint? NextHop(uint? source, uint? destination)
     {
