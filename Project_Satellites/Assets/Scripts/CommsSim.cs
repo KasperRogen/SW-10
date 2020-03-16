@@ -98,16 +98,21 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         List<SatelliteComms> commsList = new List<SatelliteComms>();
 
-        foreach (SatelliteComms sat in satMan.satellites)
-        {
-            if (sat.Node.ID == comms.Node.ID)
-                continue;
+        int desiredSatCount = 2;
 
+
+        foreach (SatelliteComms sat in satMan.satellites
+            .Where(sat => sat.Node.ID != comms.Node.ID)
+            .OrderBy(sat => System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position))
+            .ToList().GetRange(0, desiredSatCount))
+        {
             float dist = System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position);
             float range = Constants.ScaleToSize(comms.CommRadius);
             if (dist < range)
                 commsList.Add(sat);
         }
+
+        List<uint?> newCommsList = new List<uint?>();
 
 
         return commsList.Select(col => col.Node.ID).ToList();
