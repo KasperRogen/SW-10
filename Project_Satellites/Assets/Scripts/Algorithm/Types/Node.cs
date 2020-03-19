@@ -5,7 +5,7 @@ using System.Numerics;
 using System.Threading;using System.Timers;
 public class Node : INode
 {
-    public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT };
+    public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT, DISCOVERY };
     public override uint? ID { get; set; }
     public override List<uint?> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
     public override Vector3 Position { get; set; }
@@ -65,7 +65,11 @@ public class Node : INode
    
     public override void GenerateRouter()
     {
-        Router = new Router(ActivePlan);
+        Router = new Router(this, ActivePlan);
+        if(Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(ID) == false)
+        {
+            Router.NetworkMap.Entries.Add(new NetworkMapEntry(ID, new List<uint?>(), Position));
+        }
     }
 
 
@@ -77,34 +81,42 @@ public class Node : INode
 
     public override void Communicate(Request request)
     {
-        new Thread(() =>
+        new Thread(async () =>
         {
             ThreadCount++;
             IsBusy = true;
             switch (request.Command)
             {
-                case Request.Commands.Generate:
+                case Request.Commands.GENERATE:
                     PlanGenerator.GeneratePlan(this, request as PlanRequest);
                     break;
 
-                case Request.Commands.Execute:
+                case Request.Commands.EXECUTE:
                     PlanExecuter.ExecutePlan(this, request as PlanRequest);
                     break;
 
-                case Request.Commands.Heartbeat:
+                case Request.Commands.HEARTBEAT:
                     Heartbeat.RespondToHeartbeat(this, request);
                     break;
 
-                case Request.Commands.Ping:
+                case Request.Commands.PING:
                     Ping.RespondToPing(this, request);
                     break;
 
-                case Request.Commands.DetectFailure:
+                case Request.Commands.DETECTFAILURE:
                     FailureDetection.DetectFailure(this, request as DetectFailureRequest);
                     break;
 
-                case Request.Commands.Discover:
-                    Discovery.Discover(this, request as DiscoveryRequest);
+                case Request.Commands.DISCOVER:
+                    await Discovery.DiscoverAsync(this, request as DiscoveryRequest);
+                    break;
+
+                case Request.Commands.POSITION:
+                    Router.UpdateGraph();
+                    PositionResponse response = new PositionResponse(ID, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer, Position);
+                    Router.AddNodeToGraph(request.SourceID);
+                    uint? nextHop = Router.NextHop(ID, response.DestinationID);
+                    CommsModule.Send(nextHop, response);
                     break;
 
                 default:
@@ -114,7 +126,7 @@ public class Node : INode
 
             if (request.DestinationID != ID)
             {
-                if (Router.NetworkMap[ID].Contains(request.DestinationID))
+                if (Router.NetworkMap.GetEntryByID(ID).Neighbours.Contains(request.DestinationID))
                 {
                     CommsModule.Send(request.DestinationID, request);
                 }

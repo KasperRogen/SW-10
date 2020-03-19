@@ -40,7 +40,7 @@ public class PlanExecuter : MonoBehaviour
 
             if (myNode.Router == null)
             {
-                myNode.Router = new Router(request.Plan);
+                myNode.Router = new Router(myNode, request.Plan);
             }
 
 

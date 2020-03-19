@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
+using System.Numerics;
 
 public class Response 
 {
@@ -48,4 +48,20 @@ public class FailureDetectionResponse : Response
         this.MessageIdentifer = _messageIdentifier;
         this.DeadEdges = _deadEdges;
     }
+
+}
+
+public class PositionResponse : Response
+{
+
+    public Vector3 Position { get; set; }
+    public PositionResponse(uint? _sourceID, uint? _destinationID, ResponseCodes _responsecode, string _messageIdentifier, Vector3 _position)
+    {
+        this.SourceID = _sourceID;
+        this.DestinationID = _destinationID;
+        this.ResponseCode = _responsecode;
+        this.MessageIdentifer = _messageIdentifier;
+        Position = _position;
+    }
+
 }

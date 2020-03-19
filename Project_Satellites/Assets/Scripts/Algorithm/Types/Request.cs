@@ -6,7 +6,7 @@ public class Request
 {
     public enum Commands
     {
-        Generate, Execute, DetectFailure, Heartbeat, Ping, Discover
+        GENERATE, EXECUTE, DETECTFAILURE, HEARTBEAT, PING, DISCOVER, POSITION
     }
 
     public uint? SourceID { get; set; }
@@ -25,6 +25,13 @@ public class Request
         SenderID = other.SenderID;
         Command = other.Command;
         MessageIdentifer = string.Copy(other.MessageIdentifer);
+    }
+
+    public Request(uint? sourceID, uint? destinationID, Commands command)
+    {
+        SourceID = sourceID;
+        DestinationID = destinationID;
+        Command = command;
     }
 
     public Request DeepCopy()
@@ -53,10 +60,10 @@ public class PlanRequest : Request
 
 public class DiscoveryRequest : Request
 {
-    public Dictionary<uint?, List<uint?>> EdgeSet { get; set; }
+    public NetworkMap EdgeSet { get; set; }
 
     public DiscoveryRequest(DiscoveryRequest other) : base(other) {
-        EdgeSet = other.EdgeSet.ToDictionary(x => x.Key, x => x.Value.ToList());
+        EdgeSet = other.EdgeSet; //TODO: THIS MIGHT BREAK STUFF
     }
 
     public DiscoveryRequest() {
@@ -87,4 +94,5 @@ public class DetectFailureRequest : Request
     {
         return new DetectFailureRequest(this);
     }
+
 }

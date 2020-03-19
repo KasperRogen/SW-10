@@ -84,7 +84,7 @@ public class PlanGenerator
             //Start executing the plan
             if (newRequest.Plan.LastEditedBy == myNode.ID && myNode.justChangedPlan == false)
             {
-                newRequest.Command = Request.Commands.Execute;
+                newRequest.Command = Request.Commands.EXECUTE;
                 newRequest.DestinationID = myNode.ID;
                 newRequest.SourceID = myNode.ID;
 
@@ -101,7 +101,7 @@ public class PlanGenerator
                 uint? nextSeq = myNode.Router.NextSequential(myNode.ID, request.SenderID);
                 newRequest.DestinationID = nextSeq;
 
-                if (myNode.Router.NetworkMap[myNode.ID].Contains(nextSeq))
+                if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq))
                 {
                     myNode.CommsModule.Send(nextSeq, newRequest);
                 }

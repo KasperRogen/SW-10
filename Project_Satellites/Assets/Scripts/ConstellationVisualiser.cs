@@ -65,13 +65,19 @@ public class ConstellationVisualiser : MonoBehaviour
 
         reachableSats.Clear();
         //TODO: THIS IS INSANELY EXPENSIVE. SHOULD BE IMPROVED
-        foreach (uint? node in comms.Node.Router.NetworkMap[comms.Node.ID])
+
+        if (comms.Node.Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(comms.Node.ID))
         {
-            Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.GetComponent<SatelliteComms>().Node.ID == node).transform;
-            reachableSats.Add(nodeTransform);
+            foreach (uint? node in comms.Node.Router?.NetworkMap?.GetEntryByID(comms.Node.ID).Neighbours)
+            {
+                Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.GetComponent<SatelliteComms>().Node.ID == node).transform;
+                reachableSats.Add(nodeTransform);
+            }
+
         }
 
-        
+
+
         //comms.ReachableSats = comms.Node.router.NetworkMap?[comms.Node].Select(node => BackendHelpers.Vector3FromPosition(node.Position)).ToList();
 
 
@@ -140,7 +146,15 @@ public class ConstellationVisualiser : MonoBehaviour
             }
             else
             {
-                commLineRenderes[id].GetComponent<LineRenderer>().SetPosition(1, reachableSats[i].position);
+                Vector3 commLineDir = new Vector3
+                {
+                    x = reachableSats[i].position.x - comms.Node.Position.X,
+                    y = reachableSats[i].position.y - comms.Node.Position.Y,
+                    z = reachableSats[i].position.z - comms.Node.Position.Z,
+                };
+
+                //TODO: something something vector3.right to commlinedir
+                commLineRenderes[id].GetComponent<LineRenderer>().SetPosition(1, reachableSats[i].position/* + commLineDir.*/);
             }
 
         }
@@ -191,6 +205,7 @@ public class ConstellationVisualiser : MonoBehaviour
         //commLine.Value.GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
         //}
 
+
         if (comms.Node.GeneratingPlan != null)
         {
 
@@ -219,4 +234,8 @@ public class ConstellationVisualiser : MonoBehaviour
         Gizmos.DrawWireSphere(transform.position, Constants.ScaleToSize(comms.CommRadius));
     }
 
+    public static void DrawLine(Vector3 pos, Vector3 dir)
+    {
+        Debug.DrawRay(pos, dir, Color.red, 1);
+    }
 }

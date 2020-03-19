@@ -104,7 +104,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         foreach (SatelliteComms sat in satMan.satellites
             .Where(sat => sat.Node.ID != comms.Node.ID)
             .OrderBy(sat => System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position))
-            .ToList().GetRange(0, desiredSatCount))
+            .ToList())
         {
             float dist = System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position);
             float range = Constants.ScaleToSize(comms.CommRadius);

@@ -100,7 +100,7 @@ public class TargetConstellationGenerator : MonoBehaviour
         //Send the targetconstellation to random sat
         INode targetSat = Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node;
         PlanRequest request = new PlanRequest {
-            Command = Request.Commands.Generate,
+            Command = Request.Commands.GENERATE,
             SourceID = targetSat.ID,
             DestinationID = targetSat.ID,
             SenderID = targetSat.ID,
@@ -207,7 +207,7 @@ public class TargetConstellationGenerator : MonoBehaviour
                 //Send the targetconstellation to random sat
                 INode targetSat = Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node;
                 PlanRequest request = new PlanRequest();
-                request.Command = Request.Commands.Generate;
+                request.Command = Request.Commands.GENERATE;
                 request.DestinationID = targetSat.ID;
                 request.Plan = plan;
                 request.MessageIdentifer = "42";
