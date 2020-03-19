@@ -34,7 +34,11 @@ public class ConstellationPlanEntry : IComparable
 
     public override string ToString()
     {
-        return $"{{Position: {Position}, NodeID: {NodeID}}}";
+        return $"{{(ConstellationPlanEntry)\n" +
+            $"Position: {Position},\n" +
+            $"NodeID: {NodeID},\n" +
+            $"Fields: {{\n" +
+            $"{Fields.Select(x => $"{x.Key}: {x.Value}" ).Aggregate((x, y) => x+ ",\n" + y)}}}}}";
     }
 
     public ConstellationPlanEntry DeepCopy()

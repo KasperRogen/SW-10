@@ -22,4 +22,10 @@ public class ConstellationPlanField : IComparable
     {
         return new ConstellationPlanField(string.Copy(Key), Value, compareFunction);
     }
+
+    public override string ToString() {
+        return $"{{(ConstellationPlanField)\n" +
+            $"Key: {Key},\n" +
+            $"Value: {Value}}}";
+    }
 }
