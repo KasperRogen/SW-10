@@ -20,6 +20,7 @@ public class PlanGenerator
         {
             myNode.executingPlan = false;
             myNode.State = Node.NodeState.PLANNING;
+            myNode.GeneratingPlan = request.Plan;
 
             ConstellationPlan newPlan = null;
 

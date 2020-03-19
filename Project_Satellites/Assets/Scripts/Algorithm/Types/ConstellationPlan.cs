@@ -47,4 +47,11 @@ public class ConstellationPlan
         copy.LastEditedBy = LastEditedBy;
         return copy;
     }
+
+    public override string ToString() {
+        return $"{{(ConstellationPlan)\n" +
+            $"LastEditedBy: {LastEditedBy},\n" +
+            $"Entries: [\n" +
+            $"{Entries.Select(x => x.ToString()).Aggregate((x, y) => x + ",\n" + y)}]}}";
+    }
 }
