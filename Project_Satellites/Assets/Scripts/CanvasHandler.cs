@@ -33,7 +33,7 @@ public class CanvasHandler : MonoBehaviour
         {
             SatelliteButtons.SetActive(true);
             CallingNode = hit.transform.gameObject;
-        } else if (Input.GetMouseButtonDown(0) &&
+        } else if (Input.GetMouseButtonDown(1) &&
           Physics.SphereCast(Camera.main.ScreenPointToRay(Input.mousePosition), 0.33f, out hit, float.MaxValue, BackGroundLayer, QueryTriggerInteraction.Ignore))
         {
             Debug.Log("Spawning");

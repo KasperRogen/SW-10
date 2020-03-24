@@ -166,6 +166,11 @@ public class Router : IRouter
             nodeToNodeIDMapping[entry.ID] = nodeID;
         }
 
+        if(node.ID == 12)
+        {
+            int i = 0;
+        }
+
         foreach (NetworkMapEntry entry in NetworkMap.Entries)
         {
             foreach (uint? neighbor in entry.Neighbours)

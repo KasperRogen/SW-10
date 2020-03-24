@@ -25,7 +25,7 @@ public class ConstellationGenerator : MonoBehaviour
         node.TargetPosition = node.Position;
         node.CommsModule = sim;
 
-        satellite.name = "P(" + 0 + "), S(" + satIndex + ")";
+        satellite.name = "P(" + 0 + "), S(" + (satIndex-1) + ")";
         satellite.GetComponent<SatelliteComms>().Node = node;
         node.GenerateRouter();
     }
