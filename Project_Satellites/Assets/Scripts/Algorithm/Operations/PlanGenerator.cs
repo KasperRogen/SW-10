@@ -99,7 +99,7 @@ public class PlanGenerator
                 myNode.State = Node.NodeState.PASSIVE;
 
                 //Pass the plan to the next sequential node
-                uint? nextSeq = myNode.Router.NextSequential(myNode.ID, request.SenderID);
+                uint? nextSeq = myNode.Router.NextSequential(myNode);
                 newRequest.DestinationID = nextSeq;
 
                 if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq))

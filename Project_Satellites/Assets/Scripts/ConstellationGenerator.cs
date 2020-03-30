@@ -24,6 +24,7 @@ public class ConstellationGenerator : MonoBehaviour
         INode node = new Node((uint?)satIndex, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
         node.TargetPosition = node.Position;
         node.CommsModule = sim;
+        node.PlaneNormalDir = BackendHelpers.NumericsVectorFromUnity(Vector3.up);
 
         satellite.name = "P(" + 0 + "), S(" + (satIndex-1) + ")";
         satellite.GetComponent<SatelliteComms>().Node = node;
@@ -70,6 +71,7 @@ public class ConstellationGenerator : MonoBehaviour
                 INode node = new Node(j, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
                 node.TargetPosition = node.Position;
                 node.CommsModule = sim;
+                node.PlaneNormalDir = BackendHelpers.NumericsVectorFromUnity(Vector3.up);
 
                 satellite.name = "P(" + i + "), S(" + j + ")";
                 satellite.GetComponent<SatelliteComms>().Node = node;

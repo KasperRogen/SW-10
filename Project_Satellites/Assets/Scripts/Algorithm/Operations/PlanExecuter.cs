@@ -47,7 +47,7 @@ public class PlanExecuter : MonoBehaviour
             PlanRequest newRequest = request.DeepCopy();
 
             newRequest.SenderID = myNode.ID;
-            uint? nextSeq = myNode.Router.NextSequential(myNode.ID, request.SenderID);
+            uint? nextSeq = myNode.Router.NextSequential(myNode);
 
             newRequest.SourceID = myNode.ID;
             newRequest.DestinationID = nextSeq;

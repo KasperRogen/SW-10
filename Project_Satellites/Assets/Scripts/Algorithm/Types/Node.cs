@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
-using System.Threading;using System.Timers;
+using System.Threading;
+using System.Timers;
 public class Node : INode
 {
     public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT, DISCOVERY };
@@ -10,6 +11,8 @@ public class Node : INode
     public override List<uint?> ReachableNodes { get; set; } // Future Work: Make part of the algorithm that reachable nodes are calculated based on position and a communication distance
     public override Vector3 Position { get; set; }
     public override Vector3 TargetPosition { get; set; }
+
+    public string LastDiscoveryID = "";
 
     public override bool Active
     {
@@ -45,7 +48,8 @@ public class Node : INode
         Position = position;
         Active = true;
         MainThread();
-    }
+    }
+
     private void MainThread()
     {
         new Thread(() =>
@@ -112,11 +116,8 @@ public class Node : INode
                     break;
 
                 case Request.Commands.POSITION:
-                    Router.UpdateGraph();
                     PositionResponse response = new PositionResponse(ID, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer, Position);
-                    Router.AddNodeToGraph(request.SourceID);
-                    uint? nextHop = Router.NextHop(ID, response.DestinationID);
-                    CommsModule.Send(nextHop, response);
+                    CommsModule.Send(request.SourceID, response);
                     break;
 
                 default:

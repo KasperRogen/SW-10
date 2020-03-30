@@ -1,10 +1,11 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Linq;
 
 public class NetworkMap
 {
-    public List<NetworkMapEntry> Entries { get; set; }
+    public List<NetworkMapEntry> Entries { get; set;}
 
     public NetworkMap()
     {

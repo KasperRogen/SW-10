@@ -27,62 +27,75 @@ public class Discovery
     /// </summary>
     public static async System.Threading.Tasks.Task DiscoverAsync(INode MyNode, DiscoveryRequest request)
     {
-        if(MyNode.State != Node.NodeState.DISCOVERY)
+        if(MyNode.LastDiscoveryID != request.MessageIdentifer)
         {
-            MyNode.Router.NetworkMap.Entries.ForEach(mapEntry => mapEntry.Neighbours.Clear());
+            MyNode.LastDiscoveryID = request.MessageIdentifer;
+            MyNode.Router.NetworkMap.Entries.Clear();
+            MyNode.Router.NetworkMap.Entries.Add(new NetworkMapEntry(MyNode.ID, MyNode.Position));
+            MyNode.Router.ClearNetworkMap();
         }
 
 
         bool newKnowledge = false;
         bool alteredSet = false;
 
+        
 
         //Request all nodes reachable by the commsModule
         List<uint?> ReachableNodes = MyNode.CommsModule.Discover();
-
-        MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.AddRange(ReachableNodes);
         
-        request.EdgeSet.Entries.Add(new NetworkMapEntry(MyNode.ID, new List<uint?>(), MyNode.Position));
-
-        foreach (var set in request.EdgeSet.Entries)
+        //Add these reachable nodes to my neighbours
+        MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.AddRange(ReachableNodes);
+        MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours = MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Distinct().ToList();
+        
+        //If the request doesn't contain my node, add it
+        if(request.EdgeSet.Entries.Select(set => set.ID).Contains(MyNode.ID) == false)
         {
-            if(set.Neighbours.Any(neighbour => MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Contains(neighbour) == false)){
-                if(MyNode.Router.NetworkMap.Entries.Any(entry => entry.ID == set.ID) == false)
-                {
-                    MyNode.Router.NetworkMap.Entries.Add(set);
-                } else
-                {
-                    MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours.AddRange(set.Neighbours);
-                }
-
-                MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours = MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours.Distinct().ToList();
-                newKnowledge = true;
-                continue;
-            }
+            request.EdgeSet.Entries.Add(new NetworkMapEntry(MyNode.ID, new List<uint?>(), MyNode.Position));
         }
 
-        foreach (uint? node in MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours)
+
+        NetworkMap networkmap = MyNode.Router.NetworkMap;
+
+
+        //Add any nodes not in my networkmap
+        foreach(NetworkMapEntry set in request.EdgeSet.Entries)
         {
-            
-            //Only add it to the list if it doesn't already exist
-            if (request.EdgeSet.GetEntryByID(MyNode.ID).Neighbours.Contains(node) == false)
+            if(networkmap.Entries.Select(entry => entry.ID).Contains(set.ID) == false)
             {
-                request.EdgeSet.GetEntryByID(MyNode.ID).Neighbours.Add(node);
+                //I don't have this node as entry in my networkmap, add it
+                networkmap.Entries.Add(set);
+                newKnowledge = true;
+            } else if(set.Neighbours.Any(neighbour => networkmap.GetEntryByID(set.ID).Neighbours.Contains(neighbour) == false)) //If we already know of it, add any neighbours
+            {
+                //A new neighbour is identified, for a node in my networkmap, add it.
+                networkmap.GetEntryByID(set.ID).Neighbours.AddRange(set.Neighbours);
+                networkmap.GetEntryByID(set.ID).Neighbours = networkmap.GetEntryByID(set.ID).Neighbours.Distinct().ToList();
+                newKnowledge = true;
+            }
+
+        }
+
+        foreach(NetworkMapEntry entry in networkmap.Entries)
+        {
+            if(request.EdgeSet.Entries.Select(set => set.ID).Contains(entry.ID) == false)
+            {
+                //The request edgeset doesn't contain this entry. add it
+                request.EdgeSet.Entries.Add(entry);
+                alteredSet = true;
+            } else if(entry.Neighbours.Any(neighbour => request.EdgeSet.GetEntryByID(entry.ID).Neighbours.Contains(neighbour) == false))
+            {
+                //The request edgeset doesn't have this given neighbour for the entry. add it
+                request.EdgeSet.GetEntryByID(entry.ID).Neighbours.AddRange(entry.Neighbours);
+                request.EdgeSet.GetEntryByID(entry.ID).Neighbours = request.EdgeSet.GetEntryByID(entry.ID).Neighbours.Distinct().ToList();
                 alteredSet = true;
             }
+
         }
 
-        foreach(uint? node in request.EdgeSet.GetEntryByID(MyNode.ID).Neighbours)
-        {
-            if(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Contains(node) == false)
-            {
-                MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Add(node);
-                newKnowledge = true;
-            }
-        }
 
-        MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours = MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Distinct().ToList();
 
+        //For each of my neighbours
         foreach (uint? neighbour in MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours)
         {
             if(MyNode.Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(neighbour) == false)
@@ -96,7 +109,9 @@ public class Discovery
                 uint? nextHop = MyNode.Router.NextHop(MyNode.ID, positionRequest.DestinationID);
                 PositionResponse response = await MyNode.CommsModule.SendAsync(nextHop, positionRequest, 300000) as PositionResponse;
                 Vector3 position = response.Position;
-                MyNode.Router.NetworkMap.Entries.Add(new NetworkMapEntry(neighbour, position));
+                NetworkMapEntry neigbourEntry = new NetworkMapEntry(neighbour, position);
+                MyNode.Router.NetworkMap.Entries.Add(neigbourEntry);
+                request.EdgeSet.Entries.Add(neigbourEntry);
                 newKnowledge = true;
                 alteredSet = true;
             }
@@ -111,7 +126,7 @@ public class Discovery
         {
             DiscoveryRequest newRequest = request.DeepCopy();
 
-            newRequest.DestinationID = MyNode.Router.NextSequential(MyNode, MyNode.ActivePlan);
+            newRequest.DestinationID = MyNode.Router.NextSequential(MyNode);
             newRequest.SourceID = MyNode.ID;
             uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
             MyNode.CommsModule.Send(nextHop, newRequest);

@@ -6,4 +6,5 @@ public abstract class IRouter
 
     public abstract uint? NextHop(uint? source, uint? destination);
     public abstract void UpdateNetworkMap(ConstellationPlan plan);
+    public abstract void ClearNetworkMap();
 }

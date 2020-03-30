@@ -49,7 +49,10 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
             ActiveCommSat = hop;
             Thread.Sleep(250);
+
+            if(request.MessageIdentifer == null)
             request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
+
             hop.Node.CommsModule.Receive(request);
             ActiveCommSat = null;
         }
