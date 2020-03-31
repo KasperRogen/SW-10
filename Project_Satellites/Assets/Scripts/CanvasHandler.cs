@@ -7,6 +7,7 @@ public class CanvasHandler : MonoBehaviour
     LineRenderer lineRenderer;
     public static CanvasHandler _instance;
     public LayerMask SatelliteLayer;
+    public LayerMask BackGroundLayer;
     public GameObject CallingNode { get; set; }
     public GameObject SatelliteButtons;
 
@@ -27,14 +28,19 @@ public class CanvasHandler : MonoBehaviour
     {
         RaycastHit hit;
 
-        if (Input.GetMouseButton(1) &&
+        if (Input.GetMouseButtonDown(1) &&
           Physics.SphereCast(Camera.main.ScreenPointToRay(Input.mousePosition), 0.33f, out hit, float.MaxValue, SatelliteLayer, QueryTriggerInteraction.Ignore))
         {
             SatelliteButtons.SetActive(true);
             CallingNode = hit.transform.gameObject;
+        } else if (Input.GetMouseButtonDown(1) &&
+          Physics.SphereCast(Camera.main.ScreenPointToRay(Input.mousePosition), 0.33f, out hit, float.MaxValue, BackGroundLayer, QueryTriggerInteraction.Ignore))
+        {
+            Debug.Log("Spawning");
+            ConstellationGenerator.InstantiateSatellite(hit.point);
         }
 
-        lineRenderer.SetPositions(new Vector3[] { Vector3.up * 10,
+            lineRenderer.SetPositions(new Vector3[] { Vector3.up * 10,
             CallingNode == null ? Vector3.up * 10 : CallingNode.transform.position + Vector3.up * 10 });
     }
 

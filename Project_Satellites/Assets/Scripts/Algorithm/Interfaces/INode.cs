@@ -18,6 +18,8 @@ public abstract class INode
     public bool IsBusy { get; set; }
     public bool executingPlan;
     public bool justChangedPlan;
+    public string LastDiscoveryID;
+    public Vector3 PlaneNormalDir { get; set; }
 
     public abstract void GenerateRouter();
     public abstract void Communicate(Request message);

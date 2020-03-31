@@ -40,14 +40,14 @@ public class PlanExecuter : MonoBehaviour
 
             if (myNode.Router == null)
             {
-                myNode.Router = new Router(request.Plan);
+                myNode.Router = new Router(myNode, request.Plan);
             }
 
 
             PlanRequest newRequest = request.DeepCopy();
 
             newRequest.SenderID = myNode.ID;
-            uint? nextSeq = myNode.Router.NextSequential(myNode.ID, request.SenderID);
+            uint? nextSeq = myNode.Router.NextSequential(myNode);
 
             newRequest.SourceID = myNode.ID;
             newRequest.DestinationID = nextSeq;

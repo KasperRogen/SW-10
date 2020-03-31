@@ -18,11 +18,11 @@ public class Heartbeat
         myNode.State = Node.NodeState.HEARTBEAT;
 
         //Loop through all immidate neightbours
-        foreach (uint? node in myNode.Router.NetworkMap[myNode.ID].ToList()) //TODO: Should just communicate with reachable nodes instead of using networkmap
+        foreach (uint? node in myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.ToList()) //TODO: Should just communicate with reachable nodes instead of using networkmap
         {
             Request request = new Request();
             request.SourceID = myNode.ID;
-            request.Command = Request.Commands.Heartbeat;
+            request.Command = Request.Commands.HEARTBEAT;
             request.DestinationID = node;
 
             Response response = await myNode.CommsModule.SendAsync(node, request, 5000);

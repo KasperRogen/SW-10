@@ -22,7 +22,7 @@ public class FailureDetection
         if (myNode.ID == request.DestinationID)
         {
             //If we don't have a live already, we assume the connection has been determined to be bad
-            if(myNode.Router.NetworkMap[myNode.ID].Contains(request.NodeToCheck) == false)// TODO: Probably safer check here
+            if(myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(request.NodeToCheck) == false)// TODO: Probably safer check here
             {
                 Response response = new Response();
                 response.DestinationID = request.SourceID;
@@ -37,7 +37,7 @@ public class FailureDetection
                 Request ping = new Request();
                 ping.SourceID = myNode.ID;
                 ping.DestinationID = request.NodeToCheck;
-                ping.Command = Request.Commands.Ping;
+                ping.Command = Request.Commands.PING;
                 Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000);
 
                 FailureDetectionResponse requestResponse;
@@ -72,12 +72,12 @@ public class FailureDetection
         myNode.Router.DeleteEdge(myNode.ID, failedNode); //TODO: Should we do this already???
 
         //Get a immidiate neighbour to the failed node
-        uint? neighbourID = myNode.Router.NetworkMap[failedNode][0]; //TODO: what if we are only neighbour? what if there are more? or a best?
+        uint? neighbourID = myNode.Router.NetworkMap.GetEntryByID(failedNode).Neighbours[0]; //TODO: what if we are only neighbour? what if there are more? or a best?
         uint? nextHop = myNode.Router.NextHop(myNode.ID, neighbourID);
 
         DetectFailureRequest request = new DetectFailureRequest
         {
-            Command = Request.Commands.DetectFailure,
+            Command = Request.Commands.DETECTFAILURE,
             DestinationID = neighbourID,
             SourceID = myNode.ID,
             NodeToCheck = failedNode,
@@ -88,12 +88,12 @@ public class FailureDetection
 
         if(response.ResponseCode == Response.ResponseCodes.ERROR)
         {
-            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(10, 7.152f);
+            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(SatManager._instance.satellites.Count, 7.152f);
             PlanRequest recoveryRequest = new PlanRequest
             {
                 SourceID = myNode.ID,
                 DestinationID = myNode.ID,
-                Command = Request.Commands.Generate,
+                Command = Request.Commands.GENERATE,
                 Plan = RecoveryPlan,
             };
 

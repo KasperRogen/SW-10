@@ -1100,6 +1100,9 @@ MonoBehaviour:
   SatelliteLayer:
     serializedVersion: 2
     m_Bits: 256
+  BackGroundLayer:
+    serializedVersion: 2
+    m_Bits: 512
   SatelliteButtons: {fileID: 83798367}
 --- !u!1 &1143321174
 GameObject:

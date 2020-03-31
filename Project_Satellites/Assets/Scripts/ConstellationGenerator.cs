@@ -6,6 +6,7 @@ using UnityEngine;
 public class ConstellationGenerator : MonoBehaviour
 {
     public GameObject SatellitePrefab;
+    private static GameObject _satellitePrefab;
 
     [Header("Constellation Settings"), Space(10)]
     [Min(1)] public int PlaneNum;
@@ -13,11 +14,28 @@ public class ConstellationGenerator : MonoBehaviour
     [Min(0)] public float SatelliteAltitude;
 
 
+    public static void InstantiateSatellite(Vector3 instantiationPoisition)
+    {
+        GameObject satellite = Instantiate(_satellitePrefab, instantiationPoisition, Quaternion.identity);
+        CommsSim sim = satellite.AddComponent<CommsSim>();
 
+        int satIndex = SatManager._instance.satellites.Count;
+
+        INode node = new Node((uint?)satIndex, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
+        node.TargetPosition = node.Position;
+        node.CommsModule = sim;
+        node.PlaneNormalDir = BackendHelpers.NumericsVectorFromUnity(Vector3.up);
+
+        satellite.name = "P(" + 0 + "), S(" + (satIndex-1) + ")";
+        satellite.GetComponent<SatelliteComms>().Node = node;
+        node.GenerateRouter();
+    }
 
     // Start is called before the first frame update
     void Start()
     {
+        _satellitePrefab = SatellitePrefab; 
+
         Constants.EarthRadius = (GetComponent<SphereCollider>().radius * transform.localScale.x);
         float constellationAltitude = Constants.EarthRadius + Constants.ScaleToSize(SatelliteAltitude);
         float constellationRadius = constellationAltitude / 2;
@@ -53,6 +71,7 @@ public class ConstellationGenerator : MonoBehaviour
                 INode node = new Node(j, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
                 node.TargetPosition = node.Position;
                 node.CommsModule = sim;
+                node.PlaneNormalDir = BackendHelpers.NumericsVectorFromUnity(Vector3.up);
 
                 satellite.name = "P(" + i + "), S(" + j + ")";
                 satellite.GetComponent<SatelliteComms>().Node = node;
