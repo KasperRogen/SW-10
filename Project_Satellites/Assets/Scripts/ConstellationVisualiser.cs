@@ -81,16 +81,15 @@ public class ConstellationVisualiser : MonoBehaviour
 
         //If i have an entry in the neworkmap
 
-        var q = comms.Node.Router.NetworkMap.Entries.Where(entry => KnownNeighbours.Contains(entry.ID)).Select(node => node.ID).ToList();
+        List<uint?> newNeighbourEntries = comms.Node.Router.NetworkMap.Entries.Where(entry => KnownNeighbours.Contains(entry.ID)).Select(node => node.ID).ToList();
 
-        bool a = KnownNeighbours.Equals(comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.ID)?.Neighbours) == false;
-        bool b = (KnownNeighbourEntryIDs.OrderBy(x => x.Value).SequenceEqual(q.OrderBy(x => x.Value))) == false;
-        bool Hasupdated = a
-            || b
-            || comms.Node.State == Node.NodeState.EXECUTING;
+        bool hasNewNeighbours = KnownNeighbours.Equals(comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.ID)?.Neighbours) == false;
+        bool hasNewNeighbourEntry = (KnownNeighbourEntryIDs.OrderBy(x => x.Value).SequenceEqual(newNeighbourEntries.OrderBy(x => x.Value))) == false;
+
+        bool hasupdated = hasNewNeighbours || hasNewNeighbourEntry || comms.Node.State == Node.NodeState.EXECUTING;
 
 
-        if (Hasupdated)
+        if (hasupdated)
         {
             KnownNeighbours = comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.ID)?.Neighbours;
             KnownNeighbourEntryIDs = (comms.Node.Router.NetworkMap.Entries.Where(entry => KnownNeighbours.Contains(entry.ID)).Select(node => node.ID)).ToList();
