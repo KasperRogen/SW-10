@@ -54,4 +54,9 @@ public class ConstellationPlan
             $"Entries: [\n" +
             $"{Entries.Select(x => x.ToString()).Aggregate((x, y) => x + ",\n" + y)}]}}";
     }
+
+    public float Cost()
+    {
+        return Entries.Select(x => x.Fields["DeltaV"].Value).Sum();
+    }
 }
