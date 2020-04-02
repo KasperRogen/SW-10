@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using UnityEngine;
 using System;
+using System.Threading.Tasks;
 
 public class FailureDetection
 {
@@ -38,7 +39,8 @@ public class FailureDetection
                 ping.SourceID = myNode.ID;
                 ping.DestinationID = request.NodeToCheck;
                 ping.Command = Request.Commands.PING;
-                Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000);
+                //Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000);
+                Response pingResponse = await AttemptRequest(myNode, ping, 5);
 
                 FailureDetectionResponse requestResponse;
                 if (pingResponse == null || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
@@ -61,7 +63,27 @@ public class FailureDetection
 
     }
 
+    private async static Task<Response> AttemptRequest(INode myNode, Request request, int attempts)
+    {
+        Response response = null;
+        int sleepTime = 1000;
 
+        for (int i = 0; i < attempts; i++) {
+            response = await myNode.CommsModule.SendAsync(request.DestinationID, request, 1000);
+
+            if (response == null || response.ResponseCode == Response.ResponseCodes.ERROR)
+            {
+                Thread.Sleep(sleepTime);
+                sleepTime *= sleepTime; // Increase sleep time exponentially and keep attempting
+            }
+            else
+            {
+                break; // Escape loop if we got a response
+            }
+        }
+
+        return response;
+    }
 
     /// <summary>Should be used on the node when it detects a failure
     /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
