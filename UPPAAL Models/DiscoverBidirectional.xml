@@ -1,0 +1,715 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>const int N = 10; // Number of satellites
+
+int[0,2] convergeCasts = 0;
+
+clock time;
+
+typedef int[0, N-1] UID;
+typedef struct { int a; int b; } edge;
+
+UID start; // The satellite that initiates
+
+chan transmit[N];
+
+meta UID sender; // For saving who send a massage
+
+meta int[0, N] len;
+meta edge edgeList[N];
+
+
+
+
+
+
+
+</declaration>
+	<template>
+		<name>RingNode</name>
+		<parameter>const UID ID</parameter>
+		<declaration>clock t;
+bool verified;
+
+UID convergeID;
+
+int[0, N] mapLen = 0;
+edge networkMap[N];
+
+UID senderId;
+UID oldSender;
+bool snd = false;
+
+int IntClamp(int n)
+{
+  if (n &lt; 0) { return N - 1; }
+  else { return n % N; }
+}
+
+int leftHop(){
+  int nextId = IntClamp(ID + 1);
+  return nextId;
+}
+
+int rightHop()
+{
+  int nextId = IntClamp(ID - 1);
+  return nextId; 
+}
+
+int nextHop()
+{
+  int hop;
+  if (senderId == 0 &amp;&amp; ID == (N-1))
+  {
+    hop = rightHop();
+  }
+  else if (senderId == (N-1) &amp;&amp; ID == 0)
+  {
+    hop = leftHop();
+  }
+  else if (senderId &gt; ID)
+  {
+    hop = rightHop();
+  }
+  else if (senderId &lt; ID)
+  {
+    hop = leftHop();
+  }
+
+  return hop;
+}
+
+// Adds a node's two neighbours to its networkMap as its start knowledge.
+void AddNeighbours() 
+{
+  int nb1 = IntClamp(ID + 1);
+  int nb2 = IntClamp(ID - 1);
+
+  edge e1 = {ID, nb1};
+  edge e2 = {ID, nb2};
+
+  networkMap[mapLen++] = e1;
+  networkMap[mapLen++] = e2;
+}
+
+// Checks if a edge is equal to another edge - {1,2} and {2,1} are considered equal.
+bool EdgeEqual(edge e1, edge e2)
+{
+  return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
+}
+
+bool ExistsInNetwork(edge e)
+{
+  int i;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    bool check = EdgeEqual(e, networkMap[i]);
+    if (check == true) { return true; } 
+  }
+  return false;
+}
+
+// Checks if a given edge exist in networkMap and stops if its true.
+void TryAdd(edge e)
+{
+  bool exist = ExistsInNetwork(e);
+
+  if (exist == false) { networkMap[mapLen++] = e; }
+  else { return; }
+  
+}
+
+// Look at the meta edgeList, add all edges that we it didn't have knowledge about
+void ProcessEdges()
+{
+  int i;
+  for (i=0; i&lt;len; i++)
+  {
+    TryAdd(edgeList[i]);
+  }
+}
+
+// Reset the edgeList and len meta variable and fills it with this nodes edge knowledge
+void TransmitEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    edgeList[len++] = networkMap[i];
+  }
+}
+
+bool Verify()
+{
+  int i;
+
+  for (i=0; i&lt;N; i++)
+  {
+    edge e = {i, IntClamp(i+1)};
+    bool exist = ExistsInNetwork(e);
+
+    if (exist == false) { return false; }
+  }
+
+  return true;
+}</declaration>
+		<location id="id0" x="-272" y="170">
+			<name x="-289" y="136">Initiate</name>
+			<committed/>
+		</location>
+		<location id="id1" x="-442" y="170">
+			<name x="-467" y="187">Receive</name>
+		</location>
+		<location id="id2" x="-68" y="0">
+			<name x="-51" y="-17">ConvergeCast</name>
+			<label kind="invariant" x="-51" y="0">t &lt;= 2</label>
+		</location>
+		<location id="id3" x="-272" y="272">
+			<name x="-289" y="289">Start</name>
+			<urgent/>
+		</location>
+		<location id="id4" x="-68" y="-340">
+			<committed/>
+		</location>
+		<location id="id5" x="-442" y="0">
+			<name x="-493" y="-8">Wait</name>
+			<label kind="invariant" x="-501" y="8">t &lt;= 1</label>
+		</location>
+		<location id="id6" x="-442" y="-119">
+			<name x="-493" y="-136">Relay</name>
+			<label kind="invariant" x="-493" y="-119">t &lt;= 1</label>
+			<urgent/>
+		</location>
+		<location id="id7" x="-238" y="0">
+			<committed/>
+		</location>
+		<location id="id8" x="-442" y="-340">
+			<committed/>
+		</location>
+		<location id="id9" x="-442" y="-442">
+			<name x="-459" y="-476">Done</name>
+			<committed/>
+		</location>
+		<location id="id10" x="-612" y="170">
+			<committed/>
+		</location>
+		<location id="id11" x="-374" y="-510">
+			<name x="-348" y="-518">Wrong</name>
+		</location>
+		<location id="id12" x="-510" y="-510">
+			<name x="-578" y="-518">Verified</name>
+		</location>
+		<init ref="id3"/>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="-399" y="-136">transmit[ID]?</label>
+			<label kind="assignment" x="-408" y="-119">ProcessEdges()</label>
+			<nail x="-272" y="-119"/>
+			<nail x="-272" y="-51"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-433" y="-186">transmit[nextHop()]!</label>
+			<label kind="assignment" x="-433" y="-246">sender = ID,
+t = 0,
+TransmitEdges()</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-229" y="-102">snd == true</label>
+			<nail x="-238" y="-280"/>
+			<nail x="-391" y="-280"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="-399" y="-17">transmit[ID]?</label>
+			<label kind="assignment" x="-408" y="0">ProcessEdges()</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-323" y="-399">transmit[rightHop()]!</label>
+			<label kind="assignment" x="-323" y="-382">convergeCasts++,
+sender = ID</label>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-408" y="-595">transmit[ID]?</label>
+			<nail x="-408" y="-578"/>
+			<nail x="-340" y="-578"/>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="-544" y="-595">transmit[ID]?</label>
+			<nail x="-544" y="-578"/>
+			<nail x="-476" y="-578"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-612" y="-476">verified == true</label>
+			<nail x="-510" y="-442"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id11"/>
+			<label kind="guard" x="-365" y="-476">verified == false</label>
+			<nail x="-374" y="-442"/>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-518" y="-391">snd == true</label>
+			<label kind="assignment" x="-552" y="-408">verified = Verify()</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id10"/>
+			<label kind="guard" x="-561" y="-340">snd == false</label>
+			<nail x="-612" y="-340"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-561" y="170">snd = true</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-195" y="-25">snd == false</label>
+			<label kind="assignment" x="-195" y="0">t = 0,
+snd = true</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-399" y="170">start != ID</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id6"/>
+			<label kind="guard" x="-433" y="-76">t &gt;= 1</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="-433" y="51">transmit[ID]?</label>
+			<label kind="assignment" x="-433" y="68">t= 0,
+senderId = sender,
+ProcessEdges()</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id4"/>
+			<label kind="guard" x="-59" y="-195">t &gt;= 2</label>
+			<label kind="synchronisation" x="-59" y="-135">transmit[leftHop()]!</label>
+			<label kind="assignment" x="-59" y="-178">TransmitEdges(),
+sender = ID</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-221" y="170">start == ID</label>
+			<nail x="-68" y="170"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id0"/>
+			<label kind="assignment" x="-263" y="212">AddNeighbours()</label>
+		</transition>
+	</template>
+	<template>
+		<name>RingNodeOld</name>
+		<parameter>const UID ID</parameter>
+		<declaration>clock t;
+
+int[0,2] rounds = 0;
+
+int[0, N] mapLen = 0;
+edge networkMap[N];
+
+bool convergeCast;
+bool relay;
+bool receive;
+
+UID senderID;
+UID convergeID;
+
+bool verified;
+
+bool snd = false;
+
+int IntClamp(int n)
+{
+  if (n &lt; 0) { return N - 1; }
+  else { return n % N; }
+}
+
+int leftHop(){
+  int nextId = IntClamp(ID + 1);
+  return nextId;
+}
+
+int rightHop()
+{
+  int nextId = IntClamp(ID - 1);
+  return nextId; 
+}
+
+int nextHop()
+{
+  int hop;
+  if (senderID == 0 &amp;&amp; ID == (N-1))
+  {
+    hop = rightHop();
+  }
+  else if (senderID == (N-1) &amp;&amp; ID == 0)
+  {
+    hop = leftHop();
+  }
+  else if (senderID &gt; ID)
+  {
+    hop = rightHop();
+  }
+  else if (senderID &lt; ID)
+  {
+    hop = leftHop();
+  }
+
+  return hop;
+}
+
+void Converge()
+{
+  if (receive == true)
+  {
+    convergeCast = true;
+    receive = false;
+  }
+  else if (relay == true &amp;&amp; ID &gt; convergeID)
+  {
+    convergeCast = true;
+    relay = false;
+  }
+}
+
+void UpdateRelay()
+{
+  if (relay == true)
+  {
+    relay = false; receive = true;
+  }
+  else if (receive == true)
+  {
+    receive = false; receive = true;
+  }
+}
+
+
+// Adds a node's two neighbours to its networkMap as its start knowledge.
+void Initialize() 
+{
+  int nb1 = IntClamp(ID + 1);
+  int nb2 = IntClamp(ID - 1);
+
+  edge e1 = {ID, nb1};
+  edge e2 = {ID, nb2};
+
+  networkMap[mapLen++] = e1;
+  networkMap[mapLen++] = e2;
+
+  if (start == ID) {convergeCast = true;}
+  else {receive = true;}
+}
+
+// Checks if a edge is equal to another edge - {1,2} and {2,1} are considered equal.
+bool EdgeEqual(edge e1, edge e2)
+{
+  return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
+}
+
+bool ExistsInNetwork(edge e)
+{
+  int i;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    bool check = EdgeEqual(e, networkMap[i]);
+    if (check == true) { return true; } 
+  }
+  return false;
+}
+
+// Checks if a given edge exist in networkMap and stops if its true.
+void TryAdd(edge e)
+{
+  bool exist = ExistsInNetwork(e);
+
+  if (exist == false) { networkMap[mapLen++] = e; }
+  else { return; }
+  
+}
+
+// Look at the meta edgeList, add all edges that we it didn't have knowledge about
+void ProcessEdges()
+{
+  int i;
+  for (i=0; i&lt;len; i++)
+  {
+    TryAdd(edgeList[i]);
+  }
+}
+
+// Reset the edgeList and len meta variable and fills it with this nodes edge knowledge
+void TransmitEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    edgeList[len++] = networkMap[i];
+  }
+}
+
+bool Verify()
+{
+  int i;
+
+  for (i=0; i&lt;N; i++)
+  {
+    edge e = {i, IntClamp(i+1)};
+    bool exist = ExistsInNetwork(e);
+
+    if (exist == false) { return false; }
+  }
+
+  return true;
+}</declaration>
+		<location id="id13" x="-544" y="-68">
+			<urgent/>
+		</location>
+		<location id="id14" x="-374" y="-68">
+			<urgent/>
+		</location>
+		<location id="id15" x="306" y="-68">
+			<committed/>
+		</location>
+		<location id="id16" x="68" y="34">
+			<committed/>
+		</location>
+		<location id="id17" x="68" y="-238">
+			<committed/>
+		</location>
+		<location id="id18" x="-170" y="-68">
+			<urgent/>
+		</location>
+		<location id="id19" x="-170" y="-238">
+			<committed/>
+		</location>
+		<location id="id20" x="-170" y="102">
+		</location>
+		<location id="id21" x="442" y="-68">
+			<label kind="invariant" x="425" y="-42">t &lt;= 1</label>
+		</location>
+		<location id="id22" x="442" y="-340">
+			<committed/>
+		</location>
+		<location id="id23" x="612" y="-340">
+			<name x="637" y="-348">Done</name>
+		</location>
+		<init ref="id13"/>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id23"/>
+			<label kind="guard" x="484" y="-365">rounds == 2</label>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id14"/>
+			<label kind="guard" x="331" y="-365">rounds &lt; 2</label>
+			<nail x="-374" y="-340"/>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id22"/>
+			<label kind="guard" x="450" y="-238">t &gt;= 1</label>
+			<label kind="assignment" x="450" y="-221">UpdateRelay(),
+rounds++</label>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id15"/>
+			<label kind="synchronisation" x="119" y="-263">transmit[rightHop()]!</label>
+			<label kind="assignment" x="127" y="-238">sender = ID</label>
+			<nail x="306" y="-238"/>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id21"/>
+			<label kind="synchronisation" x="552" y="-101">transmit[ID]?</label>
+			<label kind="assignment" x="552" y="-76">convergeID = sender,
+ProcessEdges(),
+Converge()</label>
+			<nail x="544" y="0"/>
+			<nail x="544" y="-136"/>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id21"/>
+			<label kind="assignment" x="348" y="-68">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id15"/>
+			<label kind="synchronisation" x="34" y="102">transmit[ID]?</label>
+			<label kind="assignment" x="-34" y="119">senderID = sender, ProcessEdges()</label>
+			<nail x="306" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-102" y="-93">ID &lt; convergeID</label>
+			<nail x="68" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id15"/>
+			<label kind="synchronisation" x="-17" y="-195">transmit[nextHop()]!</label>
+			<label kind="assignment" x="-42" y="-170">sender = ID, TransmitEdges()</label>
+			<nail x="-170" y="-170"/>
+			<nail x="272" y="-170"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id14"/>
+			<label kind="assignment" x="-493" y="-68">Initialize()</label>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id15"/>
+			<label kind="guard" x="127" y="8">ID &gt; convergeID</label>
+			<label kind="assignment" x="127" y="34">convergeCast = true,
+relay = false</label>
+			<nail x="272" y="34"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id16"/>
+			<label kind="synchronisation" x="-102" y="8">transmit[ID]?</label>
+			<label kind="assignment" x="-119" y="34">convergeID = sender,
+ProcessEdges()</label>
+			<nail x="-170" y="34"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id17"/>
+			<label kind="synchronisation" x="-110" y="-280">transmit[leftHop()]!</label>
+			<label kind="assignment" x="-144" y="-263">sender = ID, TransmitEdges()</label>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id20"/>
+			<label kind="guard" x="-306" y="110">receive == true</label>
+			<nail x="-340" y="-34"/>
+			<nail x="-340" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-306" y="-93">relay == true</label>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-323" y="-263">convergeCast == true</label>
+			<nail x="-340" y="-102"/>
+			<nail x="-340" y="-238"/>
+		</transition>
+	</template>
+	<template>
+		<name>Discovery</name>
+		<location id="id24" x="-272" y="0">
+			<committed/>
+		</location>
+		<location id="id25" x="-136" y="0">
+		</location>
+		<init ref="id24"/>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id25"/>
+			<label kind="select" x="-229" y="-42">i : UID</label>
+			<label kind="assignment" x="-230" y="-25">start = i</label>
+		</transition>
+	</template>
+	<system>system RingNode, Discovery;</system>
+	<queries>
+		<query>
+			<formula>A[] time &lt;= (N+3)</formula>
+			<comment>Da tiden kan gå uendeligt i Verified/Wrong, ville alle noder's tid være større eller lig med N+3. Kan det verificiers på en anden måde måske? stopwatches?</comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= (N+2)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= (N+1)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; exists (i : UID) RingNode(i).Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNode(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] convergeCasts &lt;= 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNode(i).Verified || RingNode(i).Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) (RingNode(i).Verified || RingNode(i).Wrong)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (forall (i: UID) !RingNode(i).Wrong &amp;&amp; !RingNode(i).Verified)</formula>
+			<comment>tjekker om deadlock kan opstå før vi er i Wrong eller Verified.</comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock</formula>
+			<comment>Tjekker deadlock. Er opfyldt da systemet er deadlocked når alle noder er Verified</comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+	</queries>
+</nta>

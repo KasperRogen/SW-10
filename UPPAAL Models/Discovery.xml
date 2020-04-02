@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>const int N = 11; // Number of satellites
+
+clock time;
+
+typedef int[0, N-1] UID;
+typedef struct { int a; int b; } edge;
+
+UID start; // The satellite that initiates
+
+chan transmit[N];
+
+meta int[0, N] len;
+meta edge edgeList[N];
+
+
+
+
+
+
+
+</declaration>
+	<template>
+		<name>RingNode</name>
+		<parameter>const UID ID</parameter>
+		<declaration>clock t;
+
+int[0, N] mapLen = 0;
+edge networkMap[N];
+
+bool secondPass = false;
+
+UID nextHop () {
+  return (ID + 1) % N;
+}
+
+int IntClamp(int n)
+{
+  if (n &lt; 0) { return N - 1; }
+  else { return n % N; }
+}
+
+// Adds a node's two neighbours to its networkMap as its start knowledge.
+void AddNeighbours() 
+{
+  int nb1 = IntClamp(ID + 1);
+  int nb2 = IntClamp(ID - 1);
+
+  edge e1 = {ID, nb1};
+  edge e2 = {ID, nb2};
+
+  networkMap[mapLen++] = e1;
+  networkMap[mapLen++] = e2;
+}
+
+// Checks if a edge is equal to another edge - {1,2} and {2,1} are considered equal.
+bool EdgeEqual(edge e1, edge e2)
+{
+  return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
+}
+
+bool ExistsInNetwork(edge e)
+{
+  int i;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    bool check = EdgeEqual(e, networkMap[i]);
+    if (check == true) { return true; } 
+  }
+  return false;
+}
+
+// Checks if a given edge exist in networkMap and stops if its true.
+void TryAdd(edge e)
+{
+  bool exist = ExistsInNetwork(e);
+
+  if (exist == false) { networkMap[mapLen++] = e; }
+  else { return; }
+  
+}
+
+// Look at the meta edgeList, add all edges that we it didn't have knowledge about
+void ProcessEdges()
+{
+  int i;
+  for (i=0; i&lt;len; i++)
+  {
+    TryAdd(edgeList[i]);
+  }
+}
+
+// Reset the edgeList and len meta variable and fills it with this nodes edge knowledge
+void TransmitEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    edgeList[len++] = networkMap[i];
+  }
+}
+
+// Build the expected complete network map and check if they all exist in the node's network map
+bool Verify()
+{
+  int i;
+
+  for (i=0; i&lt;N; i++)
+  {
+    edge e = {i, IntClamp(i+1)};
+    bool exist = ExistsInNetwork(e);
+
+    if (exist == false) { return false; }
+  }
+
+  return true;
+}</declaration>
+		<location id="id0" x="-68" y="0">
+			<name x="-136" y="-8">Receive</name>
+		</location>
+		<location id="id1" x="136" y="0">
+			<name x="110" y="17">Process</name>
+			<urgent/>
+		</location>
+		<location id="id2" x="306" y="0">
+			<name x="280" y="17">Transmit</name>
+			<label kind="invariant" x="289" y="34">t &lt;= 1</label>
+		</location>
+		<location id="id3" x="544" y="0">
+			<urgent/>
+		</location>
+		<location id="id4" x="-68" y="102">
+			<urgent/>
+		</location>
+		<location id="id5" x="34" y="-102">
+			<name x="17" y="-238">Start</name>
+			<urgent/>
+		</location>
+		<location id="id6" x="34" y="-204">
+			<committed/>
+		</location>
+		<location id="id7" x="714" y="0">
+			<name x="731" y="-8">Done</name>
+			<committed/>
+		</location>
+		<location id="id8" x="714" y="-102">
+			<name x="688" y="-136">Verified</name>
+		</location>
+		<location id="id9" x="714" y="102">
+			<name x="688" y="119">Wrong</name>
+		</location>
+		<init ref="id6"/>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id2"/>
+			<label kind="guard" x="127" y="-127">start == ID</label>
+			<nail x="306" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="790" y="93">transmit[ID]?</label>
+			<nail x="782" y="136"/>
+			<nail x="782" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id9"/>
+			<label kind="guard" x="722" y="42">Verify() == false</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="790" y="-110">transmit[ID]?</label>
+			<nail x="782" y="-136"/>
+			<nail x="782" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id8"/>
+			<label kind="guard" x="722" y="-60">Verify() == true</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id7"/>
+			<label kind="guard" x="561" y="-25">secondPass == true</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="guard" x="161" y="76">secondPass == false</label>
+			<nail x="544" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id5"/>
+			<label kind="assignment" x="42" y="-170">AddNeighbours()</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-59" y="-127">start != ID</label>
+			<nail x="-68" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id0"/>
+			<label kind="assignment" x="-59" y="51">secondPass = true</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="guard" x="408" y="-59">t &gt;= 1</label>
+			<label kind="synchronisation" x="365" y="-25">transmit[nextHop()]!</label>
+			<label kind="assignment" x="374" y="-42">TransmitEdges()</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="assignment" x="178" y="-42">ProcessEdges(),
+t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="0" y="-25">transmit[ID]?</label>
+		</transition>
+	</template>
+	<template>
+		<name>Discovery</name>
+		<location id="id10" x="-272" y="0">
+			<committed/>
+		</location>
+		<location id="id11" x="-136" y="0">
+		</location>
+		<init ref="id10"/>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="select" x="-229" y="-42">i : UID</label>
+			<label kind="assignment" x="-230" y="-25">start = i</label>
+		</transition>
+	</template>
+	<system>system RingNode, Discovery;</system>
+	<queries>
+		<query>
+			<formula>A[] time &lt;= (N * 2)</formula>
+			<comment>Tjekker om tiden altid er mindre ind N*2. Da tiden kan gå uendeligt i Verified, ville alle noder's tid være større eller lig med N*2. Kan det verificiers på en anden måde måske? stopwatches?</comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= N * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= N * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= (N * 2) -1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; exists (i : UID) RingNode(i).Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNode(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>forall (i : UID) RingNode(i).Start --&gt; RingNode(i).Done</formula>
+			<comment>Virker ikke, ville være fedt hvis man kunne tjekke noget ligende.</comment>
+		</query>
+		<query>
+			<formula>RingNodeUni(1).Start --&gt; RingNode(1).Done</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (forall (i: UID) !RingNode(i).Wrong &amp;&amp; !RingNode(i).Verified)</formula>
+			<comment>tjekker om deadlock kan opstå før vi er i Wrong eller Verified.</comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock</formula>
+			<comment>Tjekker deadlock. Er opfyldt da systemet er deadlocked når alle noder er Verified</comment>
+		</query>
+	</queries>
+</nta>
