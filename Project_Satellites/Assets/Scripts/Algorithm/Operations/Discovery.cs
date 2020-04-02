@@ -38,7 +38,7 @@ public class Discovery
 
         bool newKnowledge = false;
         bool alteredSet = false;
-
+        MyNode.State = Node.NodeState.DISCOVERY;
         
 
         //Request all nodes reachable by the commsModule
@@ -131,5 +131,8 @@ public class Discovery
             uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
             MyNode.CommsModule.Send(nextHop, newRequest);
         }
+
+
+        MyNode.State = Node.NodeState.PASSIVE;
     }
 }

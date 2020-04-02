@@ -12,6 +12,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
     public int requestlistcount;
     List<Request> requestList = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
+    ConstellationVisualiser visualiser;
     public int nodethreads;
 
     SatManager satMan;
@@ -19,6 +20,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
     {
         comms = GetComponent<SatelliteComms>();
         satMan = GameObject.FindGameObjectWithTag("SatelliteManager").GetComponent<SatManager>();
+        visualiser = GetComponent<ConstellationVisualiser>();
     }
 
     private void Update()
@@ -32,8 +34,12 @@ public class CommsSim : MonoBehaviour, ICommunicate
         if (comms.Node.Active == false)
             return;
 
-        requestList.Add(request);
-        requestlistcount = requestList.Count;
+        new Thread(() =>
+        {
+            Thread.Sleep(250);
+            requestList.Add(request);
+            requestlistcount = requestList.Count;
+        }).Start();
 
     }
 
@@ -43,12 +49,13 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
+        satMan.SentMessages.Add(new Tuple<Vector3, Vector3>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position)));
+
 
 
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
             ActiveCommSat = hop;
-            Thread.Sleep(250);
 
             if(request.MessageIdentifer == null)
             request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
@@ -61,7 +68,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
     public async Task<Response> SendAsync(uint? nextHop, Request request, int timeout)
     {
 
-
+        
 
         var tcs = new TaskCompletionSource<Response>();
 
@@ -121,17 +128,20 @@ public class CommsSim : MonoBehaviour, ICommunicate
         return commsList.Select(col => col.Node.ID).ToList();
     }
 
+
+
     public void Send(uint? nextHop, Response response)
     {
         Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : Response" + "\t dst: " + response.DestinationID);
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
+        satMan.SentMessages.Add(new Tuple<Vector3, Vector3>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position)));
+
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
             hop.Node.CommsModule.Receive(response);
             ActiveCommSat = hop;
-            Thread.Sleep(250);
             ActiveCommSat = null;
         }
     }
@@ -158,22 +168,25 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
 
 
-        if (response.DestinationID == comms.Node.ID)
+
+        new Thread(() =>
         {
-            OnResponseReceived?.Invoke(this, new ResponseEventArgs(response));
-        }
-        else
-        {
-            new Thread(() =>
+            Thread.Sleep(450);
+
+            if (response.DestinationID == comms.Node.ID)
+            {
+                OnResponseReceived?.Invoke(this, new ResponseEventArgs(response));
+            }
+            else
             {
                 comms.Node.ThreadCount++;
-                Thread.Sleep(250);
                 uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
                 Send(nextHop, response);
                 comms.Node.ThreadCount--;
-            }).Start();
 
-        }
+            }
+        }).Start();
+
 
 
     }

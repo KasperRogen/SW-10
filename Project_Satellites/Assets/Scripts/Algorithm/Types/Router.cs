@@ -41,11 +41,13 @@ public class Router : IRouter
     // Always sends clockwise or counterclockwise (cant remember which one).
     public uint? NextSequential(INode source)
     {
+
+
         Vector3 EarthPosition = Vector3.Zero;
         
         if(NetworkMap.GetEntryByID(source.ID).Neighbours.Count < 2)
         {
-            throw new Exception("Not enough nodes in neighbours");
+            return null;
         }
 
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
@@ -76,17 +78,21 @@ public class Router : IRouter
         }
 
 
-
+        if(neighbourEntries.Any() == false || neighbourEntries.Count <= 1)
+        {
+            return null;
+        }
 
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
         Vector3 normalVector = source.PlaneNormalDir;
         List<double> angles = neighbourEntries.Select(x => BackendHelpers.NumericsVectorSignedAngle(source.Position, x.Position, normalVector)).ToList();
-        return neighbourEntries[angles.IndexOf(angles.Where(angle => angle > 0).Min())].ID;
-
-
-
-
-        return currentBestEntry.ID;
+        if(angles.Any(angle => angle > 0))
+        {
+            return neighbourEntries[angles.IndexOf(angles.Where(angle => angle > 0).Min())].ID;
+        } else
+        {
+            return null;
+        }
     }
 
     public void AddNodeToGraph(uint? neighbour)
@@ -143,7 +149,6 @@ public class Router : IRouter
             //Order sats by distance to myself
             neighbors = neighbors.OrderBy(sat => sat.Item2).ToList();
 
-            int desiredSatNum = 2;
 
             if (entry.NodeID != null)
             {

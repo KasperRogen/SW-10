@@ -29,19 +29,25 @@ public class CanvasHandler : MonoBehaviour
         RaycastHit hit;
 
         if (Input.GetMouseButtonDown(1) &&
-          Physics.SphereCast(Camera.main.ScreenPointToRay(Input.mousePosition), 0.33f, out hit, float.MaxValue, SatelliteLayer, QueryTriggerInteraction.Ignore))
+          Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, SatelliteLayer, QueryTriggerInteraction.Ignore))
         {
             SatelliteButtons.SetActive(true);
             CallingNode = hit.transform.gameObject;
-        } else if (Input.GetMouseButtonDown(1) &&
-          Physics.SphereCast(Camera.main.ScreenPointToRay(Input.mousePosition), 0.33f, out hit, float.MaxValue, BackGroundLayer, QueryTriggerInteraction.Ignore))
+        }
+        else if (Input.GetMouseButtonDown(1) && Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, BackGroundLayer, QueryTriggerInteraction.Ignore))
         {
-            Debug.Log("Spawning");
-            ConstellationGenerator.InstantiateSatellite(hit.point);
+            if(CallingNode == null) { 
+                Debug.Log("Spawning");
+                ConstellationGenerator.InstantiateSatellite(hit.point);
+            } else
+            {
+                CallingNode = null;
+                SatelliteButtons.SetActive(false);
+            }
         }
 
-            lineRenderer.SetPositions(new Vector3[] { Vector3.up * 10,
-            CallingNode == null ? Vector3.up * 10 : CallingNode.transform.position + Vector3.up * 10 });
+        lineRenderer.SetPositions(new Vector3[] { Vector3.up * 10,
+        CallingNode == null ? Vector3.up * 10 : CallingNode.transform.position + Vector3.up * 10 });
     }
 
 
@@ -68,10 +74,24 @@ public class CanvasHandler : MonoBehaviour
 
     public void ToggleNode()
     {
-        SatelliteComms comms = CallingNode.GetComponent<SatelliteComms>();
-        comms.Node.Active = !comms.Node.Active;
-        SatelliteButtons.SetActive(false);
-        CallingNode = null;
+        if (CallingNode != null)
+        {
+            SatelliteComms comms = CallingNode.GetComponent<SatelliteComms>();
+            comms.Node.Active = !comms.Node.Active;
+            SatelliteButtons.SetActive(false);
+            CallingNode = null;
+        }
+    }
+
+    public void GenerateNode()
+    {
+        if (CallingNode != null)
+        {
+            SatelliteComms comms = CallingNode.GetComponent<SatelliteComms>();
+            TargetConstellationGenerator.instance.GenerateTargetConstellation(CallingNode.GetComponent<SatelliteComms>().Node.ID);
+            SatelliteButtons.SetActive(false);
+            CallingNode = null;
+        }
     }
 
 

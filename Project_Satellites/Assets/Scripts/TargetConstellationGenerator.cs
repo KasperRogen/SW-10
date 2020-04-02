@@ -29,19 +29,8 @@ public class TargetConstellationGenerator : MonoBehaviour
 
     List<Vector3> TargetPositions = new List<Vector3>();
 
-    private void OnGUI()
-    {
-        if (GUI.Button(new Rect(10, 50, 200, 30), "Generate Target Constellation"))
-        {
-            GenerateTargetConstellation();
-        }
-        GUI.TextField(new Rect(10, 10, 200, 20), "Target Altitude", 25);
-        ConstellationAltitudeInput = GUI.TextField(new Rect(10, 30, 200, 20), ConstellationAltitudeInput, 25);
 
-        GUI.TextField(new Rect(10, 80, 200, 20), CurrentDeltaVSum.ToString(), 25);
-    }
-
-    public void GenerateTargetConstellation()
+    public void GenerateTargetConstellation(uint? RequesterNode)
     {
         System.Random r = new System.Random(RandomSeed);
         float constellationAltitude;
@@ -98,7 +87,7 @@ public class TargetConstellationGenerator : MonoBehaviour
         plan = new ConstellationPlan(entries);
 
         //Send the targetconstellation to random sat
-        INode targetSat = Sats[UnityEngine.Random.Range(0, Sats.Count - 1)].GetComponent<SatelliteComms>().Node;
+        INode targetSat = Sats.Find(node => node.GetComponent<SatelliteComms>().Node.ID == RequesterNode).GetComponent<SatelliteComms>().Node;
         PlanRequest request = new PlanRequest {
             Command = Request.Commands.GENERATE,
             SourceID = targetSat.ID,
@@ -108,10 +97,6 @@ public class TargetConstellationGenerator : MonoBehaviour
             Plan = plan
         };
         targetSat.Communicate(request);
-
-        if (autotestRunning == false && EnableAutotest == true)
-            StartCoroutine(RestartGenerator());
-        
 
     }
 
@@ -123,31 +108,7 @@ public class TargetConstellationGenerator : MonoBehaviour
     }
 
 
-    IEnumerator RestartGenerator()
-    {
-        autotestRunning = true;
-        yield return new WaitForSeconds(5);
-
-        while (EnableAutotest)
-        {
-            if(nodes.Count == 0)
-                Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
-
-
-            if (plan != null && plan.Entries.TrueForAll(entry => nodes.Any(node => System.Numerics.Vector3.Distance(node.Position, entry.Position) < 0.1f))) {
-                int newSeed = RandomSeed;
-                do
-                {
-                    newSeed = (int)(DateTime.Now.DayOfYear * DateTime.Now.Minute * Time.time * UnityEngine.Random.Range(1, 5));
-                } while (RandomSeed == newSeed);
-
-                RandomSeed = newSeed;
-                GenerateTargetConstellation();
-            }
-            yield return new WaitForSeconds(1);
-        }
-        autotestRunning = false;
-    }
+    
 
     // Start is called before the first frame update
     void Start()
@@ -156,7 +117,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
         Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));
 
-        StartCoroutine(RestartGenerator());
+
 
         instance = this;
     }
