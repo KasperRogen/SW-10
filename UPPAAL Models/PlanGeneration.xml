@@ -15,6 +15,8 @@ UID start; // The satellite that initiates
 
 typedef struct { int x; int y; int z; } pos;
 
+int[0, 4] comms;
+
 // ---- Positions -----
 const pos sp1 = {8,0,8};
 const pos sp2 = {8,0,-8};
@@ -55,35 +57,6 @@ int Distance(pos p1, pos p2)
   int distInt = fint(dist);
   return  distInt;
 }
-
-/*
-void ProcessPlan()
-{
-  int tempCost = 999;
-  int tempPos = -1;
-  
-  int i;
-  for (i=0; i&lt;N; i++)
-  {
-    if (chosenPos[i] == -1)
-    {
-      int costToPos = Distance(startPositions[node], targetPositions[i]);
-      if (costToPos &lt; tempCost)
-      {
-        tempCost = costToPos;
-        tempPos = i;
-      }
-    }
-  }
-
-  if (tempPos != -1)
-  {
-    cost = tempCost;
-    chosenPos[tempPos] = ID;
-  }
-
-}
-*/
 
 int minIndex()
 {
@@ -255,6 +228,209 @@ void ProcessPlan()
 		</transition>
 	</template>
 	<template>
+		<name>RingNodeAsync</name>
+		<parameter>const UID ID</parameter>
+		<declaration>clock t;
+
+int cost; // the cost to move to a target position
+
+int possiblePos[N];
+
+UID nextHop() {
+  return (ID + 1) % N;
+}
+
+// Distance between two points
+int Distance(pos p1, pos p2)
+{
+  double a = pow((p2.x - p1.x), 2);
+  double b = pow((p2.y - p1.y), 2);
+  double c = pow((p2.z - p1.z), 2);
+
+  double dist = sqrt(a + b + c);
+  int distInt = fint(dist);
+  return  distInt;
+}
+
+int minIndex()
+{
+  int minVal = 999;
+  int index;
+  
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (possiblePos[i] &lt; minVal  &amp;&amp; possiblePos[i] != -1)
+    {
+      index = i;
+      minVal = possiblePos[i];
+    }
+  }
+  return index;
+}
+
+// check if node with id has already chosen a position
+bool InPlan(int id)
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (id == chosenPos[i]) { return true; }
+  }
+  return false;
+}
+
+// finds the best node for a certain target position
+int BestNode(int index)
+{
+  int bestCost = 999;
+  int bestNode;
+  
+  int i;
+
+  for (i=0; i&lt;N; i++)
+  {
+    bool hasChosen = InPlan(i);
+    if (hasChosen == false)
+    { 
+      int tempCost = Distance(startPositions[i], targetPositions[index]);
+
+      if (tempCost &lt; bestCost)
+      {
+        bestCost = tempCost;
+        bestNode = i;
+      }
+    }
+  }
+
+  return bestNode;
+}
+
+void CalculatePositions()
+{
+  int i;
+
+  // Calculate cost to all target positions
+  for (i=0; i&lt;N; i++)
+  {
+    if (chosenPos[i] == -1)
+    {
+      possiblePos[i] = Distance(startPositions[ID], targetPositions[i]);
+    }
+    else
+    {
+      possiblePos[i] = -1;
+    }
+  }
+}
+
+void ProcessPlan()
+{
+  int i;
+
+  // Loop over all possible positions (smallest first)
+  // Check if other nodes has each position as their best
+  // Choose the first available
+  for (i=0; i&lt;N; i++)
+  {
+    if (possiblePos[i] != -1)
+    {
+      int index = minIndex();
+      int node = BestNode(index);
+      
+      if (node == ID)
+      {
+        chosenPos[index] = ID;
+        cost = Distance(startPositions[ID], targetPositions[index]);
+      }
+      else
+      {
+        possiblePos[index] = -1;
+      }
+    }
+  }
+}</declaration>
+		<location id="id7" x="-450" y="-17">
+			<name x="-475" y="0">Receive</name>
+		</location>
+		<location id="id8" x="-246" y="-17">
+			<name x="-272" y="0">Process</name>
+			<urgent/>
+		</location>
+		<location id="id9" x="213" y="-17">
+			<name x="187" y="0">Transmit</name>
+			<label kind="invariant" x="187" y="17">t &lt;= 10</label>
+		</location>
+		<location id="id10" x="383" y="-17">
+			<name x="366" y="0">Done</name>
+		</location>
+		<location id="id11" x="-348" y="-85">
+			<name x="-365" y="-119">Start</name>
+			<urgent/>
+		</location>
+		<location id="id12" x="519" y="-17">
+			<committed/>
+		</location>
+		<location id="id13" x="-59" y="-17">
+			<committed/>
+		</location>
+		<location id="id14" x="119" y="-17">
+			<name x="102" y="0">Wait</name>
+			<label kind="invariant" x="102" y="17">t &lt;= 1</label>
+		</location>
+		<init ref="id11"/>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id9"/>
+			<label kind="guard" x="144" y="-42">t &gt;= 1</label>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id14"/>
+			<label kind="assignment" x="-34" y="-42">ProcessPlan(), t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id13"/>
+			<label kind="assignment" x="-212" y="-42">CalculatePositions()</label>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="417" y="-110">complete!</label>
+			<nail x="519" y="-85"/>
+			<nail x="383" y="-85"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id12"/>
+			<label kind="synchronisation" x="408" y="-42">transmit[ID]?</label>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-323" y="-110">ID == start</label>
+			<nail x="-246" y="-85"/>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-433" y="-110">ID != start</label>
+			<nail x="-450" y="-85"/>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="229" y="-42">transmit[nextHop()]!</label>
+			<label kind="assignment" x="255" y="-59">comms++</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="-391" y="-42">transmit[ID]?</label>
+		</transition>
+	</template>
+	<template>
 		<name>Ring</name>
 		<declaration>bool Destinct(){
   bool result = true;
@@ -275,44 +451,44 @@ void ProcessPlan()
 bool Verify() {
   return Destinct();
 }</declaration>
-		<location id="id7" x="-170" y="0">
+		<location id="id15" x="-170" y="0">
 			<name x="-178" y="17">Init</name>
 			<committed/>
 		</location>
-		<location id="id8" x="-68" y="0">
+		<location id="id16" x="-68" y="0">
 			<name x="-85" y="17">Wait</name>
 		</location>
-		<location id="id9" x="34" y="0">
+		<location id="id17" x="34" y="0">
 			<name x="51" y="-8">Complete</name>
 			<committed/>
 		</location>
-		<location id="id10" x="170" y="68">
+		<location id="id18" x="170" y="68">
 			<name x="187" y="59">Wrong</name>
 		</location>
-		<location id="id11" x="170" y="-68">
+		<location id="id19" x="170" y="-68">
 			<name x="187" y="-76">Correct</name>
 		</location>
-		<init ref="id7"/>
+		<init ref="id15"/>
 		<transition>
-			<source ref="id9"/>
-			<target ref="id10"/>
+			<source ref="id17"/>
+			<target ref="id18"/>
 			<label kind="guard" x="42" y="68">Verify() == false</label>
 			<nail x="34" y="68"/>
 		</transition>
 		<transition>
-			<source ref="id9"/>
-			<target ref="id11"/>
+			<source ref="id17"/>
+			<target ref="id19"/>
 			<label kind="guard" x="42" y="-93">Verify() == true</label>
 			<nail x="34" y="-68"/>
 		</transition>
 		<transition>
-			<source ref="id8"/>
-			<target ref="id9"/>
+			<source ref="id16"/>
+			<target ref="id17"/>
 			<label kind="synchronisation" x="-51" y="-25">complete?</label>
 		</transition>
 		<transition>
-			<source ref="id7"/>
-			<target ref="id8"/>
+			<source ref="id15"/>
+			<target ref="id16"/>
 			<label kind="select" x="-144" y="-42">i : UID</label>
 			<label kind="assignment" x="-144" y="-25">start = i</label>
 		</transition>
@@ -324,7 +500,7 @@ bool Verify() {
 
 //system Process;
 
-system RingNode, Ring;</system>
+system RingNodeAsync, Ring;</system>
 	<queries>
 		<query>
 			<formula>A[] time &lt;= N</formula>
@@ -335,6 +511,10 @@ system RingNode, Ring;</system>
 			<comment>Checks if the nodes always use less than N (the number of nodes) time. Time may only pass, and only uses 1 time unit, per transmission, making it equal to the number of transmissions.
 
 In short, checks if we terminate after N hops.</comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; Ring.Complete &amp;&amp; comms &lt;= N</formula>
+			<comment></comment>
 		</query>
 		<query>
 			<formula></formula>
@@ -369,6 +549,10 @@ Not satisfied is expected</comment>
 		<query>
 			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Done</formula>
 			<comment>Does all nodes reach its done location?</comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Done</formula>
+			<comment></comment>
 		</query>
 		<query>
 			<formula></formula>
