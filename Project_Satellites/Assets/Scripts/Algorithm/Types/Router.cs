@@ -36,12 +36,7 @@ public class Router : IRouter
         UpdateNetworkMap(_plan);
     }
 
-    // Returns next sequential neighbour node based on who sent a request.
-    // The other neighbour is then returned in order to send the message "forward".
-    public uint? NextSequential(uint? source, uint? sender)
-    {
-        return NetworkMap.GetEntryByID(source).Neighbours.Where(x => x != sender).ToList()[0];
-    }
+
 
     // Returns next sequential neighbour node based on current plan.
     // Always sends clockwise or counterclockwise (cant remember which one).
