@@ -138,7 +138,7 @@ public class Discovery
 
             DiscoveryRequest newRequest = request.DeepCopy();
 
-            newRequest.DestinationID = MyNode.Router.NextSequential(MyNode);
+            newRequest.DestinationID = MyNode.Router.NextSequential(MyNode, Router.CommDir.CW);
             newRequest.SourceID = MyNode.ID;
             uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
             MyNode.CommsModule.Send(nextHop, newRequest);

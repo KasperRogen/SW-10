@@ -172,7 +172,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
             if(KnownNeighbours.Count >= 2)
             {
-                uint? nextSeq = comms.Node.Router.NextSequential(comms.Node); //dies at 5th iteration
+                uint? nextSeq = comms.Node.Router.NextSequential(comms.Node, Router.CommDir.CW); //dies at 5th iteration
 
                 if(nextSeq != null)
                 {
