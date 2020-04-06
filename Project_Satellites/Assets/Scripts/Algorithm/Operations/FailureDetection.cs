@@ -88,7 +88,7 @@ public class FailureDetection
 
         if(response.ResponseCode == Response.ResponseCodes.ERROR)
         {
-            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(SatManager._instance.satellites.Count, 7.152f);
+            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.NetworkMap.Entries.Count, 7.152f);
             PlanRequest recoveryRequest = new PlanRequest
             {
                 SourceID = myNode.ID,

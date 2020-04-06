@@ -112,13 +112,13 @@ public class PlanGenerator
             newRequest.DestinationID = myNode.ID;
             newRequest.SourceID = myNode.ID;
 
+
             //Notify self about execution
             //TODO: SOMETHING MORE ELEGANT THAN THIS :D
             myNode.CommsModule.Send(myNode.ID, newRequest);
         } else {
             myNode.justChangedPlan = false;
-            myNode.State = Node.NodeState.PASSIVE;
-
+            
             //Pass the plan to the next sequential node
             uint? nextSeq = myNode.Router.NextSequential(myNode, Router.CommDir.CW);
             newRequest.DestinationID = nextSeq;
@@ -198,7 +198,6 @@ public class PlanGenerator
         }
         else
         {
-            myNode.State = Node.NodeState.PASSIVE;
             uint? nextSeq = myNode.Router.NextSequential(myNode, Router.CommDir.CW);
             newRequest.DestinationID = nextSeq;
 
@@ -244,7 +243,6 @@ public class PlanGenerator
 
             PlanExecuter.ExecutePlan(myNode, newRequest);
         } else {
-            myNode.State = Node.NodeState.PASSIVE;
             uint? nextSeq = myNode.Router.NextSequential(myNode, Router.CommDir.CW);
             newRequest.DestinationID = nextSeq;
 

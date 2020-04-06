@@ -31,6 +31,7 @@ public class PlanExecuter : MonoBehaviour
 
             if (myNode.executingPlan)
             {
+                myNode.State = Node.NodeState.PASSIVE;
                 return; // Ignore Execute command if already executing which stops the execute communication loop
             }
             else
@@ -59,7 +60,8 @@ public class PlanExecuter : MonoBehaviour
 
             myNode.Router.UpdateNetworkMap(newRequest.Plan);
 
-
+            Thread.Sleep(1000);
+            myNode.State = Node.NodeState.PASSIVE;
 
         }
 

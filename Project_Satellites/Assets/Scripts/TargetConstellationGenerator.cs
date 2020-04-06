@@ -30,7 +30,7 @@ public class TargetConstellationGenerator : MonoBehaviour
     List<Vector3> TargetPositions = new List<Vector3>();
 
 
-    public void GenerateTargetConstellation(uint? RequesterNode)
+    public void GenerateTargetConstellation(INode RequesterNode)
     {
         System.Random r = new System.Random(RandomSeed);
         float constellationAltitude;
@@ -51,6 +51,13 @@ public class TargetConstellationGenerator : MonoBehaviour
         if (Sats.Count == 0)
             Sats = GameObject.FindGameObjectsWithTag("Satellite").ToList();
 
+        for(int i = Sats.Count -1; i > 0; i--)
+        {
+            if(RequesterNode.Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(Sats[i].GetComponent<SatelliteComms>().Node.ID) == false)
+            {
+                Sats.RemoveAt(i);
+            }
+        }
 
 
         //Remove old location Placeholders
@@ -87,7 +94,7 @@ public class TargetConstellationGenerator : MonoBehaviour
         plan = new ConstellationPlan(entries);
 
         //Send the targetconstellation to random sat
-        INode targetSat = Sats.Find(node => node.GetComponent<SatelliteComms>().Node.ID == RequesterNode).GetComponent<SatelliteComms>().Node;
+        INode targetSat = RequesterNode;
         PlanRequest request = new PlanRequest {
             Command = Request.Commands.GENERATE,
             SourceID = targetSat.ID,

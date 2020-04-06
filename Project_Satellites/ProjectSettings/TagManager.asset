@@ -9,6 +9,9 @@ TagManager:
   - LocationPlaceholder
   - SatelliteCanvas
   - SatelliteManager
+  - SatState
+  - SatID
+  - SatIcon
   layers:
   - Default
   - TransparentFX

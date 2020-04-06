@@ -7,15 +7,17 @@ using System.Linq;
 public class ConstellationVisualiser : MonoBehaviour
 {
 
-    public Material PassiveMat;
-    public Material LeaderMat;
-    public Material OverrideMat;
-    public Material CommsMat;
-    public Material CommsActiveMat;
-    public Material ExecuteMat;
-    public Material DeadMat;
-    public Material HeartbeatMat;
+    public Material CommLineMat;
+    public Color PassiveMat;
+    public Color LeaderMat;
+    public Color OverrideMat;
+    public Color CommsMat;
+    public Color CommsActiveMat;
+    public Color ExecuteMat;
+    public Color DeadMat;
+    public Color HeartbeatMat;
 
+    
     public Node.NodeState state;
     public GameObject MessageGO;
 
@@ -34,6 +36,7 @@ public class ConstellationVisualiser : MonoBehaviour
     public List<uint?> KnownNeighbours = new List<uint?>();
     public List<uint?> KnownNeighbourEntryIDs = new List<uint?>();
 
+
     private void Awake()
     {
         GameObject targetLineGO = new GameObject();
@@ -41,7 +44,7 @@ public class ConstellationVisualiser : MonoBehaviour
         targetLineGO.transform.parent = this.transform;
 
         targetPositionLineRenderer = targetLineGO.AddComponent<LineRenderer>();
-
+        targetPositionLineRenderer.material = CommLineMat;
     }
 
 
@@ -52,14 +55,16 @@ public class ConstellationVisualiser : MonoBehaviour
         //commLineRenderer.endWidth = 0.025f;
         //commLineRenderer.material = CommsMat;
 
+
         targetPositionLineRenderer.startWidth = 0.1f;
         targetPositionLineRenderer.endWidth = 0.1f;
-        targetPositionLineRenderer.material = PassiveMat;
+        targetPositionLineRenderer.material.SetColor("_BaseColor", LeaderMat);
+        targetPositionLineRenderer.material.SetColor("_EmissionColor", LeaderMat);
 
         comms = GetComponent<SatelliteComms>();
         commsSim = GetComponent<CommsSim>();
 
-        meshRenderer = GetComponent<MeshRenderer>();
+        meshRenderer = transform.GetComponentsInChildren<MeshRenderer>().ToList().Find(mesh => mesh.transform.tag == "SatIcon");
     }
 
 
@@ -69,9 +74,9 @@ public class ConstellationVisualiser : MonoBehaviour
     {
 
         state = comms.Node.State;
-        foreach(Tuple<Vector3, Vector3> tuple in SatManager._instance.SentMessages)
+        foreach (Tuple<Vector3, Vector3, Color> tuple in SatManager._instance.SentMessages)
         {
-            StartCoroutine(DisplayMessageSent(tuple.Item1 + Vector3.up, tuple.Item2 + Vector3.up, 0.5f, 0f));
+            StartCoroutine(DisplayMessageSent(tuple.Item1 + Vector3.up, tuple.Item2 + Vector3.up, 0.5f, 0f, tuple.Item3));
         }
 
         SatManager._instance.SentMessages.Clear();
@@ -81,141 +86,133 @@ public class ConstellationVisualiser : MonoBehaviour
 
         //If i have an entry in the neworkmap
 
-        List<uint?> newNeighbourEntries = comms.Node.Router.NetworkMap.Entries.Where(entry => KnownNeighbours.Contains(entry.ID)).Select(node => node.ID).ToList();
-
-        bool hasNewNeighbours = KnownNeighbours.Equals(comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.ID)?.Neighbours) == false;
-        bool hasNewNeighbourEntry = (KnownNeighbourEntryIDs.OrderBy(x => x.Value).SequenceEqual(newNeighbourEntries.OrderBy(x => x.Value))) == false;
-
-        bool hasupdated = hasNewNeighbours || hasNewNeighbourEntry || comms.Node.State == Node.NodeState.EXECUTING;
 
 
-        if (hasupdated)
+
+        KnownNeighbours = comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.ID)?.Neighbours;
+        KnownNeighbourEntryIDs = (comms.Node.Router.NetworkMap.Entries.Where(entry => KnownNeighbours.Contains(entry.ID)).Select(node => node.ID)).ToList();
+
+        reachableSats.Clear();
+
+        foreach (uint? node in KnownNeighbours)
         {
-            KnownNeighbours = comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.ID)?.Neighbours;
-            KnownNeighbourEntryIDs = (comms.Node.Router.NetworkMap.Entries.Where(entry => KnownNeighbours.Contains(entry.ID)).Select(node => node.ID)).ToList();
+            Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.GetComponent<SatelliteComms>().Node.ID == node).transform;
+            reachableSats.Add(nodeTransform);
+        }
 
-            reachableSats.Clear();
+        List<uint?> reachableSatsID = new List<uint?>();
 
-            foreach (uint? node in KnownNeighbours)
+        for (int i = 0; i < reachableSats?.Count; i++)
+        {
+            uint? id = reachableSats[i].GetComponent<SatelliteComms>().Node.ID;
+            reachableSatsID.Add(id);
+
+            if (commLineRenderes.ContainsKey(id) == false)
             {
-                Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.GetComponent<SatelliteComms>().Node.ID == node).transform;
-                reachableSats.Add(nodeTransform);
+                GameObject commlineGO = new GameObject();
+                commlineGO.transform.parent = this.transform;
+                LineRenderer lineRenderer = commlineGO.AddComponent<LineRenderer>();
+
+                lineRenderer.material = CommLineMat;
+                lineRenderer.material.SetColor("_BaseColor", CommsMat);
+                lineRenderer.startWidth = 0.025f;
+                lineRenderer.endWidth = 0.025f;
+
+
+
+
+                lineRenderer.positionCount = 2;
+                lineRenderer.SetPosition(0, this.transform.position);
+                lineRenderer.SetPosition(1, reachableSats[i].transform.position);
+
+                commLineRenderes.Add(id, commlineGO);
             }
-
-            List<uint?> reachableSatsID = new List<uint?>();
-
-            for (int i = 0; i < reachableSats?.Count; i++)
+            else
             {
-                uint? id = reachableSats[i].GetComponent<SatelliteComms>().Node.ID;
-                reachableSatsID.Add(id);
-
-                if (commLineRenderes.ContainsKey(id) == false)
+                Vector3 commLineDir = new Vector3
                 {
-                    GameObject commlineGO = new GameObject();
-                    commlineGO.transform.parent = this.transform;
-                    LineRenderer lineRenderer = commlineGO.AddComponent<LineRenderer>();
+                    x = reachableSats[i].position.x - comms.Node.Position.X,
+                    y = reachableSats[i].position.y - comms.Node.Position.Y,
+                    z = reachableSats[i].position.z - comms.Node.Position.Z,
+                };
 
-                    lineRenderer.material = CommsMat;
-
-                    lineRenderer.startWidth = 0.025f;
-                    lineRenderer.endWidth = 0.025f;
-
-
-
-
-                    lineRenderer.positionCount = 2;
-                    lineRenderer.SetPosition(0, this.transform.position);
-                    lineRenderer.SetPosition(1, reachableSats[i].transform.position);
-
-                    commLineRenderes.Add(id, commlineGO);
-                }
-                else
-                {
-                    Vector3 commLineDir = new Vector3
-                    {
-                        x = reachableSats[i].position.x - comms.Node.Position.X,
-                        y = reachableSats[i].position.y - comms.Node.Position.Y,
-                        z = reachableSats[i].position.z - comms.Node.Position.Z,
-                    };
-
-                    //TODO: something something vector3.right to commlinedir
-                    LineRenderer lineRenderer = commLineRenderes[id].GetComponent<LineRenderer>();
-                    lineRenderer.SetPosition(1, reachableSats[i].position/* + commLineDir.*/);
-                    lineRenderer.startWidth = 0.025f;
-                    lineRenderer.endWidth = 0.025f;
-                }
-
+                //TODO: something something vector3.right to commlinedir
+                LineRenderer lineRenderer = commLineRenderes[id].GetComponent<LineRenderer>();
+                lineRenderer.SetPosition(1, reachableSats[i].position/* + commLineDir.*/);
+                lineRenderer.startWidth = 0.025f;
+                lineRenderer.endWidth = 0.025f;
             }
-
-            for (int i = commLineRenderes.Count - 1; i >= 0; i--)
-            {
-                if (comms.Node.Active == false)
-                {
-                    Destroy(commLineRenderes.ElementAt(i).Value);
-                    commLineRenderes.Remove(commLineRenderes.ElementAt(i).Key);
-                    continue;
-                }
-
-                uint? key = commLineRenderes.ElementAt(i).Key;
-
-                if (reachableSatsID.Contains(key) == false)
-                {
-                    Destroy(commLineRenderes[key]);
-                    commLineRenderes.Remove(key);
-                }
-                else
-                {
-                    commLineRenderes[key].GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
-                }
-            }
-
-
-            if(KnownNeighbours.Count >= 2)
-            {
-                uint? nextSeq = comms.Node.Router.NextSequential(comms.Node, Router.CommDir.CW); //dies at 5th iteration
-
-                if(nextSeq != null)
-                {
-                    LineRenderer nextSeqCommLine = commLineRenderes[nextSeq].GetComponent<LineRenderer>();
-                    nextSeqCommLine.startWidth = 0.1f;
-                    nextSeqCommLine.endWidth = 0.1f;
-                }
-            }
-
 
         }
 
-        //switch (comms.Node.State)
-        //{
-        //    case Node.NodeState.PASSIVE:
-        //        meshRenderer.material = PassiveMat;
-        //        targetPositionLineRenderer.material = PassiveMat;
-        //        break;
+        for (int i = commLineRenderes.Count - 1; i >= 0; i--)
+        {
+            if (comms.Node.Active == false)
+            {
+                Destroy(commLineRenderes.ElementAt(i).Value);
+                commLineRenderes.Remove(commLineRenderes.ElementAt(i).Key);
+                continue;
+            }
 
-        //    case Node.NodeState.PLANNING:
-        //        meshRenderer.material = LeaderMat;
-        //        targetPositionLineRenderer.material = LeaderMat;
-        //        break;
+            uint? key = commLineRenderes.ElementAt(i).Key;
 
-        //    case Node.NodeState.EXECUTING:
-        //        meshRenderer.material = ExecuteMat;
-        //        targetPositionLineRenderer.material = ExecuteMat;
-        //        break;
+            if (reachableSatsID.Contains(key) == false)
+            {
+                Destroy(commLineRenderes[key]);
+                commLineRenderes.Remove(key);
+            }
+            else
+            {
+                commLineRenderes[key].GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+            }
+        }
 
-        //    case Node.NodeState.OVERRIDE:
 
-        //        meshRenderer.material = OverrideMat;
-        //        targetPositionLineRenderer.material = OverrideMat;
-        //        break;
+        if (KnownNeighbours.Count >= 2)
+        {
+            uint? nextSeq = comms.Node.Router.NextSequential(comms.Node, Router.CommDir.CW); //dies at 5th iteration
 
-        //    case Node.NodeState.DEAD:
-        //        meshRenderer.material = DeadMat;
-        //        break;
+            if (nextSeq != null && commLineRenderes.ContainsKey(nextSeq))
+            {
+                LineRenderer nextSeqCommLine = commLineRenderes[nextSeq].GetComponent<LineRenderer>();
+                nextSeqCommLine.startWidth = 0.1f;
+                nextSeqCommLine.endWidth = 0.1f;
+            }
+        }
 
-        //    case Node.NodeState.HEARTBEAT:
-        //        meshRenderer.material = HeartbeatMat;
-        //        break;
-        //}
+
+
+        switch (comms.Node.State)
+        {
+            case Node.NodeState.PASSIVE:
+                meshRenderer.material.SetColor("_BaseColor", PassiveMat);
+                //targetPositionLineRenderer.material.SetColor("_BaseColor", PassiveMat);
+                break;
+
+            case Node.NodeState.PLANNING:
+                //meshRenderer.material.SetColor("_BaseColor", LeaderMat);
+                //targetPositionLineRenderer.material.SetColor("_BaseColor", LeaderMat);
+                break;
+
+            case Node.NodeState.EXECUTING:
+                meshRenderer.material.SetColor("_BaseColor", ExecuteMat);
+                //targetPositionLineRenderer.material.SetColor("_BaseColor", ExecuteMat);
+                break;
+
+            case Node.NodeState.OVERRIDE:
+
+                meshRenderer.material.SetColor("_BaseColor", OverrideMat);
+                //targetPositionLineRenderer.material.SetColor("_BaseColor", OverrideMat);
+                break;
+
+            case Node.NodeState.DEAD:
+                meshRenderer.material.SetColor("_BaseColor", DeadMat);
+                break;
+
+            case Node.NodeState.HEARTBEAT:
+                meshRenderer.material.SetColor("_BaseColor", HeartbeatMat);
+                break;
+        }
 
 
         lastState = comms.Node.State;
@@ -226,16 +223,16 @@ public class ConstellationVisualiser : MonoBehaviour
         if (commsSim.ActiveCommSat != null && commLineRenderes.ContainsKey(commsSim.ActiveCommSat.Node.ID))
         {
             uint? id = commsSim.ActiveCommSat.Node.ID;
-            commLineRenderes[id].GetComponent<LineRenderer>().material = CommsActiveMat;
+            commLineRenderes[id].GetComponent<LineRenderer>().material.SetColor("_BaseColor", CommsActiveMat);
             lastActiveComm = id;
         }
         else if (lastActiveComm != null && commLineRenderes.ContainsKey(lastActiveComm))
         {
-            commLineRenderes[lastActiveComm].GetComponent<LineRenderer>().material = CommsMat;
+            commLineRenderes[lastActiveComm].GetComponent<LineRenderer>().material.SetColor("_BaseColor", CommsMat);
         }
 
         // Remove all non-reachable links, then update position
-        
+
 
 
         if (comms.Node.GeneratingPlan != null)
@@ -263,12 +260,13 @@ public class ConstellationVisualiser : MonoBehaviour
 
 
 
-    public IEnumerator DisplayMessageSent(Vector3 Origin, Vector3 Destination, float duration, float delay)
+    public IEnumerator DisplayMessageSent(Vector3 Origin, Vector3 Destination, float duration, float delay, Color color)
     {
         yield return new WaitForSeconds(delay);
         GameObject Message = Instantiate(MessageGO, Origin, Quaternion.identity);
+        Message.transform.GetChild(0).GetComponent<Renderer>().material.SetColor("_BaseColor", color);
         float Dist = Vector3.Distance(Origin, Destination);
-        while(Vector3.Distance(Message.transform.position, Destination) > 0.1f)
+        while (Vector3.Distance(Message.transform.position, Destination) > 0.1f)
         {
             Message.transform.position = Vector3.MoveTowards(Message.transform.position, Destination, (Dist / duration) * Time.deltaTime);
             yield return new WaitForEndOfFrame();
