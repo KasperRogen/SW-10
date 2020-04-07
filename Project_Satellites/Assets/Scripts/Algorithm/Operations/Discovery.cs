@@ -29,6 +29,7 @@ public class Discovery
     {
         if(MyNode.LastDiscoveryID != request.MessageIdentifer)
         {
+            MyNode.ReachableNodeCount = MyNode.Router.ReachableSats(MyNode).Count;
             MyNode.ActivePlan = new ConstellationPlan(new List<ConstellationPlanEntry>());
             MyNode.LastDiscoveryID = request.MessageIdentifer;
             MyNode.Router.NetworkMap.Entries.Clear();
@@ -142,6 +143,29 @@ public class Discovery
             newRequest.SourceID = MyNode.ID;
             uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
             MyNode.CommsModule.Send(nextHop, newRequest);
+        } else
+        {
+            if(MyNode.Router.ReachableSats(MyNode).Count > MyNode.ReachableNodeCount)
+            {
+                ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(MyNode.Router.ReachableSats(MyNode).Count, 7.152f);
+
+
+                PlanRequest recoveryRequest = new PlanRequest
+                {
+                    SourceID = MyNode.ID,
+                    DestinationID = MyNode.ID,
+                    Command = Request.Commands.GENERATE,
+                    Plan = RecoveryPlan
+                };
+
+                if (MyNode.Router.NextSequential(MyNode, Router.CommDir.CW) == null)
+                {
+                    recoveryRequest.Dir = Router.CommDir.CCW;
+                }
+
+                MyNode.CommsModule.Send(MyNode.ID, recoveryRequest);
+                return;
+            }
         }
 
 

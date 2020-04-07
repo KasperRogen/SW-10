@@ -104,7 +104,7 @@ public class Router : IRouter
             reachableNodes.AddRange(newNodes);
         }
 
-        return reachableNodes;
+        return reachableNodes.Distinct().ToList();
     }
 
 

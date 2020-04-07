@@ -23,4 +23,5 @@ public abstract class INode
 
     public abstract void GenerateRouter();
     public abstract void Communicate(Request message);
+    public int ReachableNodeCount;
 }
