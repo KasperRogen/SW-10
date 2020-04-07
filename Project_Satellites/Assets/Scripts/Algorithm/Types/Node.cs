@@ -85,6 +85,10 @@ public class Node : INode
 
     public override void Communicate(Request request)
     {
+
+        if (active == false)
+            return;
+
         new Thread(async () =>
         {
             ThreadCount++;

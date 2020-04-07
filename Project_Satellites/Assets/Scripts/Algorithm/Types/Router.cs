@@ -46,10 +46,6 @@ public class Router : IRouter
 
         Vector3 EarthPosition = Vector3.Zero;
         
-        if(NetworkMap.GetEntryByID(source.ID).Neighbours.Count < 2)
-        {
-            return null;
-        }
 
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
 
@@ -66,15 +62,10 @@ public class Router : IRouter
 
 
         
-        if (neighbourEntries.Any() == false || neighbourEntries.Count <= 1)
-        {
-            return null;
-        }
-
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
         Vector3 normalVector = source.PlaneNormalDir;
         List<double> angles = neighbourEntries.Select(x => BackendHelpers.NumericsVectorSignedAngle(source.Position, x.Position, normalVector)).ToList();
-        if(angles.Any(angle => angle > 0))
+        if(angles.Any(angle => dir == CommDir.CW ? (angle > 0) : (angle < 0)))
         {
             if(dir == CommDir.CW)
             {
@@ -87,6 +78,35 @@ public class Router : IRouter
 
         return null;
     }
+
+
+    public List<uint?> ReachableSats(INode requestingNode)
+    {
+        List<uint?> checkedNodes = new List<uint?>();
+        List<uint?> nodesToCheck = new List<uint?>();
+        List<uint?> reachableNodes = new List<uint?>();
+
+        checkedNodes.Add(requestingNode.ID);
+        reachableNodes.Add(requestingNode.ID);
+        reachableNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.ID).Neighbours);
+        nodesToCheck.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.ID).Neighbours);
+
+        while(nodesToCheck.Count > 0)
+        {
+            uint? node = nodesToCheck[0];
+            checkedNodes.Add(node);
+            nodesToCheck.RemoveAt(0);
+
+            List<uint?> newNodes = new List<uint?>(); 
+            newNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(node).Neighbours);
+            newNodes = newNodes.Except(checkedNodes).ToList();
+            nodesToCheck.AddRange(newNodes);
+            reachableNodes.AddRange(newNodes);
+        }
+
+        return reachableNodes;
+    }
+
 
     public void AddNodeToGraph(uint? neighbour)
     {

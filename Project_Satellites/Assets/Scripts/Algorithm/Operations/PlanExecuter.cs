@@ -47,13 +47,22 @@ public class PlanExecuter : MonoBehaviour
 
             PlanRequest newRequest = request.DeepCopy();
 
-            newRequest.SenderID = myNode.ID;
-            uint? nextSeq = myNode.Router.NextSequential(myNode, Router.CommDir.CW);
+            uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
 
-            newRequest.SourceID = myNode.ID;
-            newRequest.DestinationID = nextSeq;
-            uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-            myNode.CommsModule.Send(nextHop, newRequest);
+            if(nextSeq == null)
+            {
+                Router.CommDir newDir = request.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
+                newRequest.Dir = newDir;
+                nextSeq = myNode.Router.NextSequential(myNode, newDir);
+            }
+
+            if(nextSeq != null)
+            {
+                newRequest.SourceID = myNode.ID;
+                newRequest.DestinationID = nextSeq;
+                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+                myNode.CommsModule.Send(nextHop, newRequest);
+            } 
 
 
             myNode.ActivePlan = newRequest.Plan;

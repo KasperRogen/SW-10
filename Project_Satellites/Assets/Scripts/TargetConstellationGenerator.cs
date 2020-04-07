@@ -51,9 +51,11 @@ public class TargetConstellationGenerator : MonoBehaviour
         if (Sats.Count == 0)
             Sats = GameObject.FindGameObjectsWithTag("Satellite").ToList();
 
+        List<uint?> reachableNodes = RequesterNode.Router.ReachableSats(RequesterNode).ToList();
+
         for(int i = Sats.Count -1; i > 0; i--)
         {
-            if(RequesterNode.Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(Sats[i].GetComponent<SatelliteComms>().Node.ID) == false)
+            if(reachableNodes.Contains(Sats[i].GetComponent<SatelliteComms>().Node.ID) == false)
             {
                 Sats.RemoveAt(i);
             }

@@ -14,6 +14,7 @@ public class Request
     public uint? SenderID { get; set; }
     public Commands Command { get; set; }
     public string MessageIdentifer { get; set; }
+    public Router.CommDir Dir { get; set; }
 
     public Request() {
 
@@ -25,6 +26,7 @@ public class Request
         SenderID = other.SenderID;
         Command = other.Command;
         MessageIdentifer = string.Copy(other.MessageIdentifer);
+        Dir = other.Dir;
     }
 
     public Request(uint? sourceID, uint? destinationID, Commands command)
@@ -32,6 +34,7 @@ public class Request
         SourceID = sourceID;
         DestinationID = destinationID;
         Command = command;
+        Dir = Router.CommDir.CW;
     }
 
     public Request DeepCopy()
