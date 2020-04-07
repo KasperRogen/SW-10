@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 7053171283478394476}
   - component: {fileID: 5341261088271625510}
   m_Layer: 8
-  m_Name: Text (TMP)
+  m_Name: Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -37,7 +37,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 20, y: 5}
+  m_SizeDelta: {x: 30, y: 5}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &5850677662130312058
 MeshRenderer:
@@ -112,7 +112,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 1
+  m_text: '1
+
+    DISCOVERY'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -157,7 +159,7 @@ MonoBehaviour:
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
-  m_firstOverflowCharacterIndex: -1
+  m_firstOverflowCharacterIndex: 2
   m_linkedTextComponent: {fileID: 0}
   m_isLinkedTextComponent: 0
   m_isTextTruncated: 0
@@ -181,12 +183,12 @@ MonoBehaviour:
   m_margin: {x: 0, y: 0, z: 0, w: 0}
   m_textInfo:
     textComponent: {fileID: 5341261088271625510}
-    characterCount: 1
+    characterCount: 11
     spriteCount: 0
-    spaceCount: 0
-    wordCount: 1
+    spaceCount: 1
+    wordCount: 2
     linkCount: 0
-    lineCount: 1
+    lineCount: 2
     pageCount: 1
     materialCount: 1
   m_isUsingLegacyAnimationComponent: 0
@@ -330,14 +332,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e4cdd39105cda48459f086a89e2aaa44, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  PassiveMat: {fileID: 2100000, guid: fd99be37e6033d142a97575c3a099cd6, type: 2}
-  LeaderMat: {fileID: 2100000, guid: 39ad9b04444f9c544add89202f9e89bf, type: 2}
-  OverrideMat: {fileID: 2100000, guid: 8b342019c0f9d8a4d8a48b019559d13f, type: 2}
-  CommsMat: {fileID: 2100000, guid: 2910cb5f7dccac6438392ed9c284e8b8, type: 2}
-  CommsActiveMat: {fileID: 2100000, guid: db1ec131ded252e4a9d4602750851352, type: 2}
-  ExecuteMat: {fileID: 2100000, guid: cef5b1e2bb7134b4f8833a0fe4cd2248, type: 2}
-  DeadMat: {fileID: 2100000, guid: e7c6bfff95568e849b150776ea78b2e4, type: 2}
-  HeartbeatMat: {fileID: 2100000, guid: 02800e17d1e1135468ce7414458d6f18, type: 2}
+  CommLineMat: {fileID: 2100000, guid: 2910cb5f7dccac6438392ed9c284e8b8, type: 2}
+  PassiveMat: {r: 1, g: 1, b: 1, a: 1}
+  LeaderMat: {r: 1, g: 0.97702324, b: 0, a: 1}
+  OverrideMat: {r: 1, g: 1, b: 1, a: 1}
+  CommsMat: {r: 1, g: 1, b: 1, a: 1}
+  CommsActiveMat: {r: 1, g: 1, b: 1, a: 1}
+  ExecuteMat: {r: 1, g: 1, b: 1, a: 1}
+  DeadMat: {r: 1, g: 0, b: 0, a: 1}
+  HeartbeatMat: {r: 1, g: 1, b: 1, a: 1}
   state: 0
   MessageGO: {fileID: 8824269860879398575, guid: c6081b0f742550140a4c7862df7c8a8b,
     type: 3}
@@ -354,6 +357,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e937749e13fab141ab1d87497fd91b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  XOffsetScale: 0.033
+  YOffsetScale: 0.04
 --- !u!1 &7647052041419691168
 GameObject:
   m_ObjectHideFlags: 0
@@ -452,7 +457,7 @@ GameObject:
   - component: {fileID: 331492579560631460}
   m_Layer: 8
   m_Name: Image
-  m_TagString: Untagged
+  m_TagString: SatIcon
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

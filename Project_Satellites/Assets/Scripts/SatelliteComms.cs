@@ -9,7 +9,9 @@ public class SatelliteComms : MonoBehaviour
 
     [Header("Satellite Settings"), Space(10)]
     [Min(0)] public float CommRadius;
-    
+
+    TextMeshPro text;
+
     SatelliteMovement movement;
 
     [SerializeField]
@@ -19,7 +21,7 @@ public class SatelliteComms : MonoBehaviour
     {
         GetComponents<SphereCollider>().ToList().Find(col => col.isTrigger).radius = (transform.localScale.x * Constants.ScaleToSize(CommRadius));
         movement = GetComponent<SatelliteMovement>();
-        GetComponentInChildren<TextMeshPro>().text = Node.ID.ToString();
+        text = GetComponentInChildren<TextMeshPro>();
     }
 
     private void Update()
@@ -27,7 +29,8 @@ public class SatelliteComms : MonoBehaviour
         if (Node.TargetPosition != null)
             movement.TargetPosition = BackendHelpers.UnityVectorFromNumerics(Node.TargetPosition);
 
-        Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);        
+        Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
+        text.text = Node.ID.ToString() + "\n" + Node.State.ToString();
     }
 
     private void OnEnable()

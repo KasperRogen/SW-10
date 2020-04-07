@@ -10,6 +10,7 @@ public class CanvasHandler : MonoBehaviour
     public LayerMask BackGroundLayer;
     public GameObject CallingNode { get; set; }
     public GameObject SatelliteButtons;
+    public GameObject SatelliteToggles;
 
     bool interactionButtonsActive;
     // Start is called before the first frame update
@@ -19,6 +20,7 @@ public class CanvasHandler : MonoBehaviour
         _instance = this;
         lineRenderer = GetComponent<LineRenderer>();
         SatelliteButtons.SetActive(false);
+        SatelliteToggles.SetActive(false);
         lineRenderer.positionCount = 2;
 
     }
@@ -31,8 +33,15 @@ public class CanvasHandler : MonoBehaviour
         if (Input.GetMouseButtonDown(1) &&
           Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, SatelliteLayer, QueryTriggerInteraction.Ignore))
         {
-            SatelliteButtons.SetActive(true);
+            SatelliteToggles.SetActive(true);
             CallingNode = hit.transform.gameObject;
+            if(CallingNode.GetComponent<SatelliteComms>().Node.State != Node.NodeState.DEAD)
+            {
+                SatelliteButtons.SetActive(true);
+            } else
+            {
+                SatelliteButtons.SetActive(false);
+            }
         }
         else if (Input.GetMouseButtonDown(1) && Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, BackGroundLayer, QueryTriggerInteraction.Ignore))
         {
@@ -43,6 +52,7 @@ public class CanvasHandler : MonoBehaviour
             {
                 CallingNode = null;
                 SatelliteButtons.SetActive(false);
+                SatelliteToggles.SetActive(false);
             }
         }
 
@@ -58,6 +68,7 @@ public class CanvasHandler : MonoBehaviour
         {
             Heartbeat.CheckHeartbeat(CallingNode.GetComponent<SatelliteComms>().Node);
             SatelliteButtons.SetActive(false);
+            SatelliteToggles.SetActive(false);
             CallingNode = null;
         }
     }
@@ -68,6 +79,7 @@ public class CanvasHandler : MonoBehaviour
         {
             Discovery.StartDiscovery(CallingNode.GetComponent<SatelliteComms>().Node);
             SatelliteButtons.SetActive(false);
+            SatelliteToggles.SetActive(false);
             CallingNode = null;
         }
     }
@@ -79,6 +91,7 @@ public class CanvasHandler : MonoBehaviour
             SatelliteComms comms = CallingNode.GetComponent<SatelliteComms>();
             comms.Node.Active = !comms.Node.Active;
             SatelliteButtons.SetActive(false);
+            SatelliteToggles.SetActive(false);
             CallingNode = null;
         }
     }
@@ -88,8 +101,9 @@ public class CanvasHandler : MonoBehaviour
         if (CallingNode != null)
         {
             SatelliteComms comms = CallingNode.GetComponent<SatelliteComms>();
-            TargetConstellationGenerator.instance.GenerateTargetConstellation(CallingNode.GetComponent<SatelliteComms>().Node.ID);
+            TargetConstellationGenerator.instance.GenerateTargetConstellation(CallingNode.GetComponent<SatelliteComms>().Node);
             SatelliteButtons.SetActive(false);
+            SatelliteToggles.SetActive(false);
             CallingNode = null;
         }
     }

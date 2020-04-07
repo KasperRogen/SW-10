@@ -49,7 +49,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
-        satMan.SentMessages.Add(new Tuple<Vector3, Vector3>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position)));
+        satMan.SentMessages.Add(new Tuple<Vector3, Vector3, Color>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), Color.yellow));
 
 
 
@@ -136,7 +136,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
-        satMan.SentMessages.Add(new Tuple<Vector3, Vector3>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position)));
+        satMan.SentMessages.Add(new Tuple<Vector3, Vector3, Color>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), Color.blue));
 
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {

@@ -9,7 +9,7 @@ public class SatManager : MonoBehaviour
     public static SatManager _instance;
 
     public List<SatelliteComms> satellites = new List<SatelliteComms>();
-    public List<Tuple<Vector3, Vector3>> SentMessages = new List<Tuple<Vector3, Vector3>>();
+    public List<Tuple<Vector3, Vector3, Color>> SentMessages = new List<Tuple<Vector3, Vector3, Color>>();
 
     private void Start()
     {

@@ -8,6 +8,12 @@ using Dijkstra.NET.ShortestPath;
 
 public class Router : IRouter
 {
+    public enum CommDir
+    {
+        CW, CCW
+    }
+
+
     INode node;
     private Graph<uint?, string> graph = new Graph<uint?, string>();
     private Dictionary<uint?, uint> nodeToNodeIDMapping = new Dictionary<uint?, uint>();
@@ -30,16 +36,11 @@ public class Router : IRouter
         UpdateNetworkMap(_plan);
     }
 
-    // Returns next sequential neighbour node based on who sent a request.
-    // The other neighbour is then returned in order to send the message "forward".
-    public uint? NextSequential(uint? source, uint? sender)
-    {
-        return NetworkMap.GetEntryByID(source).Neighbours.Where(x => x != sender).ToList()[0];
-    }
+
 
     // Returns next sequential neighbour node based on current plan.
     // Always sends clockwise or counterclockwise (cant remember which one).
-    public uint? NextSequential(INode source)
+    public uint? NextSequential(INode source, CommDir dir)
     {
 
 
@@ -64,21 +65,8 @@ public class Router : IRouter
         Vector3 SatClockwiseVector = Vector3.Cross(EarthPosition - source.Position, source.PlaneNormalDir);
 
 
-        NetworkMapEntry currentBestEntry = null;
-        double currentBestAngle = -1;
-
-        foreach (NetworkMapEntry entry in neighbourEntries)
-        {
-            double angle = AngleBetween(entry.Position - source.Position, SatClockwiseVector);
-            if(angle < 90 && angle > currentBestAngle)
-            {
-                currentBestAngle = angle;//TODO: Make this actually work properly, we need to make sure this one actually gets the next, and never skips a node. Maybe check from earth out and get lowest angle
-                currentBestEntry = entry;
-            }
-        }
-
-
-        if(neighbourEntries.Any() == false || neighbourEntries.Count <= 1)
+        
+        if (neighbourEntries.Any() == false || neighbourEntries.Count <= 1)
         {
             return null;
         }
@@ -88,11 +76,16 @@ public class Router : IRouter
         List<double> angles = neighbourEntries.Select(x => BackendHelpers.NumericsVectorSignedAngle(source.Position, x.Position, normalVector)).ToList();
         if(angles.Any(angle => angle > 0))
         {
-            return neighbourEntries[angles.IndexOf(angles.Where(angle => angle > 0).Min())].ID;
-        } else
-        {
-            return null;
+            if(dir == CommDir.CW)
+            {
+                return neighbourEntries[angles.IndexOf(angles.Where(angle => angle > 0).Min())].ID;
+            } else if(dir == CommDir.CCW)
+            {
+                return neighbourEntries[angles.IndexOf(angles.Where(angle => angle < 0).Max())].ID;
+            }
         }
+
+        return null;
     }
 
     public void AddNodeToGraph(uint? neighbour)

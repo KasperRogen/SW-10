@@ -31,6 +31,7 @@ public class PlanExecuter : MonoBehaviour
 
             if (myNode.executingPlan)
             {
+                myNode.State = Node.NodeState.PASSIVE;
                 return; // Ignore Execute command if already executing which stops the execute communication loop
             }
             else
@@ -47,7 +48,7 @@ public class PlanExecuter : MonoBehaviour
             PlanRequest newRequest = request.DeepCopy();
 
             newRequest.SenderID = myNode.ID;
-            uint? nextSeq = myNode.Router.NextSequential(myNode);
+            uint? nextSeq = myNode.Router.NextSequential(myNode, Router.CommDir.CW);
 
             newRequest.SourceID = myNode.ID;
             newRequest.DestinationID = nextSeq;
@@ -59,7 +60,8 @@ public class PlanExecuter : MonoBehaviour
 
             myNode.Router.UpdateNetworkMap(newRequest.Plan);
 
-
+            Thread.Sleep(1000);
+            myNode.State = Node.NodeState.PASSIVE;
 
         }
 

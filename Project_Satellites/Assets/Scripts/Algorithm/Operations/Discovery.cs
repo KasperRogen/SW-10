@@ -29,13 +29,13 @@ public class Discovery
     {
         if(MyNode.LastDiscoveryID != request.MessageIdentifer)
         {
+            MyNode.ActivePlan = new ConstellationPlan(new List<ConstellationPlanEntry>());
             MyNode.LastDiscoveryID = request.MessageIdentifer;
             MyNode.Router.NetworkMap.Entries.Clear();
             MyNode.Router.NetworkMap.Entries.Add(new NetworkMapEntry(MyNode.ID, MyNode.Position));
             MyNode.Router.ClearNetworkMap();
         }
-
-
+            
         bool newKnowledge = false;
         bool alteredSet = false;
         MyNode.State = Node.NodeState.DISCOVERY;
@@ -124,9 +124,21 @@ public class Discovery
 
         if (alteredSet || newKnowledge)
         {
+            List<ConstellationPlanEntry> newEntries = new List<ConstellationPlanEntry>();
+
+            foreach(NetworkMapEntry entry in MyNode.Router.NetworkMap.Entries)
+            {
+                Vector3 position = entry.Position;
+                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
+                ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
+                newEntries.Add(planEntry);
+            }
+
+            MyNode.ActivePlan = new ConstellationPlan(newEntries);
+
             DiscoveryRequest newRequest = request.DeepCopy();
 
-            newRequest.DestinationID = MyNode.Router.NextSequential(MyNode);
+            newRequest.DestinationID = MyNode.Router.NextSequential(MyNode, Router.CommDir.CW);
             newRequest.SourceID = MyNode.ID;
             uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
             MyNode.CommsModule.Send(nextHop, newRequest);
