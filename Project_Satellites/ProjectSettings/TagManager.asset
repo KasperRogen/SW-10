@@ -7,6 +7,11 @@ TagManager:
   - Earth
   - Satellite
   - LocationPlaceholder
+  - SatelliteCanvas
+  - SatelliteManager
+  - SatState
+  - SatID
+  - SatIcon
   layers:
   - Default
   - TransparentFX
@@ -41,6 +46,9 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: TMPRO
+    uniqueID: 2959261645
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
