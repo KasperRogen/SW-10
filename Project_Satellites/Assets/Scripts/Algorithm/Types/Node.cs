@@ -131,9 +131,10 @@ public class Node : INode
 
             if (request.DestinationID != ID)
             {
+                request.SenderID = ID;
                 if (Router.NetworkMap.GetEntryByID(ID).Neighbours.Contains(request.DestinationID))
                 {
-                    CommsModule.Send(request.DestinationID, request);
+                    await CommsModule.SendAsync(request.DestinationID, request, 1000, 3);
                 }
                 else
                 {
@@ -142,7 +143,7 @@ public class Node : INode
                     if (nextHop == null)
                         throw new Exception("CANNOT FIND THE GUY");
 
-                    CommsModule.Send(nextHop, request);
+                    await CommsModule.SendAsync(nextHop, request, 1000, 3);
                 }
             }
             IsBusy = false;

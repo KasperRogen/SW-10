@@ -108,7 +108,7 @@ public class Discovery
 
                 Request positionRequest = new Request(MyNode.ID, neighbour, Request.Commands.POSITION);
                 uint? nextHop = MyNode.Router.NextHop(MyNode.ID, positionRequest.DestinationID);
-                PositionResponse response = await MyNode.CommsModule.SendAsync(nextHop, positionRequest, 300000) as PositionResponse;
+                PositionResponse response = await MyNode.CommsModule.SendAsync(nextHop, positionRequest, 300000, 3) as PositionResponse;
                 Vector3 position = response.Position;
                 NetworkMapEntry neigbourEntry = new NetworkMapEntry(neighbour, position);
                 MyNode.Router.NetworkMap.Entries.Add(neigbourEntry);

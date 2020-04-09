@@ -44,6 +44,20 @@ public class CommsSim : MonoBehaviour, ICommunicate
             Thread.Sleep(250);
             requestList.Add(request);
             requestlistcount = requestList.Count;
+
+            if (request.ResponseExpected)
+            {
+                Response response = new Response()
+                {
+                    SourceID = comms.Node.ID,
+                    DestinationID = request.SenderID,
+                    ResponseCode = Response.ResponseCodes.OK,
+                    MessageIdentifer = request.MessageIdentifer
+                };
+
+                uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
+                Send(nextHop, response);
+            }
         }).Start();
 
     }
@@ -70,42 +84,54 @@ public class CommsSim : MonoBehaviour, ICommunicate
         }
     }
 
-    public async Task<Response> SendAsync(uint? nextHop, Request request, int timeout)
+    public async Task<Response> SendAsync(uint? nextHop, Request request, int timeout, int attempts)
     {
+        int retryDelay = 1000;
+        TaskCompletionSource<Response> tcs = new TaskCompletionSource<Response>();
 
-        
-
-        var tcs = new TaskCompletionSource<Response>();
-
-
-        void GetResponse(object sender, ResponseEventArgs e)
-        {
-            if (e.Response.MessageIdentifer == request.MessageIdentifer)
-            {
+        void GetResponse(object sender, ResponseEventArgs e) {
+            if (e.Response.MessageIdentifer == request.MessageIdentifer) {
                 OnResponseReceived -= GetResponse;
                 tcs.SetResult(e.Response);
             }
         }
 
-        OnResponseReceived += GetResponse;
-
-        Send(nextHop, request);
-
         new Thread(() =>
         {
-            comms.Node.ThreadCount++;
-            Thread.Sleep(timeout);
-            if (tcs.Task.IsCompleted == false)
+            // Attempt to send multiple times, break loop if response
+            for (int i = 0; i < attempts; i++) {
+                OnResponseReceived += GetResponse;
+                Send(nextHop, request);
+                Thread.Sleep(timeout);
+
+                // Delay and retry with increasing delay
+                if (tcs.Task.IsCompleted == false) {
+                    Thread.Sleep(retryDelay);
+                    retryDelay *= 2;
+                } else {
+                    break;
+                }
+            }
+
+            if (tcs.Task.IsCompleted == false) {
                 tcs.SetResult(null);
-            comms.Node.ThreadCount--;
+            }
         }).Start();
 
         await tcs.Task;
 
+        // Trigger failure handling if no response after several attempts
+        if (request.GetType() != typeof(DetectFailureRequest) && tcs.Task.Result == null)
+        {
+            FailureDetection.FailureDetected(comms.Node, nextHop);
+        }
+        // Trigger recovery if no response after several attempts and already failure handling and attempted node is not the one to be checked via failure handling
+        else if (request.GetType() == typeof(DetectFailureRequest) && tcs.Task.Result == null && (request as DetectFailureRequest).NodeToCheck != nextHop)
+        {
+            FailureDetection.Recovery(comms.Node, nextHop);
+        }
+
         return tcs.Task.Result;
-
-
-
     }
 
     public List<uint?> Discover()
@@ -165,14 +191,10 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Receive(Response response)
     {
-
         if (response.GetType() == typeof(FailureDetectionResponse))
         {
             (response as FailureDetectionResponse).DeadEdges.ForEach(edge => comms.Node.Router.DeleteEdge(edge.Item1, edge.Item2));
         }
-
-
-
 
         new Thread(() =>
         {
@@ -191,11 +213,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
             }
         }).Start();
-
-
-
     }
-
 
     public Request FetchNextRequest()
     {
