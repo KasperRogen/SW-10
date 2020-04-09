@@ -9,7 +9,13 @@ public class SimulationManager : MonoBehaviour
 
     public bool SimMinutesToSeconds;
 
-
+    private void Awake()
+    {
+#if UNITY_EDITOR
+        QualitySettings.vSyncCount = 0;
+        Application.targetFrameRate = 15;
+#endif
+    }
     private void Start()
     {
         _instance = this;

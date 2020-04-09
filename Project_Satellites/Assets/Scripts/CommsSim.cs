@@ -15,6 +15,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
     ConstellationVisualiser visualiser;
     public int nodethreads;
 
+    public static List<string> logs = new List<string>();
+
     SatManager satMan;
     private void Start()
     {
@@ -26,6 +28,9 @@ public class CommsSim : MonoBehaviour, ICommunicate
     private void Update()
     {
         nodethreads = comms.Node.ThreadCount;
+
+        logs.ForEach(log => Debug.LogWarning(log));
+        logs.Clear();
     }
 
     public void Receive(Request request)
@@ -112,7 +117,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
 
         foreach (SatelliteComms sat in satMan.satellites
-            .Where(sat => sat.Node.ID != comms.Node.ID)
+            .Where(sat => sat.Node.ID != comms.Node.ID && sat.Node.Active)
             .OrderBy(sat => System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position))
             .ToList())
         {
