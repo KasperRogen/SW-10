@@ -7,7 +7,7 @@ public interface ICommunicate
 {
     void Send(uint? nextHop, Request request);
     void Receive(Request request);
-    Task<Response> SendAsync(uint? nextHop, Request request, int timeout);
+    Task<Response> SendAsync(uint? nextHop, Request request, int timeout, int attempts);
     void Send(uint? nextHop, Response response);
     void Receive(Response response);
     List<uint?> Discover();

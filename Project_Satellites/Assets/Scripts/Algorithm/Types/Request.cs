@@ -14,6 +14,7 @@ public class Request
     public uint? SenderID { get; set; }
     public Commands Command { get; set; }
     public string MessageIdentifer { get; set; }
+    public bool ResponseExpected { get; set; }
 
     public Request() {
 
@@ -25,6 +26,7 @@ public class Request
         SenderID = other.SenderID;
         Command = other.Command;
         MessageIdentifer = string.Copy(other.MessageIdentifer);
+        ResponseExpected = other.ResponseExpected;
     }
 
     public Request(uint? sourceID, uint? destinationID, Commands command)

@@ -7,8 +7,6 @@ using UnityEngine;
 
 public class Heartbeat
 {
-
-
     /// <summary>Performs aliveness check on immidiate neighbours
     /// <para>  </para>
     /// </summary>
@@ -20,21 +18,20 @@ public class Heartbeat
         //Loop through all immidate neightbours
         foreach (uint? node in myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.ToList()) //TODO: Should just communicate with reachable nodes instead of using networkmap
         {
-            Request request = new Request();
-            request.SourceID = myNode.ID;
-            request.Command = Request.Commands.HEARTBEAT;
-            request.DestinationID = node;
-
-            Response response = await myNode.CommsModule.SendAsync(node, request, 5000);
-            if (response == null || response.ResponseCode == Response.ResponseCodes.ERROR)
+            Request request = new Request()
             {
-                FailureDetection.FailureDetected(myNode, node);
-            }
+                SourceID = myNode.ID,
+                DestinationID = node,
+                SenderID = myNode.ID,
+                Command = Request.Commands.HEARTBEAT,
+                ResponseExpected = false
+            };
+
+            await myNode.CommsModule.SendAsync(node, request, 3000, 3);
         }
 
         myNode.State = previousState;
     }
-
 
     /// <summary>Responds responsecode "OK" to heartbeat
     /// <para>  </para>
@@ -48,15 +45,16 @@ public class Heartbeat
                 return;
 
             Thread.Sleep(500);
-            Response response = new Response();
-            response.DestinationID = request.SourceID;
-            response.SourceID = myNode.ID;
-            response.ResponseCode = Response.ResponseCodes.OK;
-            response.MessageIdentifer = request.MessageIdentifer;
+            Response response = new Response()
+            { 
+                SourceID = myNode.ID,
+                DestinationID = request.SenderID,
+                ResponseCode = Response.ResponseCodes.OK,
+                MessageIdentifer = request.MessageIdentifer
+            };
             myNode.CommsModule.Send(response.DestinationID, response);
 
             myNode.ThreadCount--;
         }).Start();
-
     }
 }
