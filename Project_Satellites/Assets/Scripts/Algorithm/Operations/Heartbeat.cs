@@ -27,7 +27,11 @@ public class Heartbeat
                 ResponseExpected = false
             };
 
-            await myNode.CommsModule.SendAsync(node, request, 3000, 3);
+            Response response = await myNode.CommsModule.SendAsync(node, request, 3000, 3);
+
+            if (response == null) {
+                break;
+            }
         }
 
         myNode.State = previousState;

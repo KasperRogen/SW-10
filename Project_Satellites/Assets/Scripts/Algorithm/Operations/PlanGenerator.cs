@@ -120,7 +120,8 @@ public class PlanGenerator
             myNode.justChangedPlan = false;
             
             //Pass the plan to the next sequential node
-            uint? nextSeq = myNode.Router.NextSequential(myNode, Router.CommDir.CW);
+            uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
+
             newRequest.DestinationID = nextSeq;
 
             if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq)) {
@@ -198,7 +199,23 @@ public class PlanGenerator
         }
         else
         {
-            uint? nextSeq = myNode.Router.NextSequential(myNode, Router.CommDir.CW);
+            uint? nextSeq = myNode.Router.NextSequential(myNode, newRequest.Dir);
+
+            if(nextSeq == null)
+            {
+                Router.CommDir newDir = newRequest.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
+                nextSeq = myNode.Router.NextSequential(myNode, newDir);
+
+                if(nextSeq != null)
+                {
+                    newRequest.Command = Request.Commands.EXECUTE;
+                    newRequest.SourceID = myNode.ID;
+                    newRequest.Dir = newDir;
+
+                    PlanExecuter.ExecutePlan(myNode, newRequest);
+                }
+            }
+
             newRequest.DestinationID = nextSeq;
 
             if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq)) {
@@ -243,7 +260,7 @@ public class PlanGenerator
 
             PlanExecuter.ExecutePlan(myNode, newRequest);
         } else {
-            uint? nextSeq = myNode.Router.NextSequential(myNode, Router.CommDir.CW);
+            uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
             newRequest.DestinationID = nextSeq;
 
             if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq)) {
