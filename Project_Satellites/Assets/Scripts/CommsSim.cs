@@ -35,7 +35,6 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Receive(Request request)
     {
-
         if (comms.Node.Active == false)
             return;
 
@@ -45,19 +44,40 @@ public class CommsSim : MonoBehaviour, ICommunicate
             requestList.Add(request);
             requestlistcount = requestList.Count;
 
-            if (request.ResponseExpected)
+
+            if (request.ResponseExpected && request.AckExpected)
             {
+
                 Response response = new Response()
                 {
                     SourceID = comms.Node.ID,
                     DestinationID = request.SenderID,
-                    ResponseCode = Response.ResponseCodes.OK,
+                    ResponseCode = Response.ResponseCodes.ACK,
                     MessageIdentifer = request.MessageIdentifer
                 };
 
                 uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
                 Send(nextHop, response);
             }
+            else if (request.AckExpected)
+            {
+                Response response = new Response()
+                {
+                    SourceID = comms.Node.ID,
+                    DestinationID = request.SenderID,
+                    ResponseCode = Response.ResponseCodes.ACK,
+                    MessageIdentifer = request.MessageIdentifer
+                };
+
+                uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
+                Send(nextHop, response);
+            }
+
+
+
+
+
+
         }).Start();
 
     }
@@ -76,8 +96,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
             ActiveCommSat = hop;
 
-            if(request.MessageIdentifer == null)
-            request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
+            if (request.MessageIdentifer == null)
+                request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
 
             hop.Node.CommsModule.Receive(request);
             ActiveCommSat = null;
@@ -88,32 +108,78 @@ public class CommsSim : MonoBehaviour, ICommunicate
     {
         int retryDelay = 1000;
         TaskCompletionSource<Response> tcs = new TaskCompletionSource<Response>();
+        bool AckReceived = false;
 
-        void GetResponse(object sender, ResponseEventArgs e) {
-            if (e.Response.MessageIdentifer == request.MessageIdentifer) {
-                OnResponseReceived -= GetResponse;
-                tcs.SetResult(e.Response);
+        void GetResponse(object sender, ResponseEventArgs e)
+        {
+            if (e.Response.MessageIdentifer == request.MessageIdentifer)
+            {
+                if(request.SourceID != comms.Node.ID)
+                {
+                    if(request.AckExpected == true && e.Response.ResponseCode == Response.ResponseCodes.ACK)
+                    {
+                        OnResponseReceived -= GetResponse;
+                        tcs.SetResult(e.Response);
+                    }
+
+                }
+
+
+
+
+                if (request.ResponseExpected)
+                {
+                    if (e.Response.ResponseCode == Response.ResponseCodes.ACK)
+                    {
+                        AckReceived = true;
+                    } else
+                    {
+                        OnResponseReceived -= GetResponse;
+                        tcs.SetResult(e.Response);
+                    }    
+                } else if(request.AckExpected)
+                {
+                    OnResponseReceived -= GetResponse;
+                    tcs.SetResult(e.Response);
+                }
+
             }
         }
 
+        
+
         new Thread(() =>
         {
-            // Attempt to send multiple times, break loop if response
-            for (int i = 0; i < attempts; i++) {
-                OnResponseReceived += GetResponse;
-                Send(nextHop, request);
-                Thread.Sleep(timeout);
 
-                // Delay and retry with increasing delay
-                if (tcs.Task.IsCompleted == false) {
-                    Thread.Sleep(retryDelay);
-                    retryDelay *= 2;
-                } else {
-                    break;
+            OnResponseReceived += GetResponse;
+
+
+            // Attempt to send multiple times, break loop if response
+            for (int i = 0; i < attempts; i++)
+            {
+
+                if (AckReceived == false)
+                {
+                    Send(nextHop, request);
+                    Thread.Sleep(timeout);
+
+                    // Delay and retry with increasing delay
+                    if (tcs.Task.IsCompleted == false)
+                    {
+                        Thread.Sleep(retryDelay);
+                        retryDelay *= 2;
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
+
             }
 
-            if (tcs.Task.IsCompleted == false) {
+
+            if (tcs.Task.IsCompleted == false)
+            {
                 tcs.SetResult(null);
             }
         }).Start();

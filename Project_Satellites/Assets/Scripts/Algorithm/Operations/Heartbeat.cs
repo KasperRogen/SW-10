@@ -24,7 +24,8 @@ public class Heartbeat
                 DestinationID = node,
                 SenderID = myNode.ID,
                 Command = Request.Commands.HEARTBEAT,
-                ResponseExpected = false
+                AckExpected = true,
+                ResponseExpected = true
             };
 
             Response response = await myNode.CommsModule.SendAsync(node, request, 3000, 3);

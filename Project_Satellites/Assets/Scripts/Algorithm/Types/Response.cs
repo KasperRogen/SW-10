@@ -7,7 +7,7 @@ public class Response
 {
     public enum ResponseCodes
     {
-        OK, ERROR
+        OK, ERROR, ACK
     }
 
     public Response(uint? _sourceID, uint? _destinationID, ResponseCodes _responsecode, string _messageIdentifier)

@@ -19,12 +19,12 @@ public class FailureDetection
 
         request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
 
-        Response r = new Response();
-        r.DestinationID = request.SenderID;
-        r.SourceID = myNode.ID;
-        r.ResponseCode = Response.ResponseCodes.OK;
-        r.MessageIdentifer = request.MessageIdentifer;
-        myNode.CommsModule.Send(r.DestinationID, r);
+        //Response r = new Response();
+        //r.DestinationID = request.SenderID;
+        //r.SourceID = myNode.ID;
+        //r.ResponseCode = Response.ResponseCodes.OK;
+        //r.MessageIdentifer = request.MessageIdentifer;
+        //myNode.CommsModule.Send(r.DestinationID, r);
         
         if (myNode.ID == request.DestinationID)
         {
@@ -87,6 +87,7 @@ public class FailureDetection
             SenderID = myNode.ID,
             Command = Request.Commands.DETECTFAILURE,
             ResponseExpected = true,
+            AckExpected = true,
             NodeToCheck = failedNode,
             DeadEdges = new List<Tuple<uint?, uint?>> {new Tuple<uint?, uint?>(myNode.ID, failedNode) }
         };
@@ -94,7 +95,7 @@ public class FailureDetection
         // TODO: Response here is just response from nexthop and not response from neighbour to failed node.
         // We should probably support this by being able to both send and route both requests and responses across the network.
         // OBS: Recovery code below is never run because of the above reasons. It does not wait for the "response request" that is sent to it.
-        Response response = await myNode.CommsModule.SendAsync(nextHop, request, 1000, 3);
+        Response response = await myNode.CommsModule.SendAsync(nextHop, request, 30000, 3);
 
         if(response.ResponseCode == Response.ResponseCodes.ERROR)
         {

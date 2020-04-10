@@ -14,6 +14,8 @@ public class Request
     public uint? SenderID { get; set; }
     public Commands Command { get; set; }
     public string MessageIdentifer { get; set; }
+
+    public bool AckExpected { get; set; }
     public bool ResponseExpected { get; set; }
     public Router.CommDir Dir { get; set; }
 
@@ -27,7 +29,7 @@ public class Request
         SenderID = other.SenderID;
         Command = other.Command;
         MessageIdentifer = string.Copy(other.MessageIdentifer);
-        ResponseExpected = other.ResponseExpected;
+        ResponseExpected = other.ResponseExpected;        AckExpected = other.AckExpected;
         Dir = other.Dir;
     }
 
