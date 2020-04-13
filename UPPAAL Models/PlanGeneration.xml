@@ -6,8 +6,13 @@
 clock time;
 
 typedef int[0, N-1] UID;
+
 chan transmit[N];
+chan acknowledge[N];
 chan complete;
+
+meta UID sender;
+meta bool failure;
 
 UID start; // The satellite that initiates
 
@@ -15,7 +20,7 @@ UID start; // The satellite that initiates
 
 typedef struct { int x; int y; int z; } pos;
 
-int[0, 4] comms;
+int[0, N] comms;
 
 // ---- Positions -----
 const pos sp1 = {8,0,8};
@@ -34,7 +39,7 @@ const pos targetPositions[N] = {tp1, tp2, tp3, tp4};
 int chosenPos[N] = {-1,-1,-1,-1};
 </declaration>
 	<template>
-		<name x="9" y="9">RingNode</name>
+		<name x="9" y="9">RingNodeSync</name>
 		<parameter>const UID ID</parameter>
 		<declaration>clock t;
 
@@ -163,9 +168,9 @@ void ProcessPlan()
 			<name x="144" y="17">Process</name>
 			<urgent/>
 		</location>
-		<location id="id2" x="552" y="0">
-			<name x="526" y="17">Transmit</name>
-			<label kind="invariant" x="535" y="34">t &lt;= 1</label>
+		<location id="id2" x="544" y="0">
+			<name x="518" y="17">Transmit</name>
+			<label kind="invariant" x="527" y="34">t &lt;= 1</label>
 		</location>
 		<location id="id3" x="722" y="0">
 			<name x="705" y="17">Done</name>
@@ -218,8 +223,9 @@ void ProcessPlan()
 		<transition>
 			<source ref="id2"/>
 			<target ref="id3"/>
-			<label kind="guard" x="611" y="-25">t &gt;= 1</label>
-			<label kind="synchronisation" x="569" y="-42">transmit[nextHop()]!</label>
+			<label kind="guard" x="603" y="-59">t &gt;= 1</label>
+			<label kind="synchronisation" x="561" y="-42">transmit[nextHop()]!</label>
+			<label kind="assignment" x="595" y="-25">comms++</label>
 		</transition>
 		<transition>
 			<source ref="id0"/>
@@ -350,88 +356,81 @@ void ProcessPlan()
     }
   }
 }</declaration>
-		<location id="id7" x="-450" y="-17">
-			<name x="-475" y="0">Receive</name>
+		<location id="id7" x="-6460" y="-5746">
+			<name x="-6485" y="-5729">Receive</name>
 		</location>
-		<location id="id8" x="-246" y="-17">
-			<name x="-272" y="0">Process</name>
+		<location id="id8" x="-6256" y="-5746">
+			<name x="-6282" y="-5729">Process</name>
 			<urgent/>
 		</location>
-		<location id="id9" x="213" y="-17">
-			<name x="187" y="0">Transmit</name>
-			<label kind="invariant" x="187" y="17">t &lt;= 10</label>
+		<location id="id9" x="-5695" y="-5746">
+			<name x="-5712" y="-5729">Done</name>
 		</location>
-		<location id="id10" x="383" y="-17">
-			<name x="366" y="0">Done</name>
-		</location>
-		<location id="id11" x="-348" y="-85">
-			<name x="-365" y="-119">Start</name>
+		<location id="id10" x="-6358" y="-5814">
+			<name x="-6375" y="-5848">Start</name>
 			<urgent/>
 		</location>
-		<location id="id12" x="519" y="-17">
+		<location id="id11" x="-5559" y="-5746">
 			<committed/>
 		</location>
-		<location id="id13" x="-59" y="-17">
+		<location id="id12" x="-6069" y="-5746">
 			<committed/>
 		</location>
-		<location id="id14" x="119" y="-17">
-			<name x="102" y="0">Wait</name>
-			<label kind="invariant" x="102" y="17">t &lt;= 1</label>
+		<location id="id13" x="-5882" y="-5746">
+			<name x="-5899" y="-5729">Wait</name>
+			<label kind="invariant" x="-5899" y="-5712">t &lt;= 10</label>
 		</location>
-		<init ref="id11"/>
-		<transition>
-			<source ref="id14"/>
-			<target ref="id9"/>
-			<label kind="guard" x="144" y="-42">t &gt;= 1</label>
-		</transition>
+		<init ref="id10"/>
 		<transition>
 			<source ref="id13"/>
-			<target ref="id14"/>
-			<label kind="assignment" x="-34" y="-42">ProcessPlan(), t = 0</label>
-		</transition>
-		<transition>
-			<source ref="id8"/>
-			<target ref="id13"/>
-			<label kind="assignment" x="-212" y="-42">CalculatePositions()</label>
+			<target ref="id9"/>
+			<label kind="guard" x="-5822" y="-5805">t &gt;= 1</label>
+			<label kind="synchronisation" x="-5865" y="-5771">transmit[nextHop()]!</label>
+			<label kind="assignment" x="-5839" y="-5788">comms++</label>
+			<nail x="-5780" y="-5746"/>
 		</transition>
 		<transition>
 			<source ref="id12"/>
-			<target ref="id10"/>
-			<label kind="synchronisation" x="417" y="-110">complete!</label>
-			<nail x="519" y="-85"/>
-			<nail x="383" y="-85"/>
+			<target ref="id13"/>
+			<label kind="assignment" x="-6044" y="-5771">ProcessPlan(), t = 0</label>
 		</transition>
 		<transition>
-			<source ref="id10"/>
+			<source ref="id8"/>
 			<target ref="id12"/>
-			<label kind="synchronisation" x="408" y="-42">transmit[ID]?</label>
+			<label kind="assignment" x="-6222" y="-5771">CalculatePositions()</label>
 		</transition>
 		<transition>
 			<source ref="id11"/>
-			<target ref="id8"/>
-			<label kind="guard" x="-323" y="-110">ID == start</label>
-			<nail x="-246" y="-85"/>
-		</transition>
-		<transition>
-			<source ref="id11"/>
-			<target ref="id7"/>
-			<label kind="guard" x="-433" y="-110">ID != start</label>
-			<nail x="-450" y="-85"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="-5661" y="-5839">complete!</label>
+			<nail x="-5559" y="-5814"/>
+			<nail x="-5695" y="-5814"/>
 		</transition>
 		<transition>
 			<source ref="id9"/>
-			<target ref="id10"/>
-			<label kind="synchronisation" x="229" y="-42">transmit[nextHop()]!</label>
-			<label kind="assignment" x="255" y="-59">comms++</label>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="-5670" y="-5771">transmit[ID]?</label>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-6333" y="-5839">ID == start</label>
+			<nail x="-6256" y="-5814"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-6443" y="-5839">ID != start</label>
+			<nail x="-6460" y="-5814"/>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id8"/>
-			<label kind="synchronisation" x="-391" y="-42">transmit[ID]?</label>
+			<label kind="synchronisation" x="-6401" y="-5771">transmit[ID]?</label>
 		</transition>
 	</template>
 	<template>
-		<name>Ring</name>
+		<name>PlanGeneration</name>
 		<declaration>bool Destinct(){
   bool result = true;
   int i;
@@ -451,69 +450,52 @@ void ProcessPlan()
 bool Verify() {
   return Destinct();
 }</declaration>
-		<location id="id15" x="-170" y="0">
+		<location id="id14" x="-170" y="0">
 			<name x="-178" y="17">Init</name>
 			<committed/>
 		</location>
-		<location id="id16" x="-68" y="0">
+		<location id="id15" x="-68" y="0">
 			<name x="-85" y="17">Wait</name>
 		</location>
-		<location id="id17" x="34" y="0">
+		<location id="id16" x="34" y="0">
 			<name x="51" y="-8">Complete</name>
 			<committed/>
 		</location>
-		<location id="id18" x="170" y="68">
+		<location id="id17" x="170" y="68">
 			<name x="187" y="59">Wrong</name>
 		</location>
-		<location id="id19" x="170" y="-68">
+		<location id="id18" x="170" y="-68">
 			<name x="187" y="-76">Correct</name>
 		</location>
-		<init ref="id15"/>
+		<init ref="id14"/>
 		<transition>
-			<source ref="id17"/>
-			<target ref="id18"/>
+			<source ref="id16"/>
+			<target ref="id17"/>
 			<label kind="guard" x="42" y="68">Verify() == false</label>
 			<nail x="34" y="68"/>
 		</transition>
 		<transition>
-			<source ref="id17"/>
-			<target ref="id19"/>
+			<source ref="id16"/>
+			<target ref="id18"/>
 			<label kind="guard" x="42" y="-93">Verify() == true</label>
 			<nail x="34" y="-68"/>
 		</transition>
 		<transition>
-			<source ref="id16"/>
-			<target ref="id17"/>
+			<source ref="id15"/>
+			<target ref="id16"/>
 			<label kind="synchronisation" x="-51" y="-25">complete?</label>
 		</transition>
 		<transition>
-			<source ref="id15"/>
-			<target ref="id16"/>
+			<source ref="id14"/>
+			<target ref="id15"/>
 			<label kind="select" x="-144" y="-42">i : UID</label>
 			<label kind="assignment" x="-144" y="-25">start = i</label>
 		</transition>
 	</template>
-	<system>// Place template instantiations here.
-
-//Process = Template();
-// List one or more processes to be composed into a system.
-
-//system Process;
-
-system RingNodeAsync, Ring;</system>
+	<system>system RingNodeSync, PlanGeneration;</system>
 	<queries>
 		<query>
-			<formula>A[] time &lt;= N</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; Ring.Complete &amp;&amp; time &lt;= N</formula>
-			<comment>Checks if the nodes always use less than N (the number of nodes) time. Time may only pass, and only uses 1 time unit, per transmission, making it equal to the number of transmissions.
-
-In short, checks if we terminate after N hops.</comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; Ring.Complete &amp;&amp; comms &lt;= N</formula>
+			<formula>***** SYNC QUERIES *****</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -521,52 +503,144 @@ In short, checks if we terminate after N hops.</comment>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; Ring.Wrong</formula>
-			<comment>Equal to the previous
-
-Not satisfied is expected</comment>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Done</formula>
+			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] !Ring.Wrong</formula>
-			<comment>Similar to the previous.</comment>
+			<formula>A[] forall (i : UID) RingNodeSync(i).cost &lt;= 6</formula>
+			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; Ring.Correct</formula>
-			<comment>Can we always reach a correct solution</comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; Ring.Complete</formula>
-			<comment>Checks if we can always reach the complete location (after all nodes has computed). Similar to checking if we can reach deadlock before the Wrong or Correct locations.</comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1</formula>
-			<comment>Has all targetposition been chosen? Doesn't check if it's a destinct or optimal solution</comment>
+			<formula>A[] (sum (i: UID) RingNodeSync(i).cost) &lt;= 6 * N</formula>
+			<comment></comment>
 		</query>
 		<query>
 			<formula></formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Done</formula>
-			<comment>Does all nodes reach its done location?</comment>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** ASYNC QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
 		</query>
 		<query>
 			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Done</formula>
 			<comment></comment>
 		</query>
 		<query>
+			<formula>A[] forall (i : UID) RingNodeAsync(i).cost &lt;= 6</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] (sum (i: UID) RingNodeAsync(i).cost) &lt;= 6 * N</formula>
+			<comment></comment>
+		</query>
+		<query>
 			<formula></formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; deadlock &amp;&amp; (!Ring.Correct &amp;&amp; !Ring.Wrong)</formula>
-			<comment>Can we reach a deadlock before verifying, aka can the algorithm reach a deadlock while computing?</comment>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** GENEREL QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGeneration.Correct</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] time &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N - 1)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; comms &lt;= (N - 1)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** DEBUG QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGeneration.Complete</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGeneration.Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] !PlanGeneration.Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (!PlanGeneration &amp;&amp; !Ring.PlanGeneration)</formula>
+			<comment></comment>
 		</query>
 		<query>
 			<formula>E&lt;&gt; deadlock</formula>
-			<comment>Do we reach a dead? Yes, it reaches a deadlock after verifying, as that is the terminating point.
-
-Not satisfied is expected.</comment>
+			<comment></comment>
 		</query>
 	</queries>
 </nta>

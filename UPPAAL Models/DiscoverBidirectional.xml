@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
-	<declaration>const int N = 11; // Number of satellites
+	<declaration>const int N = 10; // Number of satellites
 
 int[0,2] convergeCasts = 0;
 int[0,3*N] comms;
@@ -28,7 +28,7 @@ meta edge edgeList[N];
 
 </declaration>
 	<template>
-		<name>RingNode</name>
+		<name>RingNodeSync</name>
 		<parameter>const UID ID</parameter>
 		<declaration>clock t;
 bool verified;
@@ -215,9 +215,10 @@ bool Verify()
 			<source ref="id6"/>
 			<target ref="id8"/>
 			<label kind="synchronisation" x="-433" y="-186">transmit[nextHop()]!</label>
-			<label kind="assignment" x="-433" y="-246">sender = ID,
-t = 0,
-TransmitEdges()</label>
+			<label kind="assignment" x="-433" y="-255">t = 0,
+TransmitEdges(),
+sender = ID,
+comms++</label>
 		</transition>
 		<transition>
 			<source ref="id7"/>
@@ -235,9 +236,10 @@ TransmitEdges()</label>
 		<transition>
 			<source ref="id4"/>
 			<target ref="id8"/>
-			<label kind="synchronisation" x="-323" y="-399">transmit[rightHop()]!</label>
-			<label kind="assignment" x="-323" y="-382">convergeCasts++,
-sender = ID</label>
+			<label kind="synchronisation" x="-323" y="-416">transmit[rightHop()]!</label>
+			<label kind="assignment" x="-323" y="-399">convergeCasts++,
+sender = ID,
+comms++</label>
 		</transition>
 		<transition>
 			<source ref="id11"/>
@@ -310,10 +312,11 @@ ProcessEdges()</label>
 		<transition>
 			<source ref="id2"/>
 			<target ref="id4"/>
-			<label kind="guard" x="-59" y="-195">t &gt;= 1</label>
+			<label kind="guard" x="-59" y="-212">t &gt;= 1</label>
 			<label kind="synchronisation" x="-59" y="-135">transmit[leftHop()]!</label>
-			<label kind="assignment" x="-59" y="-178">TransmitEdges(),
-sender = ID</label>
+			<label kind="assignment" x="-59" y="-195">TransmitEdges(),
+sender = ID,
+comms++</label>
 		</transition>
 		<transition>
 			<source ref="id0"/>
@@ -465,8 +468,8 @@ bool Verify()
 			<name x="-467" y="187">Receive</name>
 		</location>
 		<location id="id15" x="-68" y="0">
-			<name x="-51" y="-17">Wait2</name>
-			<label kind="invariant" x="-51" y="0">t &lt;= 1</label>
+			<name x="-51" y="-17">ConvergeCast</name>
+			<label kind="invariant" x="-51" y="0">t &lt;= 10</label>
 		</location>
 		<location id="id16" x="-238" y="272">
 			<name x="-255" y="289">Start</name>
@@ -502,23 +505,16 @@ bool Verify()
 		<location id="id25" x="-510" y="-510">
 			<name x="-578" y="-518">Verified</name>
 		</location>
-		<location id="id26" x="-68" y="-102">
-			<name x="-51" y="-119">ConvergeCast</name>
-			<label kind="invariant" x="-51" y="-102">t &lt;= 10</label>
-		</location>
 		<init ref="id16"/>
 		<transition>
-			<source ref="id26"/>
+			<source ref="id15"/>
 			<target ref="id17"/>
-			<label kind="synchronisation" x="-59" y="-246">transmit[leftHop()]!</label>
-			<label kind="assignment" x="-59" y="-229">TransmitEdges(),
+			<label kind="guard" x="-59" y="-204">t &gt;= 1</label>
+			<label kind="synchronisation" x="-59" y="-187">transmit[leftHop()]!</label>
+			<label kind="assignment" x="-59" y="-170">TransmitEdges(),
 sender = ID,
 comms++</label>
-		</transition>
-		<transition>
-			<source ref="id15"/>
-			<target ref="id26"/>
-			<label kind="guard" x="-59" y="-59">t &gt;= 1</label>
+			<nail x="-68" y="-170"/>
 		</transition>
 		<transition>
 			<source ref="id19"/>
@@ -532,9 +528,9 @@ comms++</label>
 			<source ref="id19"/>
 			<target ref="id21"/>
 			<label kind="synchronisation" x="-433" y="-186">transmit[nextHop()]!</label>
-			<label kind="assignment" x="-433" y="-255">sender = ID,
-t = 0,
+			<label kind="assignment" x="-433" y="-255">t = 0,
 TransmitEdges(),
+sender = ID,
 comms++</label>
 		</transition>
 		<transition>
@@ -640,15 +636,15 @@ ProcessEdges()</label>
 	</template>
 	<template>
 		<name>Discovery</name>
-		<location id="id27" x="-272" y="0">
+		<location id="id26" x="-272" y="0">
 			<committed/>
 		</location>
-		<location id="id28" x="-136" y="0">
+		<location id="id27" x="-136" y="0">
 		</location>
-		<init ref="id27"/>
+		<init ref="id26"/>
 		<transition>
-			<source ref="id27"/>
-			<target ref="id28"/>
+			<source ref="id26"/>
+			<target ref="id27"/>
 			<label kind="select" x="-229" y="-42">i : UID</label>
 			<label kind="assignment" x="-230" y="-25">start = i</label>
 		</transition>
@@ -656,7 +652,7 @@ ProcessEdges()</label>
 	<system>system RingNodeAsync, Discovery;</system>
 	<queries>
 		<query>
-			<formula>***** SYNC RINGNODE QUERIES</formula>
+			<formula>***** SYNC QUERIES *****</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -668,67 +664,19 @@ ProcessEdges()</label>
 			<comment>Da tiden kan gå uendeligt i Verified/Wrong, ville alle noder's tid være større eller lig med N+3. Kan det verificiers på en anden måde måske? stopwatches?</comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= (N + 1)</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= N</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified &amp;&amp; time &lt;= (N-1)</formula>
-			<comment></comment>
-		</query>
-		<query>
 			<formula></formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; exists (i : UID) RingNode(i).Wrong</formula>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Verified</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNode(i).Verified</formula>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Verified &amp;&amp; time &lt;= N</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; forall (i : UID) RingNode(i).Verified</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] convergeCasts &lt;= 2</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>E&lt;&gt; forall (i : UID) RingNode(i).Verified || RingNode(i).Wrong</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; forall (i : UID) (RingNode(i).Verified || RingNode(i).Wrong)</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>E&lt;&gt; deadlock &amp;&amp; (forall (i: UID) !RingNode(i).Wrong &amp;&amp; !RingNode(i).Verified)</formula>
-			<comment>tjekker om deadlock kan opstå før vi er i Wrong eller Verified.</comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>***** ASYNC RINGNODE QUERIES *****</formula>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeSync(i).Verified &amp;&amp; time &lt;= (N-1)</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -740,11 +688,79 @@ ProcessEdges()</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] comms &lt;= ((N * 2) - 1)</formula>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeSync(i).Verified &amp;&amp; comms &lt;= (N * 2) - 1</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; time &lt;= (N + 1)</formula>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** ASYNC QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; time &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= (N * 2)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; comms &lt;= (N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** DEBUG QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock</formula>
+			<comment>Tjekker deadlock. Er opfyldt da systemet er deadlocked når alle noder er Verified</comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (forall (i: UID) !RingNodeSync(i).Wrong &amp;&amp; !RingNodeSync(i).Verified)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (forall (i: UID) !RingNodeAsync(i).Wrong &amp;&amp; !RingNodeAsync(i).Verified)</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -760,7 +776,7 @@ ProcessEdges()</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified</formula>
+			<formula>E&lt;&gt; exists (i : UID) RingNodeSync(i).Wrong</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -772,32 +788,12 @@ ProcessEdges()</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; time &lt;= (N + 1)</formula>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeSync(i).Verified || RingNodeSync(i).Wrong</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; time &lt;= N</formula>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified || RingNodeAsync(i).Wrong</formula>
 			<comment></comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; time &lt;= (N-1)</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>***** GENEREL QUERIES *****</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>E&lt;&gt; deadlock</formula>
-			<comment>Tjekker deadlock. Er opfyldt da systemet er deadlocked når alle noder er Verified</comment>
 		</query>
 		<query>
 			<formula></formula>

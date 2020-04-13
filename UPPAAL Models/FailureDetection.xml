@@ -1,0 +1,935 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.
+const int N = 11;
+
+clock time;
+int[0, 2*N] comms;
+int[0, 6*N] totalFailures;
+
+typedef int[0, N-1] UID;
+
+broadcast chan transmit[N];
+broadcast chan respond[N];
+
+
+UID start;
+
+bool subdivided;
+bool singleSplit;
+bool split;
+
+const int len = 2;
+int deadNodes[len] = {0, 0};
+
+meta UID sender;
+meta UID failedNode;
+meta bool isFailed;
+
+
+</declaration>
+	<template>
+		<name x="5" y="5">RingNodeSync</name>
+		<parameter>const UID ID</parameter>
+		<declaration>// Place local declarations here.
+clock t;
+
+UID senderID;
+UID failedNodeID;
+UID firstFailID;
+
+bool sndPass = false;
+bool newFailure;
+
+int tolerance = 3;
+int[0,3] failures = 0;
+
+UID Clockwise(int n)
+{
+  return n % N;
+}
+
+UID CounterClockwise(int n)
+{
+  if (n &lt; 0) { return N - 1; }
+  else { return n; }
+
+}
+
+UID cwHop(){
+  return Clockwise(ID + 1);
+}
+
+UID ccwHop()
+{
+  return CounterClockwise(ID - 1);
+}
+
+UID nextHop()
+{
+  if (senderID == cwHop())
+  {
+    return ccwHop();
+  }
+  else
+  {
+    return cwHop();
+  }
+}
+
+bool isDead()
+{
+  int i;
+  
+  if (deadNodes[0] == ID)
+  {
+    return true;
+  }
+  else if (singleSplit == false &amp;&amp; deadNodes[1] == ID)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+
+// "Walks" from the first dead node to the second dead node
+bool isOutOfReach()
+{
+  int i;
+  int node = deadNodes[0];
+
+  if ( subdivided == false )
+  {
+    return false;
+  }
+
+  for (i = 0; i &lt; N; i++)
+  {
+    node = Clockwise(node + 1);
+    if (node == deadNodes[1])
+    { 
+      return false;
+    }
+    else if (node == ID)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+void CheckFailed()
+{
+  if (sndPass == true &amp;&amp; failedNodeID != failedNode)
+  {
+    newFailure = true;
+    firstFailID = failedNodeID;
+  }
+  failedNodeID = failedNode;
+}
+
+bool isSubdivided()
+{
+  if (newFailure == false)
+  {
+    return false;
+  }
+  else
+  {
+    UID neighbour1 = Clockwise(failedNodeID + 1);
+    UID neighbour2 = CounterClockwise(failedNodeID - 1);
+
+    return (firstFailID != neighbour1 &amp;&amp; firstFailID != neighbour2);
+  }
+}
+</declaration>
+		<location id="id0" x="-408" y="-34">
+			<name x="-433" y="-68">Init</name>
+			<urgent/>
+		</location>
+		<location id="id1" x="-408" y="68">
+			<name x="-399" y="42">Receive</name>
+		</location>
+		<location id="id2" x="-68" y="68">
+			<name x="-59" y="25">Transmit</name>
+			<label kind="invariant" x="-51" y="42">t &lt;= 1</label>
+		</location>
+		<location id="id3" x="-238" y="68">
+			<name x="-263" y="34">Respond</name>
+			<committed/>
+		</location>
+		<location id="id4" x="102" y="-34">
+			<name x="85" y="-76">Retry</name>
+			<committed/>
+		</location>
+		<location id="id5" x="102" y="68">
+			<name x="110" y="42">Response</name>
+			<label kind="invariant" x="93" y="85">t &lt;= 1</label>
+		</location>
+		<location id="id6" x="272" y="-34">
+			<name x="229" y="-85">FailedTrans</name>
+			<label kind="invariant" x="255" y="-68">t &lt;= 1</label>
+		</location>
+		<location id="id7" x="-408" y="-136">
+			<name x="-425" y="-170">Dead</name>
+		</location>
+		<location id="id8" x="-578" y="68">
+			<name x="-629" y="59">Start</name>
+			<label kind="invariant" x="-629" y="76">t &lt;= 1</label>
+		</location>
+		<location id="id9" x="-408" y="204">
+			<committed/>
+		</location>
+		<location id="id10" x="272" y="68">
+			<committed/>
+		</location>
+		<location id="id11" x="476" y="17">
+			<name x="493" y="8">Done</name>
+			<committed/>
+		</location>
+		<location id="id12" x="714" y="-34">
+			<name x="697" y="-68">Split</name>
+		</location>
+		<location id="id13" x="714" y="68">
+			<name x="680" y="85">Subdivided</name>
+		</location>
+		<location id="id14" x="-238" y="-34">
+			<name x="-221" y="-42">OutOfReach</name>
+		</location>
+		<init ref="id0"/>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id14"/>
+			<label kind="guard" x="-399" y="-59">isOutOfReach() == true</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id10"/>
+			<label kind="guard" x="51" y="170">start == ID</label>
+			<nail x="-68" y="170"/>
+			<nail x="238" y="170"/>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id13"/>
+			<label kind="guard" x="527" y="42">isSubdivided() == true</label>
+			<nail x="510" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id12"/>
+			<label kind="guard" x="527" y="-59">isSubdivided() == false</label>
+			<nail x="510" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="guard" x="331" y="68">sndPass == true</label>
+			<nail x="476" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id11"/>
+			<label kind="guard" x="314" y="-195">t &gt;= 1</label>
+			<label kind="synchronisation" x="314" y="-170">transmit[senderID]!</label>
+			<label kind="assignment" x="314" y="-153">sender = ID,
+failedNode = nextHop(),
+newFailure = true,
+firstFailID = failedNodeID,
+failedNodeID = nextHop(),
+comms++</label>
+			<nail x="476" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id9"/>
+			<label kind="guard" x="-136" y="204">sndPass == false</label>
+			<nail x="272" y="204"/>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="144" y="68">respond[ID]?</label>
+			<label kind="assignment" x="144" y="85">failures = 0,
+comms++</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="-399" y="161">sndPass = true</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-561" y="68">t &gt;= 1</label>
+			<label kind="synchronisation" x="-561" y="85">transmit[ccwHop()]!</label>
+			<label kind="assignment" x="-561" y="102">sender = ID,
+failedNodeID = cwHop(),
+failedNode = cwHop(),
+sndPass = true,
+comms++</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id8"/>
+			<label kind="guard" x="-535" y="-68">start == ID</label>
+			<label kind="assignment" x="-518" y="-51">t = 0</label>
+			<nail x="-578" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="guard" x="119" y="-59">failures &gt;= tolerance</label>
+			<label kind="assignment" x="161" y="-76">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id2"/>
+			<label kind="guard" x="-51" y="-59">failures &lt; tolerance</label>
+			<nail x="-68" y="-34"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-51" y="68">t &gt;= 1 &amp;&amp; start != ID</label>
+			<label kind="synchronisation" x="-51" y="85">transmit[nextHop()]!</label>
+			<label kind="assignment" x="-51" y="102">sender = ID,
+t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id7"/>
+			<label kind="guard" x="-399" y="-102">isDead() == true</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id4"/>
+			<label kind="guard" x="110" y="-17">t &gt;= 1</label>
+			<label kind="assignment" x="110" y="0">failures++,
+totalFailures++</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id2"/>
+			<label kind="synchronisation" x="-212" y="68">respond[senderID]!</label>
+			<label kind="assignment" x="-178" y="85">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id3"/>
+			<label kind="synchronisation" x="-374" y="68">transmit[ID]?</label>
+			<label kind="assignment" x="-374" y="85">senderID = sender,
+CheckFailed()</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="guard" x="-408" y="-25">start != ID &amp;&amp;
+isDead() == false &amp;&amp;
+isOutOfReach() == false</label>
+		</transition>
+	</template>
+	<template>
+		<name>RingNodeAsync</name>
+		<parameter>const UID ID</parameter>
+		<declaration>// Place local declarations here.
+clock t;
+
+UID senderID;
+UID failedNodeID;
+UID firstFailID;
+
+bool sndPass = false;
+bool newFailure;
+
+int tolerance = 3;
+int[0,3] failures = 0;
+
+UID Clockwise(int n)
+{
+  return n % N;
+}
+
+UID CounterClockwise(int n)
+{
+  if (n &lt; 0) { return N - 1; }
+  else { return n; }
+
+}
+
+UID cwHop(){
+  return Clockwise(ID + 1);
+}
+
+UID ccwHop()
+{
+  return CounterClockwise(ID - 1);
+}
+
+UID nextHop()
+{
+  if (senderID == cwHop())
+  {
+    return ccwHop();
+  }
+  else
+  {
+    return cwHop();
+  }
+}
+
+bool isDead()
+{
+  int i;
+  
+  if (deadNodes[0] == ID)
+  {
+    return true;
+  }
+  else if (singleSplit == false &amp;&amp; deadNodes[1] == ID)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+bool isOutOfReach()
+{
+  int i;
+  int node = deadNodes[0];
+
+  if ( subdivided == false )
+  {
+    return false;
+  }
+
+  for (i = 0; i &lt; N; i++)
+  {
+    node = Clockwise(node + 1);
+    if (node == deadNodes[1])
+    { 
+      return false;
+    }
+    else if (node == ID)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+void CheckFailed()
+{
+  if (sndPass == true &amp;&amp; failedNodeID != failedNode)
+  {
+    newFailure = true;
+    firstFailID = failedNodeID;
+  }
+  failedNodeID = failedNode;
+}
+
+bool isSubdivided()
+{
+  if (newFailure == false)
+  {
+    return false;
+  }
+  else
+  {
+    UID neighbour1 = Clockwise(failedNodeID + 1);
+    UID neighbour2 = CounterClockwise(failedNodeID - 1);
+
+    return (firstFailID != neighbour1 &amp;&amp; firstFailID != neighbour2);
+  }
+}</declaration>
+		<location id="id15" x="-510" y="-68">
+			<name x="-535" y="-102">Init</name>
+			<urgent/>
+		</location>
+		<location id="id16" x="-306" y="-68">
+			<name x="-289" y="-76">OutOfReach</name>
+		</location>
+		<location id="id17" x="-510" y="68">
+			<name x="-501" y="42">Receive</name>
+		</location>
+		<location id="id18" x="-102" y="68">
+			<name x="-93" y="25">Transmit</name>
+			<label kind="invariant" x="-85" y="42">t &lt;= 10</label>
+		</location>
+		<location id="id19" x="-306" y="68">
+			<name x="-331" y="34">Respond</name>
+			<label kind="invariant" x="-323" y="85">t &lt;= 15</label>
+		</location>
+		<location id="id20" x="178" y="-68">
+			<name x="153" y="-110">Retry</name>
+			<committed/>
+		</location>
+		<location id="id21" x="178" y="68">
+			<name x="186" y="42">Response</name>
+			<label kind="invariant" x="161" y="85">t &lt;= 5</label>
+		</location>
+		<location id="id22" x="348" y="-68">
+			<name x="314" y="-59">FailedTrans</name>
+			<label kind="invariant" x="331" y="-42">t &lt;= 10</label>
+		</location>
+		<location id="id23" x="-510" y="-170">
+			<name x="-527" y="-204">Dead</name>
+		</location>
+		<location id="id24" x="-680" y="68">
+			<name x="-731" y="59">Start</name>
+			<label kind="invariant" x="-731" y="76">t &lt;= 1</label>
+		</location>
+		<location id="id25" x="-510" y="238">
+			<committed/>
+		</location>
+		<location id="id26" x="340" y="68">
+			<committed/>
+		</location>
+		<location id="id27" x="578" y="0">
+			<name x="595" y="-8">Done</name>
+			<committed/>
+		</location>
+		<location id="id28" x="816" y="-68">
+			<name x="799" y="-102">Split</name>
+		</location>
+		<location id="id29" x="816" y="68">
+			<name x="782" y="85">Subdivided</name>
+		</location>
+		<init ref="id15"/>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id26"/>
+			<label kind="synchronisation" x="93" y="136">respond[ID]?</label>
+			<label kind="assignment" x="102" y="153">failures = 0</label>
+			<nail x="-68" y="170"/>
+			<nail x="272" y="170"/>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id16"/>
+			<label kind="guard" x="-501" y="-93">isOutOfReach() == true</label>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id26"/>
+			<label kind="guard" x="17" y="204">start == ID</label>
+			<nail x="-102" y="204"/>
+			<nail x="306" y="204"/>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id29"/>
+			<label kind="guard" x="629" y="42">isSubdivided() == true</label>
+			<nail x="612" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id28"/>
+			<label kind="guard" x="629" y="-93">isSubdivided() == false</label>
+			<nail x="612" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id27"/>
+			<label kind="guard" x="407" y="68">sndPass == true</label>
+			<nail x="578" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id27"/>
+			<label kind="guard" x="391" y="-221">t &gt;= 1</label>
+			<label kind="synchronisation" x="391" y="-204">transmit[senderID]!</label>
+			<label kind="assignment" x="391" y="-187">sender = ID,
+failedNode = nextHop(),
+newFailure = true,
+firstFailID = failedNodeID,
+failedNodeID = nextHop(),
+comms++</label>
+			<nail x="578" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id25"/>
+			<label kind="guard" x="-161" y="238">sndPass == false</label>
+			<nail x="340" y="238"/>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id26"/>
+			<label kind="synchronisation" x="220" y="68">respond[ID]?</label>
+			<label kind="assignment" x="220" y="85">failures = 0,
+comms++</label>
+		</transition>
+		<transition>
+			<source ref="id25"/>
+			<target ref="id17"/>
+			<label kind="assignment" x="-501" y="195">sndPass = true</label>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id17"/>
+			<label kind="guard" x="-663" y="68">t &gt;= 1</label>
+			<label kind="synchronisation" x="-663" y="85">transmit[ccwHop()]!</label>
+			<label kind="assignment" x="-663" y="102">sender = ID,
+failedNodeID = cwHop(),
+failedNode = cwHop(),
+sndPass = true,
+comms++</label>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id24"/>
+			<label kind="guard" x="-637" y="-102">start == ID</label>
+			<label kind="assignment" x="-620" y="-85">t = 0</label>
+			<nail x="-680" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id22"/>
+			<label kind="guard" x="195" y="-102">failures &gt;= tolerance</label>
+			<label kind="assignment" x="238" y="-85">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-25" y="-102">failures &lt; tolerance</label>
+			<label kind="assignment" x="25" y="-85">t = 0</label>
+			<nail x="-102" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id21"/>
+			<label kind="guard" x="-43" y="68">t &gt;= 1 &amp;&amp; start != ID</label>
+			<label kind="synchronisation" x="-43" y="85">transmit[nextHop()]!</label>
+			<label kind="assignment" x="-43" y="102">sender = ID,
+t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id23"/>
+			<label kind="guard" x="-501" y="-136">isDead() == true</label>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id20"/>
+			<label kind="guard" x="187" y="-17">t &gt;= 5</label>
+			<label kind="assignment" x="187" y="0">failures++,
+totalFailures++</label>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-229" y="68">t &gt;= 1</label>
+			<label kind="synchronisation" x="-263" y="85">respond[senderID]!</label>
+			<label kind="assignment" x="-221" y="102">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id19"/>
+			<label kind="synchronisation" x="-476" y="68">transmit[ID]?</label>
+			<label kind="assignment" x="-476" y="85">senderID = sender,
+CheckFailed(),
+t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id17"/>
+			<label kind="guard" x="-501" y="-34">start != ID &amp;&amp;
+isDead() == false &amp;&amp;
+isOutOfReach() == false</label>
+		</transition>
+	</template>
+	<template>
+		<name>FailureDetection</name>
+		<declaration>UID Clockwise(int n)
+{
+  return n % N;
+}
+
+UID CounterClockwise(int n)
+{
+  if (n &lt; 0) { return N - 1; }
+  else { return n; }
+
+}</declaration>
+		<location id="id30" x="-34" y="0">
+			<committed/>
+		</location>
+		<location id="id31" x="136" y="0">
+			<committed/>
+		</location>
+		<location id="id32" x="306" y="-68">
+			<name x="272" y="-102">SingleSplit</name>
+		</location>
+		<location id="id33" x="374" y="68">
+			<committed/>
+		</location>
+		<location id="id34" x="544" y="0">
+			<name x="561" y="-8">Subdivided</name>
+		</location>
+		<location id="id35" x="544" y="136">
+			<name x="561" y="127">Split</name>
+		</location>
+		<init ref="id30"/>
+		<transition>
+			<source ref="id33"/>
+			<target ref="id35"/>
+			<label kind="select" x="391" y="144">n2: UID</label>
+			<label kind="guard" x="391" y="170">n2 == Clockwise(deadNodes[0] + 1)</label>
+			<label kind="assignment" x="391" y="195">split = true,
+subdivided = false,
+deadNodes[1] = n2</label>
+			<nail x="374" y="136"/>
+		</transition>
+		<transition>
+			<source ref="id33"/>
+			<target ref="id34"/>
+			<label kind="select" x="391" y="-161">n2 : UID</label>
+			<label kind="guard" x="391" y="-136">n2 != start &amp;&amp;
+n2 != deadNodes[0] &amp;&amp;
+n2 != Clockwise(deadNodes[0] + 1) &amp;&amp;
+n2 != CounterClockwise(start - 1)</label>
+			<label kind="assignment" x="391" y="-59">subdivided = true,
+split = false,
+deadNodes[1] = n2</label>
+			<nail x="374" y="0"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id33"/>
+			<label kind="assignment" x="161" y="76">singleSplit = false</label>
+			<nail x="136" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id32"/>
+			<label kind="assignment" x="161" y="-93">singleSplit = true</label>
+			<nail x="136" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id31"/>
+			<label kind="select" x="-8" y="-110">s : UID,
+n1 : UID</label>
+			<label kind="guard" x="-8" y="-68">n1 == Clockwise(s+1)</label>
+			<label kind="assignment" x="-8" y="-42">start = s,
+deadNodes[0] = n1</label>
+		</transition>
+	</template>
+	<system>system RingNodeAsync, FailureDetection;
+    </system>
+	<queries>
+		<query>
+			<formula>******** SYNC QUEURIES *******</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= (N - 2) * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; comms &gt; (N - 2) * 2 &amp;&amp; (forall (i : UID) RingNodeSync(i).Split || RingNodeSync(i).Subdivided || RingNodeSync(i).Dead || RingNodeSync(i).OutOfReach) </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] totalFailures &lt;= 3</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; totalFailures &gt; 3 &amp;&amp; (forall (i : UID) RingNodeSync(i).Split || RingNodeSync(i).Subdivided || RingNodeSync(i).Dead || RingNodeSync(i).OutOfReach) </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] forall(i : UID) RingNodeSync(i).Done imply time &lt;= (N * 2) + 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] forall(i : UID) RingNodeSync(i).Done imply RingNodeSync(i).t &lt;= N * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; FailureDetection.Subdivided	  imply forall (i : UID) (RingNodeSync(i).Dead &amp;&amp; (deadNodes[0] == i || deadNodes[1] == i)) || RingNodeSync(i).Subdivided || RingNodeSync(i).OutOfReach </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; FailureDetection.Split       imply forall (i : UID) (RingNodeSync(i).Dead &amp;&amp; (deadNodes[0] == i || deadNodes[1] == i)) || RingNodeSync(i).Split </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; FailureDetection.SingleSplit imply forall (i : UID) (RingNodeSync(i).Dead &amp;&amp; deadNodes[0] == i) || RingNodeSync(i).Split </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>******** ASYNC QUEURIES *******</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= (N - 2) * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; comms &gt; (N - 2) * 2 &amp;&amp; (forall (i : UID) RingNodeAsync(i).Split || RingNodeAsync(i).Subdivided || RingNodeAsync(i).Dead || RingNodeAsync(i).OutOfReach) </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] totalFailures &lt;= ((N - 1) * 4) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; totalFailures &gt; ((N - 1) * 4) - 1 &amp;&amp; (forall (i : UID) RingNodeAsync(i).Split || RingNodeAsync(i).Subdivided || RingNodeAsync(i).Dead || RingNodeAsync(i).OutOfReach) </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; FailureDetection.Subdivided	  imply forall (i : UID) (RingNodeAsync(i).Dead &amp;&amp; (deadNodes[0] == i || deadNodes[1] == i)) || RingNodeAsync(i).Subdivided || RingNodeAsync(i).OutOfReach </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; FailureDetection.Split       imply forall (i : UID) (RingNodeAsync(i).Dead &amp;&amp; (deadNodes[0] == i || deadNodes[1] == i)) || RingNodeAsync(i).Split </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; FailureDetection.SingleSplit imply forall (i : UID) (RingNodeAsync(i).Dead &amp;&amp; deadNodes[0] == i) || RingNodeAsync(i).Split </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>******** DEADLOCK QUEURIES *******</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; forall (i : UID) (!RingNodeSync(i).Split &amp;&amp; !RingNodeSync(i).Subdivided) || RingNodeSync(i).Dead || RingNodeSync(i).OutOfReach</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; forall (i : UID) (!RingNodeAsync(i).Split &amp;&amp; !RingNodeAsync(i).Subdivided) || RingNodeAsync(i).Dead || RingNodeAsync(i).OutOfReach</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>******** DEBUG QUEURIES *******</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Split  || RingNodeSync(i).Subdivided  || RingNodeSync(i).Dead  || RingNodeSync(i).OutOfReach </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Split || RingNodeAsync(i).Subdivided || RingNodeAsync(i).Dead || RingNodeAsync(i).OutOfReach </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeSync(i).Split  || RingNodeSync(i).Subdivided  || RingNodeSync(i).Dead  || RingNodeSync(i).OutOfReach </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeAsync(i).Split || RingNodeAsync(i).Subdivided || RingNodeAsync(i).Dead || RingNodeAsync(i).OutOfReach </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) start == i imply RingNodeSync(i).Split  || RingNodeSync(i).Subdivided</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) start == i imply RingNodeAsync(i).Split || RingNodeAsync(i).Subdivided</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) start == i imply RingNodeSync(i).Split  || RingNodeSync(i).Subdivided</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) start == i imply RingNodeAsync(i).Split || RingNodeAsync(i).Subdivided</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+	</queries>
+</nta>
