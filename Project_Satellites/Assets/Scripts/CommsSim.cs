@@ -177,22 +177,26 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
             }
 
-
-            if (tcs.Task.IsCompleted == false)
-            {
-                tcs.SetResult(null);
+            if (tcs.Task.IsCompleted == false) {
+                Response response = new Response() {
+                    SourceID = request.DestinationID,
+                    DestinationID = request.SourceID,
+                    MessageIdentifer = request.MessageIdentifer,
+                    ResponseCode = Response.ResponseCodes.TIMEOUT
+                };
+                tcs.SetResult(response);
             }
         }).Start();
 
         await tcs.Task;
 
         // Trigger failure handling if no response after several attempts
-        if (request.GetType() != typeof(DetectFailureRequest) && tcs.Task.Result == null)
+        if (request.GetType() != typeof(DetectFailureRequest) && tcs.Task.Result.ResponseCode == Response.ResponseCodes.TIMEOUT)
         {
             FailureDetection.FailureDetected(comms.Node, nextHop);
         }
         // Trigger recovery if no response after several attempts and already failure handling and attempted node is not the one to be checked via failure handling
-        else if (request.GetType() == typeof(DetectFailureRequest) && tcs.Task.Result == null && (request as DetectFailureRequest).NodeToCheck != nextHop)
+        else if (request.GetType() == typeof(DetectFailureRequest) && tcs.Task.Result.ResponseCode == Response.ResponseCodes.TIMEOUT && (request as DetectFailureRequest).NodeToCheck != nextHop)
         {
             FailureDetection.Recovery(comms.Node, nextHop);
         }

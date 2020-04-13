@@ -136,61 +136,60 @@ public class PlanGenerator
 
     private static void SingleRevolutionPlanGeneration(INode myNode, PlanRequest request)
     {
-        ConstellationPlan newPlan = request.Plan.DeepCopy();
-        KeyValuePair<Vector3, float> locationToTakeWithDistance; // Is filled by loop below
-        bool foundLocation = false;
-        IOrderedEnumerable<KeyValuePair<Vector3, float>> freeLocationsWithDistancesOrdered = newPlan.Entries
-            .Where(x => x.NodeID == null)
-            .Select(x => new KeyValuePair<Vector3, float>(x.Position, Vector3.Distance(myNode.Position, x.Position)))
-            .OrderBy(x => x.Value);
+        PlanRequest newRequest = request.DeepCopy();
+        newRequest.SenderID = myNode.ID;
 
-        foreach (KeyValuePair<Vector3, float> freeLocationWithDistance in freeLocationsWithDistancesOrdered) {
-            IEnumerable<ConstellationPlanEntry> nodesCanDoCheaper = myNode.ActivePlan.Entries
-                .Where(x => Vector3.Distance(x.Position, freeLocationWithDistance.Key) < freeLocationWithDistance.Value);
-            
-            // If no other node can take this location cheaper, then this node gets it
-            if (nodesCanDoCheaper.Count() == 0)
-            {
-                locationToTakeWithDistance = freeLocationWithDistance;
-                foundLocation = true;
-                break;
-            }
-            else
-            {
-                foreach (ConstellationPlanEntry nodeCanDoCheaper in nodesCanDoCheaper) {
-                    var freeLocationswithDistancesCheaperNode = newPlan.Entries
-                        .Where(x => x.NodeID == null)
-                        .Select(x => new KeyValuePair<Vector3, float>(x.Position, Vector3.Distance(nodeCanDoCheaper.Position, x.Position)));
+        // Only find location to take if this node hasnt already taken one
+        if (request.Plan.Entries.Select(x => x.NodeID).Contains(myNode.ID) == false)
+        {
+            ConstellationPlan newPlan = request.Plan.DeepCopy();
+            KeyValuePair<Vector3, float> locationToTakeWithDistance; // Is filled by loop below
+            bool foundLocation = false;
+            IOrderedEnumerable<KeyValuePair<Vector3, float>> freeLocationsWithDistancesOrdered = newPlan.Entries
+                .Where(x => x.NodeID == null)
+                .Select(x => new KeyValuePair<Vector3, float>(x.Position, Vector3.Distance(myNode.Position, x.Position)))
+                .OrderBy(x => x.Value);
 
-                    // Otherwise check if cheaper node has other locations it can take, that are cheaper, then this node gets the location
-                    if (freeLocationswithDistancesCheaperNode.Any(x => x.Value < freeLocationWithDistance.Value))
-                    {
-                        locationToTakeWithDistance = freeLocationWithDistance;
-                        foundLocation = true;
+            foreach (KeyValuePair<Vector3, float> freeLocationWithDistance in freeLocationsWithDistancesOrdered) {
+                IEnumerable<ConstellationPlanEntry> nodesCanDoCheaper = myNode.ActivePlan.Entries
+                    .Where(x => Vector3.Distance(x.Position, freeLocationWithDistance.Key) < freeLocationWithDistance.Value);
+
+                // If no other node can take this location cheaper, then this node gets it
+                if (nodesCanDoCheaper.Count() == 0) {
+                    locationToTakeWithDistance = freeLocationWithDistance;
+                    foundLocation = true;
+                    break;
+                } else {
+                    foreach (ConstellationPlanEntry nodeCanDoCheaper in nodesCanDoCheaper) {
+                        var freeLocationswithDistancesCheaperNode = newPlan.Entries
+                            .Where(x => x.NodeID == null)
+                            .Select(x => new KeyValuePair<Vector3, float>(x.Position, Vector3.Distance(nodeCanDoCheaper.Position, x.Position)));
+
+                        // Otherwise check if cheaper node has other locations it can take, that are cheaper, then this node gets the location
+                        if (freeLocationswithDistancesCheaperNode.Any(x => x.Value < freeLocationWithDistance.Value)) {
+                            locationToTakeWithDistance = freeLocationWithDistance;
+                            foundLocation = true;
+                            break;
+                        }
+                    }
+
+                    // Break outer loop if location is found
+                    if (foundLocation) {
                         break;
                     }
                 }
-
-                // Break outer loop if location is found
-                if (foundLocation)
-                {
-                    break;
-                }
             }
+
+            ConstellationPlanEntry entryToTake = newPlan.Entries.Single(x => x.Position == locationToTakeWithDistance.Key);
+            entryToTake.NodeID = myNode.ID;
+            entryToTake.Fields["DeltaV"].Value = locationToTakeWithDistance.Value;
+
+            newRequest.Plan = newPlan;
+            myNode.GeneratingPlan = newRequest.Plan;
         }
 
-        ConstellationPlanEntry entryToTake = newPlan.Entries.Single(x => x.Position == locationToTakeWithDistance.Key);
-        entryToTake.NodeID = myNode.ID;
-        entryToTake.Fields["DeltaV"].Value = locationToTakeWithDistance.Value;
-
-        PlanRequest newRequest = request.DeepCopy();
-        newRequest.Plan = newPlan;
-        newRequest.SenderID = myNode.ID;
-
-        myNode.GeneratingPlan = newRequest.Plan;
-
         // If last location is filled, execute the plan
-        if (newPlan.Entries.All(x => x.NodeID != null))
+        if (newRequest.Plan.Entries.All(x => x.NodeID != null))
         {
             newRequest.Command = Request.Commands.EXECUTE;
             newRequest.SourceID = myNode.ID;
@@ -204,16 +203,8 @@ public class PlanGenerator
             if(nextSeq == null)
             {
                 Router.CommDir newDir = newRequest.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
+                newRequest.Dir = newDir;
                 nextSeq = myNode.Router.NextSequential(myNode, newDir);
-
-                if(nextSeq != null)
-                {
-                    newRequest.Command = Request.Commands.EXECUTE;
-                    newRequest.SourceID = myNode.ID;
-                    newRequest.Dir = newDir;
-
-                    PlanExecuter.ExecutePlan(myNode, newRequest);
-                }
             }
 
             newRequest.DestinationID = nextSeq;
