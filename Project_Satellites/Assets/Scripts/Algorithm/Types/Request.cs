@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-
+using System.Linq;
+
+
+
 public class Request
 {
     public enum Commands
@@ -12,94 +14,180 @@ public class Request
     public uint? SourceID { get; set; }
     public uint? DestinationID { get; set; }
     public uint? SenderID { get; set; }
-    public Commands Command { get; set; }
-    public string MessageIdentifer { get; set; }
+    public Commands Command { get; set; }
+
+    public string MessageIdentifer { get; set; }
+
 
     public bool AckExpected { get; set; }
-    public bool ResponseExpected { get; set; }
-    public Router.CommDir Dir { get; set; }
-
-    public Request() {
-
-    }
-
-    public Request(Request other) {
-        SourceID = other.SourceID;
-        DestinationID = other.DestinationID;
-        SenderID = other.SenderID;
-        Command = other.Command;
-        MessageIdentifer = string.Copy(other.MessageIdentifer);
-        ResponseExpected = other.ResponseExpected;        AckExpected = other.AckExpected;
-        Dir = other.Dir;
-    }
-
-    public Request(uint? sourceID, uint? destinationID, Commands command)
-    {
-        SourceID = sourceID;
-        DestinationID = destinationID;
-        Command = command;
-        Dir = Router.CommDir.CW;
-    }
-
-    public Request DeepCopy()
-    {
-        return new Request(this);
-    }
+    public bool ResponseExpected { get; set; }
+
+    public Router.CommDir Dir { get; set; }
+
+
+
+    public Request() {
+
+
+
+    }
+
+
+
+    public Request(Request other) {
+
+        SourceID = other.SourceID;
+
+        DestinationID = other.DestinationID;
+
+        SenderID = other.SenderID;
+
+        Command = other.Command;
+
+        MessageIdentifer = string.Copy(other.MessageIdentifer);
+
+        ResponseExpected = other.ResponseExpected;
+        AckExpected = other.AckExpected;
+
+        Dir = other.Dir;
+
+    }
+
+
+
+    public Request(uint? sourceID, uint? destinationID, Commands command)
+
+    {
+
+        SourceID = sourceID;
+
+        SenderID = sourceID;
+
+        DestinationID = destinationID;
+
+        Command = command;
+
+        Dir = Router.CommDir.CW;
+
+    }
+
+
+
+    public Request DeepCopy()
+
+    {
+
+        return new Request(this);
+
+    }
+
 }
 
-public class PlanRequest : Request
-{
-    public ConstellationPlan Plan { get; set; }
-
-    public PlanRequest() {
-
-    }
-
-    public PlanRequest(PlanRequest other) : base(other) {
-        Plan = other.Plan.DeepCopy();
-    }
-
-    public PlanRequest DeepCopy()
-    {
-        return new PlanRequest(this);
-    }
+public class PlanRequest : Request
+
+{
+
+    public ConstellationPlan Plan { get; set; }
+
+
+
+    public PlanRequest() {
+
+
+
+    }
+
+
+
+    public PlanRequest(PlanRequest other) : base(other) {
+
+        Plan = other.Plan.DeepCopy();
+
+    }
+
+
+
+    public PlanRequest DeepCopy()
+
+    {
+
+        return new PlanRequest(this);
+
+    }
+
 }
 
-public class DiscoveryRequest : Request
-{
-    public NetworkMap EdgeSet { get; set; }
-
-    public DiscoveryRequest(DiscoveryRequest other) : base(other) {
-        EdgeSet = other.EdgeSet; //TODO: THIS MIGHT BREAK STUFF
-    }
-
-    public DiscoveryRequest() {
-
-    }
-
-    public DiscoveryRequest DeepCopy()
-    {
-        return new DiscoveryRequest(this);
-    }
+public class DiscoveryRequest : Request
+
+{
+
+    public NetworkMap EdgeSet { get; set; }
+
+
+
+    public DiscoveryRequest(DiscoveryRequest other) : base(other) {
+
+        EdgeSet = other.EdgeSet; //TODO: THIS MIGHT BREAK STUFF
+
+    }
+
+
+
+    public DiscoveryRequest() {
+
+
+        SenderID = SourceID;
+    }
+
+
+
+    public DiscoveryRequest DeepCopy()
+
+    {
+
+        return new DiscoveryRequest(this);
+
+    }
+
 }
 
-public class DetectFailureRequest : Request
-{
-    public uint? NodeToCheck { get; set; }
-    public List<Tuple<uint?, uint?>> DeadEdges { get; set; }
-
-    public DetectFailureRequest() {
-
-    }
-
-    public DetectFailureRequest(DetectFailureRequest other) : base(other) {
-        NodeToCheck = other.NodeToCheck;
-        DeadEdges = other.DeadEdges.ToList().ConvertAll(x => new Tuple<uint?, uint?>(x.Item1, x.Item2));
-    }
-
-    public DetectFailureRequest DeepCopy()
-    {
-        return new DetectFailureRequest(this);
-    }
-
-}
+public class DetectFailureRequest : Request
+
+{
+
+    public uint? NodeToCheck { get; set; }
+
+    public List<Tuple<uint?, uint?>> DeadEdges { get; set; }
+
+
+
+    public DetectFailureRequest() {
+
+
+
+    }
+
+
+
+    public DetectFailureRequest(DetectFailureRequest other) : base(other) {
+
+        NodeToCheck = other.NodeToCheck;
+
+        DeadEdges = other.DeadEdges.ToList().ConvertAll(x => new Tuple<uint?, uint?>(x.Item1, x.Item2));
+
+    }
+
+
+
+    public DetectFailureRequest DeepCopy()
+
+    {
+
+        return new DetectFailureRequest(this);
+
+    }
+
+
+
+}
+

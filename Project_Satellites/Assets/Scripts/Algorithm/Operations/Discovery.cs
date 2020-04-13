@@ -107,6 +107,8 @@ public class Discovery
                 MyNode.Router.AddNodeToGraph(neighbour);
 
                 Request positionRequest = new Request(MyNode.ID, neighbour, Request.Commands.POSITION);
+                positionRequest.AckExpected = true;
+                positionRequest.ResponseExpected = true;
                 uint? nextHop = MyNode.Router.NextHop(MyNode.ID, positionRequest.DestinationID);
                 PositionResponse response = await MyNode.CommsModule.SendAsync(nextHop, positionRequest, 300000, 3) as PositionResponse;
                 Vector3 position = response.Position;

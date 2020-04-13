@@ -229,7 +229,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Send(uint? nextHop, Response response)
     {
-        Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : Response" + "\t dst: " + response.DestinationID);
+        Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : Response: " + response.ResponseCode + "." + "\t dst: " + response.DestinationID);
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 

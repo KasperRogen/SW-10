@@ -60,7 +60,7 @@ public class Router : IRouter
        
         Vector3 SatClockwiseVector = Vector3.Cross(EarthPosition - source.Position, source.PlaneNormalDir);
 
-
+        neighbourEntries.ForEach(entry => CommsSim.logs.Add(entry.ID + ": " + entry.Position));
         
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
         Vector3 normalVector = source.PlaneNormalDir;
@@ -165,8 +165,8 @@ public class Router : IRouter
 
             if (entry.NodeID != null)
             {
-
                 NetworkMap.GetEntryByID(entry.NodeID).Neighbours = neighbors.Select(sat => sat.Item1).ToList();
+                NetworkMap.GetEntryByID(entry.NodeID).Position = entry.Position;
             }
 
         }

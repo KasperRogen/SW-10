@@ -31,14 +31,7 @@ public class FailureDetection
             //If we don't have a live already, we assume the connection has been determined to be bad
             if(myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(request.NodeToCheck) == false)// TODO: Probably safer check here
             {
-                Response response = new Response();
-                response.DestinationID = request.SourceID;
-                response.SourceID = myNode.ID;
-                response.ResponseCode = Response.ResponseCodes.ERROR;
-
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, request.SourceID);
-
-                myNode.CommsModule.Send(nextHop, response);
+                Recovery(myNode);
             } else
             {
                 Request ping = new Request();
@@ -50,18 +43,17 @@ public class FailureDetection
                 FailureDetectionResponse requestResponse;
                 if (pingResponse == null || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
                 {
-                    Tuple<uint?, uint?> deadEdge = new Tuple<uint?, uint?>(myNode.ID, request.NodeToCheck);
-                    request.DeadEdges.Add(deadEdge);
-                    request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
-                    requestResponse = new FailureDetectionResponse(myNode.ID, request.SourceID, Response.ResponseCodes.ERROR, request.MessageIdentifer, request.DeadEdges);
+                    Recovery(myNode);
                 } else
                 {
                     requestResponse = new FailureDetectionResponse(myNode.ID, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer, request.DeadEdges);
+                    uint? nextResponseHop = myNode.Router.NextHop(myNode.ID, requestResponse.DestinationID);
+
+                    myNode.CommsModule.Send(nextResponseHop, requestResponse); 
+                    //TODO: make the response contain the fact that the node IS dead, so other nodes can update
                 }
 
-                uint? nextResponseHop = myNode.Router.NextHop(myNode.ID, requestResponse.DestinationID);
-
-                myNode.CommsModule.Send(nextResponseHop, requestResponse); //TODO: make the response contain the fact that the node IS dead, so other nodes can update
+               
             }
         }
         
@@ -121,6 +113,30 @@ public class FailureDetection
         }
 
     }
+
+
+    public static void Recovery(INode myNode)
+    {
+            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
+
+
+            PlanRequest recoveryRequest = new PlanRequest
+            {
+                SourceID = myNode.ID,
+                DestinationID = myNode.ID,
+                Command = Request.Commands.GENERATE,
+                Plan = RecoveryPlan,
+                Dir = Router.CommDir.CW
+            };
+
+            if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
+            {
+                recoveryRequest.Dir = Router.CommDir.CCW;
+            }
+
+            myNode.CommsModule.Send(myNode.ID, recoveryRequest);
+    }
+
 
     public static void Recovery(INode myNode, uint? secondFailedNode)
     {
