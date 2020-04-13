@@ -48,7 +48,7 @@ public class FailureDetection
                 Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
 
                 FailureDetectionResponse requestResponse;
-                if (pingResponse == null || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
+                if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
                 {
                     Tuple<uint?, uint?> deadEdge = new Tuple<uint?, uint?>(myNode.ID, request.NodeToCheck);
                     request.DeadEdges.Add(deadEdge);
