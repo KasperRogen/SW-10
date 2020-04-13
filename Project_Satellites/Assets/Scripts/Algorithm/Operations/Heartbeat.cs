@@ -30,7 +30,7 @@ public class Heartbeat
 
             Response response = await myNode.CommsModule.SendAsync(node, request, 3000, 3);
 
-            if (response == null) {
+            if (response.ResponseCode == Response.ResponseCodes.TIMEOUT) {
                 break;
             }
         }

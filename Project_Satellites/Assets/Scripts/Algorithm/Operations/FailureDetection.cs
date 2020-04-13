@@ -41,7 +41,7 @@ public class FailureDetection
                 Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
 
                 FailureDetectionResponse requestResponse;
-                if (pingResponse == null || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
+                if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
                 {
                     Recovery(myNode);
                 } else
