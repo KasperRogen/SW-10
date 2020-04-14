@@ -26,9 +26,7 @@ public class PlanExecuter : MonoBehaviour
 
             myNode.State = Node.NodeState.EXECUTING;
 
-            //Set my targetposition to the position i was assigned in the plan
-            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
-
+            
             if (myNode.executingPlan)
             {
                 myNode.State = Node.NodeState.PASSIVE;
@@ -37,11 +35,6 @@ public class PlanExecuter : MonoBehaviour
             else
             {
                 myNode.executingPlan = true;
-            }
-
-            if (myNode.Router == null)
-            {
-                myNode.Router = new Router(myNode, request.Plan);
             }
 
 
@@ -66,7 +59,9 @@ public class PlanExecuter : MonoBehaviour
 
 
             myNode.ActivePlan = newRequest.Plan;
-
+            //Set my targetposition to the position i was assigned in the plan
+            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
+            
             myNode.Router.UpdateNetworkMap(newRequest.Plan);
 
             Thread.Sleep(1000);
