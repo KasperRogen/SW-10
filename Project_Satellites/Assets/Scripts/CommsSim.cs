@@ -118,7 +118,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
             float dist = System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position);
             float range = Constants.ScaleToSize(comms.CommRadius);
-            if (dist < range)
+            if (dist < range && sat.Node.Active)
                 commsList.Add(sat);
         }
 
