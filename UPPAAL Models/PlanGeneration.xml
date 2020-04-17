@@ -49,7 +49,7 @@ meta double radianIncrease;
 meta double radian = 0.0;
 */
 
-int radius = 100;
+int radius = 1000;
 int startPositions[N];
 int targetPositions[N];
 
@@ -142,7 +142,7 @@ int minIndex()
 }
 
 // check if node with id has already chosen a position
-bool InPlan(int id)
+bool isInPlan(int id)
 {
   int i;
   for (i=0; i&lt;N; i++)
@@ -150,32 +150,6 @@ bool InPlan(int id)
     if (id == chosenPos[i]) { return true; }
   }
   return false;
-}
-
-// finds the best node for a certain target position
-int BestNode(int index, int id)
-{
-  int bestCost = Distance(startPositions[id], targetPositions[index]);
-  int bestNode = id;
-  
-  int i;
-
-  for (i=0; i&lt;N; i++)
-  {
-    bool hasChosen = InPlan(i);
-    if (hasChosen == false)
-    { 
-      int tempCost = Distance(startPositions[i], targetPositions[index]);
-
-      if (tempCost &lt; bestCost)
-      {
-        bestCost = tempCost;
-        bestNode = i;
-      }
-    }
-  }
-
-  return bestNode;
 }
 
 void CalculatePositions()
@@ -196,9 +170,44 @@ void CalculatePositions()
   }
 }
 
+
+int BestPosition(int id)
+{
+  int bestCost = 999;
+  int bestPos;
+  
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    int tempCost = Distance(startPositions[id], targetPositions[i]);
+
+    if (tempCost &lt; bestCost)
+    {
+      bestCost = tempCost;
+      bestPos = i;
+    }
+  }
+
+  return bestPos;
+}
+
+
 void ProcessPlan()
 {
   int i;
+  int nodesBestPos[N];
+  
+  for (i=0; i&lt;N; i++)
+  {
+    if (!isInPlan(i) &amp;&amp; i != ID)
+    {
+        int bestPosition = BestPosition(i);
+    }
+    else
+    {
+      nodesBestPos[i] = -1;
+    }
+  }
 
   // Loop over all possible positions (smallest first)
   // Check if other nodes has each position as their best
@@ -208,12 +217,11 @@ void ProcessPlan()
     if (possiblePos[i] != -1)
     {
       int index = minIndex();
-      int node = BestNode(i, ID);
       
-      if (node == ID)
+      if (nodesBestPos[index] == -1)
       {
         chosenPos[index] = ID;
-        cost = Distance(startPositions[index], targetPositions[i]);
+        cost = Distance(startPositions[i], targetPositions[index]);
       }
       else
       {
@@ -380,7 +388,7 @@ int minIndex()
 }
 
 // check if node with id has already chosen a position
-bool InPlan(int id)
+bool isInPlan(int id)
 {
   int i;
   for (i=0; i&lt;N; i++)
@@ -388,32 +396,6 @@ bool InPlan(int id)
     if (id == chosenPos[i]) { return true; }
   }
   return false;
-}
-
-// finds the best node for a certain target position
-int BestNode(int index)
-{
-  int bestCost = 999;
-  int bestNode;
-  
-  int i;
-
-  for (i=0; i&lt;N; i++)
-  {
-    bool hasChosen = InPlan(i);
-    if (hasChosen == false)
-    { 
-      int tempCost = Distance(startPositions[i], targetPositions[index]);
-
-      if (tempCost &lt; bestCost)
-      {
-        bestCost = tempCost;
-        bestNode = i;
-      }
-    }
-  }
-
-  return bestNode;
 }
 
 void CalculatePositions()
@@ -434,9 +416,44 @@ void CalculatePositions()
   }
 }
 
+
+int BestPosition(int id)
+{
+  int bestCost = 999;
+  int bestPos;
+  
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    int tempCost = Distance(startPositions[id], targetPositions[i]);
+
+    if (tempCost &lt; bestCost)
+    {
+      bestCost = tempCost;
+      bestPos = i;
+    }
+  }
+
+  return bestPos;
+}
+
+
 void ProcessPlan()
 {
   int i;
+  int nodesBestPos[N];
+  
+  for (i=0; i&lt;N; i++)
+  {
+    if (!isInPlan(i) &amp;&amp; i != ID)
+    {
+        int bestPosition = BestPosition(i);
+    }
+    else
+    {
+      nodesBestPos[i] = -1;
+    }
+  }
 
   // Loop over all possible positions (smallest first)
   // Check if other nodes has each position as their best
@@ -446,12 +463,11 @@ void ProcessPlan()
     if (possiblePos[i] != -1)
     {
       int index = minIndex();
-      int node = BestNode(index);
       
-      if (node == ID)
+      if (nodesBestPos[index] == -1)
       {
         chosenPos[index] = ID;
-        cost = Distance(startPositions[ID], targetPositions[index]);
+        cost = Distance(startPositions[i], targetPositions[index]);
       }
       else
       {
@@ -656,7 +672,7 @@ bool Verify() {
 			<label kind="assignment" x="-178" y="-25">start = node</label>
 		</transition>
 	</template>
-	<system>system RingNodeSync, PlanGeneration;</system>
+	<system>system RingNodeAsync, PlanGeneration;</system>
 	<queries>
 		<query>
 			<formula>***** SYNC QUERIES *****</formula>
