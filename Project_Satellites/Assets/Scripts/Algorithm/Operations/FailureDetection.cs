@@ -47,25 +47,26 @@ public class FailureDetection
                 ping.Command = Request.Commands.PING;
                 Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
 
-                FailureDetectionResponse requestResponse;
                 if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
                 {
-                    Tuple<uint?, uint?> deadEdge = new Tuple<uint?, uint?>(myNode.ID, request.NodeToCheck);
-                    request.DeadEdges.Add(deadEdge);
-                    request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
-                    requestResponse = new FailureDetectionResponse(myNode.ID, request.SourceID, Response.ResponseCodes.ERROR, request.MessageIdentifer, request.DeadEdges);
-                } else
-                {
-                    requestResponse = new FailureDetectionResponse(myNode.ID, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer, request.DeadEdges);
+                    ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
+
+                    PlanRequest recoveryRequest = new PlanRequest {
+                        SourceID = myNode.ID,
+                        DestinationID = myNode.ID,
+                        Command = Request.Commands.GENERATE,
+                        Plan = RecoveryPlan,
+                        Dir = Router.CommDir.CW
+                    };
+
+                    if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null) {
+                        recoveryRequest.Dir = Router.CommDir.CCW;
+                    }
+
+                    PlanGenerator.GeneratePlan(myNode, recoveryRequest);
                 }
-
-                uint? nextResponseHop = myNode.Router.NextHop(myNode.ID, requestResponse.DestinationID);
-
-                myNode.CommsModule.Send(nextResponseHop, requestResponse); //TODO: make the response contain the fact that the node IS dead, so other nodes can update
             }
         }
-        
-
     }
 
     /// <summary>Should be used on the node when it detects a failure
@@ -86,40 +87,13 @@ public class FailureDetection
             SourceID = myNode.ID,
             SenderID = myNode.ID,
             Command = Request.Commands.DETECTFAILURE,
-            ResponseExpected = true,
+            ResponseExpected = false,
             AckExpected = true,
             NodeToCheck = failedNode,
             DeadEdges = new List<Tuple<uint?, uint?>> {new Tuple<uint?, uint?>(myNode.ID, failedNode) }
         };
 
-        // TODO: Response here is just response from nexthop and not response from neighbour to failed node.
-        // We should probably support this by being able to both send and route both requests and responses across the network.
-        // OBS: Recovery code below is never run because of the above reasons. It does not wait for the "response request" that is sent to it.
-        Response response = await myNode.CommsModule.SendAsync(nextHop, request, 30000, 3);
-
-        if(response.ResponseCode == Response.ResponseCodes.ERROR)
-        {
-            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
-
-
-            PlanRequest recoveryRequest = new PlanRequest
-            {
-                SourceID = myNode.ID,
-                DestinationID = myNode.ID,
-                Command = Request.Commands.GENERATE,
-                Plan = RecoveryPlan,
-                Dir = Router.CommDir.CW
-            };
-
-            if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
-            {
-                recoveryRequest.Dir = Router.CommDir.CCW;
-            }
-
-                myNode.CommsModule.Send(myNode.ID, recoveryRequest);
-            return;
-        }
-
+        await myNode.CommsModule.SendAsync(nextHop, request, 1000, 3);
     }
 
     public static void Recovery(INode myNode, uint? secondFailedNode)
