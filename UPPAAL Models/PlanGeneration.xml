@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
-	<declaration>const int N = 4; // Number of satellites
+	<declaration>const int N = 7; // Number of satellites
 
 clock time;
 
@@ -20,9 +20,11 @@ UID start; // The satellite that initiates
 
 typedef struct { int x; int y; int z; } pos;
 
-int[0, N] comms;
+
+int[0, 2*N] comms;
 
 // ---- Positions -----
+/*
 const pos sp1 = {8,0,8};
 const pos sp2 = {8,0,-8};
 const pos sp3 = {-8,0,8};
@@ -37,6 +39,21 @@ const pos startPositions[N] = {sp1, sp2, sp3, sp4};
 const pos targetPositions[N] = {tp1, tp2, tp3, tp4};
 
 int chosenPos[N] = {-1,-1,-1,-1};
+*/
+
+/*
+meta double PI = 3.14159265358979312;
+meta double radius = 100.0;
+
+meta double radianIncrease;
+meta double radian = 0.0;
+*/
+
+int radius = 100;
+int startPositions[N];
+int targetPositions[N];
+
+int chosenPos[N];
 </declaration>
 	<template>
 		<name x="9" y="9">RingNodeSync</name>
@@ -47,11 +64,13 @@ int cost; // the cost to move to a target position
 
 int possiblePos[N];
 
+
 UID nextHop() {
   return (ID + 1) % N;
 }
 
 // Distance between two points
+/*
 int Distance(pos p1, pos p2)
 {
   double a = pow((p2.x - p1.x), 2);
@@ -62,6 +81,48 @@ int Distance(pos p1, pos p2)
   int distInt = fint(dist);
   return  distInt;
 }
+*/
+
+int minInt(int n1, int n2)
+{
+  if (n1 &lt; n2)
+  {
+    return n1;
+  }
+  {
+    return n2;
+  }  
+}
+
+int maxInt(int n1, int n2)
+{
+  if (n1 &gt; n2)
+  {
+    return n1;
+  }
+  {
+    return n2;
+  }
+}
+
+int Distance(int p1, int p2)
+{
+  int minP = minInt(p1, p2);
+  int maxP = maxInt(p1, p2);
+
+  int distance1 = maxP - minP;
+  int distance2 = (radius - maxP) + minP;
+
+  if ((distance1 &lt; distance2) &amp;&amp; (distance1 &gt;= 0))
+  {
+    return distance1;
+  }
+  else
+  {
+    return distance2;
+  }
+}
+
 
 int minIndex()
 {
@@ -92,10 +153,10 @@ bool InPlan(int id)
 }
 
 // finds the best node for a certain target position
-int BestNode(int index)
+int BestNode(int index, int id)
 {
-  int bestCost = 999;
-  int bestNode;
+  int bestCost = Distance(startPositions[id], targetPositions[index]);
+  int bestNode = id;
   
   int i;
 
@@ -147,12 +208,12 @@ void ProcessPlan()
     if (possiblePos[i] != -1)
     {
       int index = minIndex();
-      int node = BestNode(index);
+      int node = BestNode(i, ID);
       
       if (node == ID)
       {
         chosenPos[index] = ID;
-        cost = Distance(startPositions[ID], targetPositions[index]);
+        cost = Distance(startPositions[index], targetPositions[i]);
       }
       else
       {
@@ -247,6 +308,7 @@ UID nextHop() {
 }
 
 // Distance between two points
+/*
 int Distance(pos p1, pos p2)
 {
   double a = pow((p2.x - p1.x), 2);
@@ -257,6 +319,48 @@ int Distance(pos p1, pos p2)
   int distInt = fint(dist);
   return  distInt;
 }
+*/
+
+int minInt(int n1, int n2)
+{
+  if (n1 &lt; n2)
+  {
+    return n1;
+  }
+  {
+    return n2;
+  }  
+}
+
+int maxInt(int n1, int n2)
+{
+  if (n1 &gt; n2)
+  {
+    return n1;
+  }
+  {
+    return n2;
+  }
+}
+
+int Distance(int p1, int p2)
+{
+  int minP = minInt(p1, p2);
+  int maxP = maxInt(p1, p2);
+
+  int distance1 = maxP - minP;
+  int distance2 = (radius - maxP) + minP;
+
+  if ((distance1 &lt; distance2) &amp;&amp; (distance1 &gt;= 0))
+  {
+    return distance1;
+  }
+  else
+  {
+    return distance2;
+  }
+}
+
 
 int minIndex()
 {
@@ -431,7 +535,59 @@ void ProcessPlan()
 	</template>
 	<template>
 		<name>PlanGeneration</name>
-		<declaration>bool Destinct(){
+		<declaration>/*
+void InitConstellationAndPlan()
+{
+  int i; 
+  double PI = 3.14159265358979312;
+  double radius = 100.0;
+
+  double radianIncrease = (2 * PI) / N;
+  double radian = 0.0;
+
+  //radianIncrease = (2 * PI) / N;
+
+  
+  for(i = 0; i &lt; N; i++)
+  {    
+    int startX = fint(radius * cos(radian));
+    int startZ = fint(radius * cos(radian));
+   
+    int targetX = fint(radius * cos(radian * 1.5));
+    int targetZ = fint(radius * cos(radian * 1.5));
+
+    pos newStartPos = {startX, 0, startZ};
+    pos newTargetPos = {targetX, 0, targetZ};
+
+    startPositions[i] = newStartPos;
+    targetPositions[i] = newTargetPos;
+
+    chosenPos[i] = -1;
+
+    radian = radian + radianIncrease;
+  }
+}
+*/
+
+void InitConstellationAndPlan()
+{
+  int distanceBetweenNodes = radius / N;
+  int nextPosition = 0;
+  int i;
+  for(i=0; i&lt;N; i++)
+  {
+    int randomDistance = fint(random(distanceBetweenNodes));
+    startPositions[i] = nextPosition;
+
+    targetPositions[i] = nextPosition + randomDistance;
+
+    chosenPos[i] = -1;
+
+    nextPosition += distanceBetweenNodes;
+  }
+}
+
+bool Destinct(){
   bool result = true;
   int i;
   for (i=0; i&lt;N; i++)
@@ -450,8 +606,7 @@ void ProcessPlan()
 bool Verify() {
   return Destinct();
 }</declaration>
-		<location id="id14" x="-170" y="0">
-			<name x="-178" y="17">Init</name>
+		<location id="id14" x="-204" y="0">
 			<committed/>
 		</location>
 		<location id="id15" x="-68" y="0">
@@ -467,7 +622,16 @@ bool Verify() {
 		<location id="id18" x="170" y="-68">
 			<name x="187" y="-76">Correct</name>
 		</location>
-		<init ref="id14"/>
+		<location id="id19" x="-425" y="0">
+			<name x="-435" y="-34">Init</name>
+			<committed/>
+		</location>
+		<init ref="id19"/>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id14"/>
+			<label kind="assignment" x="-399" y="-25">InitConstellationAndPlan()</label>
+		</transition>
 		<transition>
 			<source ref="id16"/>
 			<target ref="id17"/>
@@ -488,8 +652,8 @@ bool Verify() {
 		<transition>
 			<source ref="id14"/>
 			<target ref="id15"/>
-			<label kind="select" x="-144" y="-42">i : UID</label>
-			<label kind="assignment" x="-144" y="-25">start = i</label>
+			<label kind="select" x="-178" y="-42">node : UID</label>
+			<label kind="assignment" x="-178" y="-25">start = node</label>
 		</transition>
 	</template>
 	<system>system RingNodeSync, PlanGeneration;</system>
@@ -575,7 +739,7 @@ bool Verify() {
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N - 1)</formula>
+			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N - 1)</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -607,7 +771,31 @@ bool Verify() {
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1</formula>
+			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] == i</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1 &amp;&amp; RingNodeSync(i).Done</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; exists (i : UID) chosenPos[i] == -1 &amp;&amp; RingNodeSync(i).Done</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1 &amp;&amp; RingNodeAsync(i).Done</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; exists (i : UID) chosenPos[i] == -1 &amp;&amp; RingNodeAsync(i).Done</formula>
 			<comment></comment>
 		</query>
 		<query>
