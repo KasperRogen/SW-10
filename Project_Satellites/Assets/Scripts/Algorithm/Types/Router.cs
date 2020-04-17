@@ -19,6 +19,9 @@ public class Router : IRouter
     private Dictionary<uint?, uint> nodeToNodeIDMapping = new Dictionary<uint?, uint>();
     private float satRange = 5f;
 
+    private NetworkMap _networkMap;
+    public override NetworkMap NetworkMap { get => _networkMap;  set => _networkMap = value; }
+
     public Router(INode _node, ConstellationPlan _plan)
     {
         node = _node;
@@ -34,6 +37,7 @@ public class Router : IRouter
         }
 
         UpdateNetworkMap(_plan);
+        AddNodeToGraph(node.ID);
     }
 
 
@@ -42,7 +46,10 @@ public class Router : IRouter
     // Always sends clockwise or counterclockwise (cant remember which one).
     public uint? NextSequential(INode source, CommDir dir)
     {
-
+        if (node.ID == 9)
+        {
+            CommsSim.logs.Add(node.Router.NetworkMap.GetEntryByID(13)?.Position.ToString());
+        }
 
         Vector3 EarthPosition = Vector3.Zero;
         
@@ -60,12 +67,16 @@ public class Router : IRouter
        
         Vector3 SatClockwiseVector = Vector3.Cross(EarthPosition - source.Position, source.PlaneNormalDir);
 
-
         
+
+
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
         Vector3 normalVector = source.PlaneNormalDir;
         List<double> angles = neighbourEntries.Select(x => BackendHelpers.NumericsVectorSignedAngle(source.Position, x.Position, normalVector)).ToList();
-        if(angles.Any(angle => dir == CommDir.CW ? (angle > 0) : (angle < 0)))
+
+
+
+        if (angles.Any(angle => dir == CommDir.CW ? (angle > 0) : (angle < 0)))
         {
             if(dir == CommDir.CW)
             {
@@ -151,7 +162,7 @@ public class Router : IRouter
             foreach (ConstellationPlanEntry innerEntry in plan.Entries.Where((x) => x != entry))
             {
                 float dist = Vector3.Distance(entry.Position, innerEntry.Position);
-                if (dist < satRange) // 100 = Range for Satellite communication
+                if (dist < satRange) 
                 {
 
                     if (innerEntry.NodeID != null)
@@ -165,8 +176,8 @@ public class Router : IRouter
 
             if (entry.NodeID != null)
             {
-
                 NetworkMap.GetEntryByID(entry.NodeID).Neighbours = neighbors.Select(sat => sat.Item1).ToList();
+                NetworkMap.GetEntryByID(entry.NodeID).Position = entry.Position;
             }
 
         }

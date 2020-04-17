@@ -37,7 +37,8 @@ public class Node : INode
     public override ConstellationPlan ActivePlan { get; set; }
     public override ConstellationPlan GeneratingPlan { get; set; }
     public override NodeState State { get; set; }
-    public override Router Router { get; set; }
+    private Router _router;
+    public override Router Router { get => _router; set => _router = value; }
 
     private bool active;
 
@@ -47,6 +48,7 @@ public class Node : INode
         State = Node.NodeState.PASSIVE;
         Position = position;
         Active = true;
+        GenerateRouter();
         MainThread();
     }
 
@@ -93,6 +95,9 @@ public class Node : INode
         {
             ThreadCount++;
             IsBusy = true;
+
+            
+
             switch (request.Command)
             {
                 case Request.Commands.GENERATE:

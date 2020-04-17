@@ -55,34 +55,34 @@ public class Discovery
             request.EdgeSet.Entries.Add(new NetworkMapEntry(MyNode.ID, new List<uint?>(), MyNode.Position));
         }
 
-
-        NetworkMap networkmap = MyNode.Router.NetworkMap;
+        
 
 
         //Add any nodes not in my networkmap
         foreach(NetworkMapEntry set in request.EdgeSet.Entries)
         {
-            if(networkmap.Entries.Select(entry => entry.ID).Contains(set.ID) == false)
+            if(MyNode.Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(set.ID) == false)
             {
                 //I don't have this node as entry in my networkmap, add it
-                networkmap.Entries.Add(set);
+                NetworkMapEntry setClone = new NetworkMapEntry(set.ID, set.Neighbours, set.Position);
+                MyNode.Router.NetworkMap.Entries.Add(setClone);
                 newKnowledge = true;
-            } else if(set.Neighbours.Any(neighbour => networkmap.GetEntryByID(set.ID).Neighbours.Contains(neighbour) == false)) //If we already know of it, add any neighbours
+            } else if(set.Neighbours.Any(neighbour => MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours.Contains(neighbour) == false)) //If we already know of it, add any neighbours
             {
                 //A new neighbour is identified, for a node in my networkmap, add it.
-                networkmap.GetEntryByID(set.ID).Neighbours.AddRange(set.Neighbours);
-                networkmap.GetEntryByID(set.ID).Neighbours = networkmap.GetEntryByID(set.ID).Neighbours.Distinct().ToList();
+                MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours.AddRange(set.Neighbours);
+                MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours = MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours.Distinct().ToList();
                 newKnowledge = true;
             }
 
         }
 
-        foreach(NetworkMapEntry entry in networkmap.Entries)
+        foreach(NetworkMapEntry entry in MyNode.Router.NetworkMap.Entries)
         {
             if(request.EdgeSet.Entries.Select(set => set.ID).Contains(entry.ID) == false)
             {
                 //The request edgeset doesn't contain this entry. add it
-                request.EdgeSet.Entries.Add(entry);
+                request.EdgeSet.Entries.Add(entry.DeepClone());
                 alteredSet = true;
             } else if(entry.Neighbours.Any(neighbour => request.EdgeSet.GetEntryByID(entry.ID).Neighbours.Contains(neighbour) == false))
             {
@@ -118,8 +118,9 @@ public class Discovery
                 PositionResponse response = await MyNode.CommsModule.SendAsync(nextHop, positionRequest, 1000, 3) as PositionResponse;
                 Vector3 position = response.Position;
                 NetworkMapEntry neigbourEntry = new NetworkMapEntry(neighbour, position);
-                MyNode.Router.NetworkMap.Entries.Add(neigbourEntry);
-                request.EdgeSet.Entries.Add(neigbourEntry);
+                NetworkMapEntry ent = new NetworkMapEntry(neigbourEntry.ID, neigbourEntry.Neighbours, neigbourEntry.Position);
+                MyNode.Router.NetworkMap.Entries.Add(ent);
+                request.EdgeSet.Entries.Add(ent);
                 newKnowledge = true;
                 alteredSet = true;
             }

@@ -40,27 +40,26 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         new Thread(() =>
         {
+
+
+            if (comms.Node.ID == 9)
+            {
+                CommsSim.logs.Add(comms.Node.Router.NetworkMap.GetEntryByID(13)?.Position.ToString());
+            }
+
             Thread.Sleep(250);
+            
+            comms.Node.Router.AddNodeToGraph(comms.Node.ID);
+            if(request.SenderID != null)
+            comms.Node.Router.AddNodeToGraph(request.SenderID);
+
             requestList.Add(request);
             requestlistcount = requestList.Count;
 
 
-            if (request.ResponseExpected && request.AckExpected)
+            if (request.AckExpected)
             {
 
-                Response response = new Response()
-                {
-                    SourceID = comms.Node.ID,
-                    DestinationID = request.SenderID,
-                    ResponseCode = Response.ResponseCodes.ACK,
-                    MessageIdentifer = request.MessageIdentifer
-                };
-
-                uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
-                Send(nextHop, response);
-            }
-            else if (request.AckExpected)
-            {
                 Response response = new Response()
                 {
                     SourceID = comms.Node.ID,
@@ -231,7 +230,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Send(uint? nextHop, Response response)
     {
-        Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : Response" + "\t dst: " + response.DestinationID);
+        Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + response.GetType() + ": " + response.ResponseCode + "." + "\t dst: " + response.DestinationID);
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
