@@ -27,6 +27,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     private void Update()
     {
+        comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
+
         nodethreads = comms.Node.ThreadCount;
 
         logs.ForEach(log => Debug.LogWarning(log));

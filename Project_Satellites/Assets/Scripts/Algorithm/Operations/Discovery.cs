@@ -115,7 +115,7 @@ public class Discovery
                     ResponseExpected = true
                 };
                 uint? nextHop = MyNode.Router.NextHop(MyNode.ID, positionRequest.DestinationID);
-                PositionResponse response = await MyNode.CommsModule.SendAsync(nextHop, positionRequest, 1000, 3) as PositionResponse;
+                PositionResponse response = await MyNode.CommsModule.SendAsync(nextHop, positionRequest, 2000, 3) as PositionResponse;
                 Vector3 position = response.Position;
                 NetworkMapEntry neigbourEntry = new NetworkMapEntry(neighbour, position);
                 NetworkMapEntry ent = new NetworkMapEntry(neigbourEntry.ID, neigbourEntry.Neighbours, neigbourEntry.Position);

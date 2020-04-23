@@ -99,7 +99,7 @@ public class FailureDetection
     /// <summary>Should be used on the node when it detects a failure
     /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
     /// </summary>
-    public async static void FailureDetected(INode myNode, uint? failedNode)
+    /*public async static void FailureDetected(INode myNode, uint? failedNode)
     {
         //Remove edge from router, ensuring it won't try to route through the failed node
         myNode.Router.DeleteEdge(myNode.ID, failedNode);
@@ -149,7 +149,7 @@ public class FailureDetection
         }
 
     }
-
+    */
 
     public static void Recovery(INode myNode)
     {

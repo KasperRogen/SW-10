@@ -59,6 +59,9 @@ public class PlanExecuter
                 myNode.CommsModule.Send(nextHop, newRequest);
             }
 
+            //Set my targetposition to the position i was assigned in the plan
+            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
+
             // Find the ID of the node that has to travel the furthest comparing the active plan to the new plan
             IEnumerable<Tuple<uint?, float>> travelDistanceByID = Enumerable.Zip(
                     myNode.ActivePlan.Entries.Where(x => newRequest.Plan.Entries.Select(y => y.NodeID).Contains(x.NodeID)).OrderBy(x => x.NodeID),
@@ -75,8 +78,6 @@ public class PlanExecuter
             }
 
             myNode.ActivePlan = newRequest.Plan;
-            //Set my targetposition to the position i was assigned in the plan
-            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
             
             myNode.Router.UpdateNetworkMap(newRequest.Plan);
 
