@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
-	<declaration>const int N = 7; // Number of satellites
+	<declaration>const int N = 6; // Number of satellites
 
 clock time;
 
@@ -49,7 +49,7 @@ meta double radianIncrease;
 meta double radian = 0.0;
 */
 
-int radius = 1000;
+const int radius = 300;
 int startPositions[N];
 int targetPositions[N];
 
@@ -230,76 +230,76 @@ void ProcessPlan()
     }
   }
 }</declaration>
-		<location id="id0" x="-34" y="0">
-			<name x="-59" y="17">Receive</name>
+		<location id="id0" x="0" y="0">
+			<name x="-25" y="17">Receive</name>
 		</location>
-		<location id="id1" x="170" y="0">
-			<name x="144" y="17">Process</name>
+		<location id="id1" x="136" y="0">
+			<name x="110" y="17">Process</name>
 			<urgent/>
 		</location>
-		<location id="id2" x="544" y="0">
-			<name x="518" y="17">Transmit</name>
-			<label kind="invariant" x="527" y="34">t &lt;= 1</label>
+		<location id="id2" x="476" y="0">
+			<name x="450" y="17">Transmit</name>
+			<label kind="invariant" x="459" y="34">t &lt;= 1</label>
 		</location>
-		<location id="id3" x="722" y="0">
-			<name x="705" y="17">Done</name>
+		<location id="id3" x="646" y="0">
+			<name x="629" y="17">Done</name>
 		</location>
 		<location id="id4" x="68" y="-68">
 			<name x="51" y="-102">Start</name>
 			<urgent/>
 		</location>
-		<location id="id5" x="858" y="0">
+		<location id="id5" x="782" y="0">
 			<committed/>
 		</location>
-		<location id="id6" x="357" y="0">
+		<location id="id6" x="306" y="0">
 			<committed/>
 		</location>
 		<init ref="id4"/>
 		<transition>
 			<source ref="id6"/>
 			<target ref="id2"/>
-			<label kind="assignment" x="382" y="-25">ProcessPlan(), t = 0</label>
+			<label kind="assignment" x="331" y="-25">ProcessPlan(), t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
 			<target ref="id6"/>
-			<label kind="assignment" x="204" y="-25">CalculatePositions()</label>
+			<label kind="assignment" x="161" y="-25">CalculatePositions()</label>
 		</transition>
 		<transition>
 			<source ref="id5"/>
 			<target ref="id3"/>
-			<label kind="synchronisation" x="756" y="-93">complete!</label>
-			<nail x="858" y="-68"/>
-			<nail x="722" y="-68"/>
+			<label kind="synchronisation" x="680" y="-93">complete!</label>
+			<nail x="782" y="-68"/>
+			<nail x="646" y="-68"/>
 		</transition>
 		<transition>
 			<source ref="id3"/>
 			<target ref="id5"/>
-			<label kind="synchronisation" x="747" y="-25">transmit[ID]?</label>
+			<label kind="synchronisation" x="680" y="-25">transmit[ID]?</label>
 		</transition>
 		<transition>
 			<source ref="id4"/>
 			<target ref="id1"/>
-			<label kind="guard" x="93" y="-93">ID == start</label>
-			<nail x="170" y="-68"/>
+			<label kind="guard" x="93" y="-85">ID == start</label>
+			<nail x="136" y="-68"/>
 		</transition>
 		<transition>
 			<source ref="id4"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-17" y="-93">ID != start</label>
-			<nail x="-34" y="-68"/>
+			<label kind="guard" x="-25" y="-85">ID != start</label>
+			<nail x="0" y="-68"/>
 		</transition>
 		<transition>
 			<source ref="id2"/>
 			<target ref="id3"/>
-			<label kind="guard" x="603" y="-59">t &gt;= 1</label>
-			<label kind="synchronisation" x="561" y="-42">transmit[nextHop()]!</label>
-			<label kind="assignment" x="595" y="-25">comms++</label>
+			<label kind="guard" x="535" y="-59">t &gt;= 1</label>
+			<label kind="synchronisation" x="493" y="-42">transmit[nextHop()]!</label>
+			<label kind="assignment" x="527" y="-25">comms++</label>
 		</transition>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id1"/>
-			<label kind="synchronisation" x="25" y="-25">transmit[ID]?</label>
+			<label kind="synchronisation" x="34" y="-25">transmit[ID]?</label>
 		</transition>
 	</template>
 	<template>
@@ -476,77 +476,77 @@ void ProcessPlan()
     }
   }
 }</declaration>
-		<location id="id7" x="-6460" y="-5746">
-			<name x="-6485" y="-5729">Receive</name>
+		<location id="id7" x="-6426" y="-5746">
+			<name x="-6451" y="-5729">Receive</name>
 		</location>
-		<location id="id8" x="-6256" y="-5746">
-			<name x="-6282" y="-5729">Process</name>
+		<location id="id8" x="-6290" y="-5746">
+			<name x="-6316" y="-5729">Process</name>
 			<urgent/>
 		</location>
-		<location id="id9" x="-5695" y="-5746">
-			<name x="-5712" y="-5729">Done</name>
+		<location id="id9" x="-5780" y="-5746">
+			<name x="-5797" y="-5729">Done</name>
 		</location>
 		<location id="id10" x="-6358" y="-5814">
 			<name x="-6375" y="-5848">Start</name>
 			<urgent/>
 		</location>
-		<location id="id11" x="-5559" y="-5746">
+		<location id="id11" x="-5644" y="-5746">
 			<committed/>
 		</location>
-		<location id="id12" x="-6069" y="-5746">
+		<location id="id12" x="-6120" y="-5746">
 			<committed/>
 		</location>
-		<location id="id13" x="-5882" y="-5746">
-			<name x="-5899" y="-5729">Wait</name>
-			<label kind="invariant" x="-5899" y="-5712">t &lt;= 10</label>
+		<location id="id13" x="-5950" y="-5746">
+			<name x="-5967" y="-5729">Wait</name>
+			<label kind="invariant" x="-5967" y="-5712">t &lt;= 10</label>
 		</location>
 		<init ref="id10"/>
 		<transition>
 			<source ref="id13"/>
 			<target ref="id9"/>
-			<label kind="guard" x="-5822" y="-5805">t &gt;= 1</label>
-			<label kind="synchronisation" x="-5865" y="-5771">transmit[nextHop()]!</label>
-			<label kind="assignment" x="-5839" y="-5788">comms++</label>
-			<nail x="-5780" y="-5746"/>
+			<label kind="guard" x="-5890" y="-5805">t &gt;= 1</label>
+			<label kind="synchronisation" x="-5933" y="-5771">transmit[nextHop()]!</label>
+			<label kind="assignment" x="-5907" y="-5788">comms++</label>
+			<nail x="-5848" y="-5746"/>
 		</transition>
 		<transition>
 			<source ref="id12"/>
 			<target ref="id13"/>
-			<label kind="assignment" x="-6044" y="-5771">ProcessPlan(), t = 0</label>
+			<label kind="assignment" x="-6103" y="-5771">ProcessPlan(), t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id8"/>
 			<target ref="id12"/>
-			<label kind="assignment" x="-6222" y="-5771">CalculatePositions()</label>
+			<label kind="assignment" x="-6264" y="-5771">CalculatePositions()</label>
 		</transition>
 		<transition>
 			<source ref="id11"/>
 			<target ref="id9"/>
-			<label kind="synchronisation" x="-5661" y="-5839">complete!</label>
-			<nail x="-5559" y="-5814"/>
-			<nail x="-5695" y="-5814"/>
+			<label kind="synchronisation" x="-5746" y="-5839">complete!</label>
+			<nail x="-5644" y="-5814"/>
+			<nail x="-5780" y="-5814"/>
 		</transition>
 		<transition>
 			<source ref="id9"/>
 			<target ref="id11"/>
-			<label kind="synchronisation" x="-5670" y="-5771">transmit[ID]?</label>
+			<label kind="synchronisation" x="-5754" y="-5771">transmit[ID]?</label>
 		</transition>
 		<transition>
 			<source ref="id10"/>
 			<target ref="id8"/>
-			<label kind="guard" x="-6333" y="-5839">ID == start</label>
-			<nail x="-6256" y="-5814"/>
+			<label kind="guard" x="-6341" y="-5831">ID == start</label>
+			<nail x="-6290" y="-5814"/>
 		</transition>
 		<transition>
 			<source ref="id10"/>
 			<target ref="id7"/>
-			<label kind="guard" x="-6443" y="-5839">ID != start</label>
-			<nail x="-6460" y="-5814"/>
+			<label kind="guard" x="-6443" y="-5831">ID != start</label>
+			<nail x="-6426" y="-5814"/>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id8"/>
-			<label kind="synchronisation" x="-6401" y="-5771">transmit[ID]?</label>
+			<label kind="synchronisation" x="-6400" y="-5771">transmit[ID]?</label>
 		</transition>
 	</template>
 	<template>
@@ -585,23 +585,12 @@ void InitConstellationAndPlan()
 }
 */
 
-void InitConstellationAndPlan()
-{
-  int distanceBetweenNodes = radius / N;
-  int nextPosition = 0;
-  int i;
-  for(i=0; i&lt;N; i++)
-  {
-    int randomDistance = fint(random(distanceBetweenNodes));
-    startPositions[i] = nextPosition;
+int setup;
+const int distanceBetweenNodes = radius / N;
+typedef int[1, 3] OffsetPosition;
 
-    targetPositions[i] = nextPosition + randomDistance;
+int nextPosition = 0;
 
-    chosenPos[i] = -1;
-
-    nextPosition += distanceBetweenNodes;
-  }
-}
 
 bool Destinct(){
   bool result = true;
@@ -621,58 +610,233 @@ bool Destinct(){
 
 bool Verify() {
   return Destinct();
+}
+
+
+// returns position close to even distribution
+int EvenOffset(OffsetPosition oP)
+{
+  
+  int offset = distanceBetweenNodes / 2;
+
+  if (oP == 1) // CounterClockwise
+  {
+    offset -= offset / 4;
+  }
+  else if(oP == 2) // Middle
+  {
+    // do nothing 
+  }
+  else if(oP == 3) // Clockwise
+  {
+        offset += offset / 4;
+  }
+  return offset;
 }</declaration>
-		<location id="id14" x="-204" y="0">
+		<location id="id14" x="-340" y="0">
 			<committed/>
 		</location>
-		<location id="id15" x="-68" y="0">
-			<name x="-85" y="17">Wait</name>
+		<location id="id15" x="-204" y="0">
+			<name x="-221" y="17">Wait</name>
 		</location>
-		<location id="id16" x="34" y="0">
-			<name x="51" y="-8">Complete</name>
+		<location id="id16" x="-68" y="0">
+			<name x="-51" y="-8">Complete</name>
 			<committed/>
 		</location>
-		<location id="id17" x="170" y="68">
-			<name x="187" y="59">Wrong</name>
+		<location id="id17" x="68" y="68">
+			<name x="85" y="59">Wrong</name>
 		</location>
-		<location id="id18" x="170" y="-68">
-			<name x="187" y="-76">Correct</name>
+		<location id="id18" x="68" y="-68">
+			<name x="85" y="-76">Correct</name>
 		</location>
-		<location id="id19" x="-425" y="0">
-			<name x="-435" y="-34">Init</name>
+		<location id="id19" x="-476" y="0">
+			<committed/>
+		</location>
+		<location id="id20" x="-476" y="102">
+			<committed/>
+		</location>
+		<location id="id21" x="-680" y="0">
 			<committed/>
 		</location>
 		<init ref="id19"/>
 		<transition>
 			<source ref="id19"/>
 			<target ref="id14"/>
-			<label kind="assignment" x="-399" y="-25">InitConstellationAndPlan()</label>
+			<label kind="guard" x="-442" y="-34">setup == N</label>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id19"/>
+			<label kind="assignment" x="-688" y="-85">chosenPos[setup] = -1,
+setup++,
+nextPosition += distanceBetweenNodes</label>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="select" x="-671" y="110">offset : OffsetPosition</label>
+			<label kind="assignment" x="-663" y="136">targetPositions[setup] = nextPosition + EvenOffset(offset)</label>
+			<nail x="-680" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id20"/>
+			<label kind="guard" x="-467" y="34">setup &lt; N</label>
+			<label kind="assignment" x="-467" y="51">startPositions[setup] = nextPosition</label>
 		</transition>
 		<transition>
 			<source ref="id16"/>
 			<target ref="id17"/>
-			<label kind="guard" x="42" y="68">Verify() == false</label>
-			<nail x="34" y="68"/>
+			<label kind="guard" x="-60" y="68">Verify() == false</label>
+			<nail x="-68" y="68"/>
 		</transition>
 		<transition>
 			<source ref="id16"/>
 			<target ref="id18"/>
-			<label kind="guard" x="42" y="-93">Verify() == true</label>
-			<nail x="34" y="-68"/>
+			<label kind="guard" x="-60" y="-93">Verify() == true</label>
+			<nail x="-68" y="-68"/>
 		</transition>
 		<transition>
 			<source ref="id15"/>
 			<target ref="id16"/>
-			<label kind="synchronisation" x="-51" y="-25">complete?</label>
+			<label kind="synchronisation" x="-170" y="-25">complete?</label>
 		</transition>
 		<transition>
 			<source ref="id14"/>
 			<target ref="id15"/>
-			<label kind="select" x="-178" y="-42">node : UID</label>
-			<label kind="assignment" x="-178" y="-25">start = node</label>
+			<label kind="select" x="-314" y="-42">node : UID</label>
+			<label kind="assignment" x="-314" y="-25">start = node</label>
 		</transition>
 	</template>
-	<system>system RingNodeAsync, PlanGeneration;</system>
+	<template>
+		<name>PlanGenerationHole</name>
+		<declaration>int setup;
+const int distanceBetweenNodes = radius / N;
+typedef int[1, 3] OffsetPosition;
+
+int nextPosition = 0;
+
+
+bool Destinct(){
+  bool result = true;
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    int count = 0;
+    int j;
+    for (j=0; j&lt;N; j++)
+    {
+      if (chosenPos[j] == i) { count++;}
+    }
+    if (count &gt; 1) { result = false; }
+  }
+  return result;
+}
+
+bool Verify() {
+  return Destinct();
+}
+
+
+// returns position close to even distribution
+int EvenOffset(OffsetPosition oP)
+{
+  
+  int offset = distanceBetweenNodes / 2;
+
+  if (oP == 1) // CounterClockwise
+  {
+    offset -= offset / 4;
+  }
+  else if(oP == 2) // Middle
+  {
+    // do nothing 
+  }
+  else if(oP == 3) // Clockwise
+  {
+        offset += offset / 4;
+  }
+  return offset;
+}</declaration>
+		<location id="id22" x="-476" y="0">
+			<committed/>
+		</location>
+		<location id="id23" x="-340" y="0">
+			<committed/>
+		</location>
+		<location id="id24" x="-680" y="0">
+			<committed/>
+		</location>
+		<location id="id25" x="-476" y="102">
+			<committed/>
+		</location>
+		<location id="id26" x="-204" y="0">
+			<name x="-221" y="17">Wait</name>
+		</location>
+		<location id="id27" x="-68" y="0">
+			<name x="-51" y="-8">Complete</name>
+			<committed/>
+		</location>
+		<location id="id28" x="68" y="68">
+			<name x="85" y="59">Wrong</name>
+		</location>
+		<location id="id29" x="68" y="-68">
+			<name x="85" y="-76">Correct</name>
+		</location>
+		<init ref="id22"/>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id23"/>
+			<label kind="guard" x="-442" y="-34">setup == N</label>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id22"/>
+			<label kind="assignment" x="-688" y="-85">chosenPos[setup] = -1,
+setup++,
+nextPosition += distanceBetweenNodes</label>
+		</transition>
+		<transition>
+			<source ref="id25"/>
+			<target ref="id24"/>
+			<label kind="select" x="-663" y="110">offset : OffsetPosition</label>
+			<label kind="assignment" x="-663" y="127">targetPositions[setup] = nextPosition + EvenOffset(offset)</label>
+			<nail x="-680" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id25"/>
+			<label kind="guard" x="-467" y="34">setup &lt; N</label>
+			<label kind="assignment" x="-467" y="51">startPositions[setup] = nextPosition</label>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id28"/>
+			<label kind="guard" x="-60" y="68">Verify() == false</label>
+			<nail x="-68" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id29"/>
+			<label kind="guard" x="-60" y="-93">Verify() == true</label>
+			<nail x="-68" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-170" y="-25">complete?</label>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id26"/>
+			<label kind="select" x="-314" y="-42">node : UID</label>
+			<label kind="assignment" x="-314" y="-25">start = node</label>
+			<label kind="comments" x="-357" y="-110">Difference between chosen
+start here or before creating
+constellation?</label>
+		</transition>
+	</template>
+	<system>system RingNodeSync, PlanGeneration;</system>
 	<queries>
 		<query>
 			<formula>***** SYNC QUERIES *****</formula>

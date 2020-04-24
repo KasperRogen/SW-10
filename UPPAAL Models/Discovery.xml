@@ -136,112 +136,112 @@ bool Verify()
 		<location id="id0" x="-102" y="340">
 			<name x="-170" y="332">Receive</name>
 		</location>
-		<location id="id1" x="85" y="340">
-			<name x="59" y="357">Process</name>
+		<location id="id1" x="34" y="340">
+			<name x="8" y="357">Process</name>
 			<committed/>
 		</location>
-		<location id="id2" x="272" y="340">
-			<name x="246" y="357">Transmit</name>
-			<label kind="invariant" x="255" y="374">t &lt;= 1</label>
+		<location id="id2" x="170" y="340">
+			<name x="144" y="357">Transmit</name>
+			<label kind="invariant" x="153" y="374">t &lt;= 1</label>
 		</location>
-		<location id="id3" x="510" y="340">
+		<location id="id3" x="374" y="340">
 			<committed/>
 		</location>
 		<location id="id4" x="-102" y="442">
 			<committed/>
 		</location>
-		<location id="id5" x="85" y="238">
-			<name x="68" y="102">Start</name>
+		<location id="id5" x="34" y="238">
+			<name x="17" y="102">Start</name>
 			<urgent/>
 		</location>
-		<location id="id6" x="85" y="136">
+		<location id="id6" x="34" y="136">
 			<committed/>
 		</location>
-		<location id="id7" x="680" y="340">
-			<name x="697" y="332">Done</name>
+		<location id="id7" x="544" y="340">
+			<name x="561" y="332">Done</name>
 			<committed/>
 		</location>
-		<location id="id8" x="680" y="238">
-			<name x="654" y="204">Verified</name>
+		<location id="id8" x="544" y="238">
+			<name x="518" y="204">Verified</name>
 		</location>
-		<location id="id9" x="680" y="442">
-			<name x="654" y="459">Wrong</name>
+		<location id="id9" x="544" y="442">
+			<name x="518" y="459">Wrong</name>
 		</location>
 		<init ref="id6"/>
 		<transition>
 			<source ref="id5"/>
 			<target ref="id2"/>
-			<label kind="guard" x="153" y="213">start == ID</label>
-			<nail x="272" y="238"/>
+			<label kind="guard" x="59" y="212">start == ID</label>
+			<nail x="170" y="238"/>
 		</transition>
 		<transition>
 			<source ref="id9"/>
 			<target ref="id9"/>
-			<label kind="synchronisation" x="756" y="433">transmit[ID]?</label>
-			<nail x="748" y="476"/>
-			<nail x="748" y="408"/>
+			<label kind="synchronisation" x="620" y="433">transmit[ID]?</label>
+			<nail x="612" y="476"/>
+			<nail x="612" y="408"/>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id9"/>
-			<label kind="guard" x="688" y="382">Verify() == false</label>
+			<label kind="guard" x="552" y="382">Verify() == false</label>
 		</transition>
 		<transition>
 			<source ref="id8"/>
 			<target ref="id8"/>
-			<label kind="synchronisation" x="756" y="230">transmit[ID]?</label>
-			<nail x="748" y="204"/>
-			<nail x="748" y="272"/>
+			<label kind="synchronisation" x="620" y="230">transmit[ID]?</label>
+			<nail x="612" y="204"/>
+			<nail x="612" y="272"/>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id8"/>
-			<label kind="guard" x="688" y="280">Verify() == true</label>
+			<label kind="guard" x="552" y="280">Verify() == true</label>
 		</transition>
 		<transition>
 			<source ref="id3"/>
 			<target ref="id7"/>
-			<label kind="guard" x="527" y="315">secondPass == true</label>
+			<label kind="guard" x="391" y="315">secondPass == true</label>
 		</transition>
 		<transition>
 			<source ref="id3"/>
 			<target ref="id4"/>
-			<label kind="guard" x="127" y="416">secondPass == false</label>
-			<nail x="510" y="442"/>
+			<label kind="guard" x="68" y="416">secondPass == false</label>
+			<nail x="374" y="442"/>
 		</transition>
 		<transition>
 			<source ref="id6"/>
 			<target ref="id5"/>
-			<label kind="assignment" x="93" y="170">AddNeighbours()</label>
+			<label kind="assignment" x="42" y="170">AddNeighbours()</label>
 		</transition>
 		<transition>
 			<source ref="id5"/>
 			<target ref="id0"/>
-			<label kind="guard" x="-42" y="213">start != ID</label>
+			<label kind="guard" x="-76" y="212">start != ID</label>
 			<nail x="-102" y="238"/>
 		</transition>
 		<transition>
 			<source ref="id4"/>
 			<target ref="id0"/>
-			<label kind="assignment" x="-93" y="391">secondPass = true</label>
+			<label kind="assignment" x="-93" y="382">secondPass = true</label>
 		</transition>
 		<transition>
 			<source ref="id2"/>
 			<target ref="id3"/>
-			<label kind="guard" x="374" y="281">t &gt;= 1</label>
-			<label kind="synchronisation" x="331" y="315">transmit[nextHop()]!</label>
-			<label kind="assignment" x="306" y="298">TransmitEdges(), comms++</label>
+			<label kind="guard" x="255" y="280">t &gt;= 1</label>
+			<label kind="synchronisation" x="212" y="314">transmit[nextHop()]!</label>
+			<label kind="assignment" x="187" y="297">TransmitEdges(), comms++</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
 			<target ref="id2"/>
-			<label kind="assignment" x="144" y="298">ProcessEdges(),
+			<label kind="assignment" x="51" y="297">ProcessEdges(),
 t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id1"/>
-			<label kind="synchronisation" x="-33" y="315">transmit[ID]?</label>
+			<label kind="synchronisation" x="-76" y="314">transmit[ID]?</label>
 		</transition>
 	</template>
 	<template>
@@ -352,113 +352,113 @@ bool Verify()
 		<location id="id10" x="-442" y="0">
 			<name x="-510" y="-8">Receive</name>
 		</location>
-		<location id="id11" x="-255" y="0">
-			<name x="-281" y="17">Process</name>
+		<location id="id11" x="-306" y="0">
+			<name x="-332" y="17">Process</name>
 			<committed/>
 		</location>
-		<location id="id12" x="-68" y="0">
-			<name x="-85" y="17">Wait</name>
-			<label kind="invariant" x="-85" y="34">t &lt;= 10</label>
+		<location id="id12" x="-170" y="0">
+			<name x="-187" y="17">Wait</name>
+			<label kind="invariant" x="-187" y="34">t &lt;= 10</label>
 		</location>
-		<location id="id13" x="170" y="0">
+		<location id="id13" x="34" y="0">
 			<committed/>
 		</location>
 		<location id="id14" x="-442" y="102">
 			<committed/>
 		</location>
-		<location id="id15" x="-255" y="-102">
-			<name x="-272" y="-238">Start</name>
+		<location id="id15" x="-306" y="-102">
+			<name x="-323" y="-238">Start</name>
 			<urgent/>
 		</location>
-		<location id="id16" x="-255" y="-204">
+		<location id="id16" x="-306" y="-204">
 			<committed/>
 		</location>
-		<location id="id17" x="340" y="0">
-			<name x="357" y="-8">Done</name>
+		<location id="id17" x="204" y="0">
+			<name x="221" y="-8">Done</name>
 			<committed/>
 		</location>
-		<location id="id18" x="340" y="-102">
-			<name x="314" y="-136">Verified</name>
+		<location id="id18" x="204" y="-102">
+			<name x="178" y="-136">Verified</name>
 		</location>
-		<location id="id19" x="340" y="102">
-			<name x="314" y="119">Wrong</name>
+		<location id="id19" x="204" y="102">
+			<name x="178" y="119">Wrong</name>
 		</location>
 		<init ref="id16"/>
 		<transition>
 			<source ref="id12"/>
 			<target ref="id13"/>
-			<label kind="guard" x="34" y="-59">t &gt;= 1</label>
-			<label kind="synchronisation" x="-8" y="-25">transmit[nextHop()]!</label>
-			<label kind="assignment" x="-34" y="-42">TransmitEdges(), comms++</label>
-			<nail x="51" y="0"/>
+			<label kind="guard" x="-85" y="-59">t &gt;= 1</label>
+			<label kind="synchronisation" x="-127" y="-25">transmit[nextHop()]!</label>
+			<label kind="assignment" x="-153" y="-42">TransmitEdges(), comms++</label>
+			<nail x="-68" y="0"/>
 		</transition>
 		<transition>
 			<source ref="id15"/>
 			<target ref="id12"/>
-			<label kind="guard" x="-187" y="-127">start == ID</label>
-			<nail x="-68" y="-102"/>
+			<label kind="guard" x="-280" y="-127">start == ID</label>
+			<nail x="-170" y="-102"/>
 		</transition>
 		<transition>
 			<source ref="id19"/>
 			<target ref="id19"/>
-			<label kind="synchronisation" x="416" y="93">transmit[ID]?</label>
-			<nail x="408" y="136"/>
-			<nail x="408" y="68"/>
+			<label kind="synchronisation" x="280" y="93">transmit[ID]?</label>
+			<nail x="272" y="136"/>
+			<nail x="272" y="68"/>
 		</transition>
 		<transition>
 			<source ref="id17"/>
 			<target ref="id19"/>
-			<label kind="guard" x="348" y="42">Verify() == false</label>
+			<label kind="guard" x="212" y="42">Verify() == false</label>
 		</transition>
 		<transition>
 			<source ref="id18"/>
 			<target ref="id18"/>
-			<label kind="synchronisation" x="416" y="-110">transmit[ID]?</label>
-			<nail x="408" y="-136"/>
-			<nail x="408" y="-68"/>
+			<label kind="synchronisation" x="280" y="-110">transmit[ID]?</label>
+			<nail x="272" y="-136"/>
+			<nail x="272" y="-68"/>
 		</transition>
 		<transition>
 			<source ref="id17"/>
 			<target ref="id18"/>
-			<label kind="guard" x="348" y="-60">Verify() == true</label>
+			<label kind="guard" x="212" y="-60">Verify() == true</label>
 		</transition>
 		<transition>
 			<source ref="id13"/>
 			<target ref="id17"/>
-			<label kind="guard" x="187" y="-25">secondPass == true</label>
+			<label kind="guard" x="51" y="-25">secondPass == true</label>
 		</transition>
 		<transition>
 			<source ref="id13"/>
 			<target ref="id14"/>
-			<label kind="guard" x="-213" y="76">secondPass == false</label>
-			<nail x="170" y="102"/>
+			<label kind="guard" x="-280" y="76">secondPass == false</label>
+			<nail x="34" y="102"/>
 		</transition>
 		<transition>
 			<source ref="id16"/>
 			<target ref="id15"/>
-			<label kind="assignment" x="-247" y="-170">AddNeighbours()</label>
+			<label kind="assignment" x="-298" y="-170">AddNeighbours()</label>
 		</transition>
 		<transition>
 			<source ref="id15"/>
 			<target ref="id10"/>
-			<label kind="guard" x="-382" y="-127">start != ID</label>
+			<label kind="guard" x="-408" y="-127">start != ID</label>
 			<nail x="-442" y="-102"/>
 		</transition>
 		<transition>
 			<source ref="id14"/>
 			<target ref="id10"/>
-			<label kind="assignment" x="-433" y="51">secondPass = true</label>
+			<label kind="assignment" x="-433" y="42">secondPass = true</label>
 		</transition>
 		<transition>
 			<source ref="id11"/>
 			<target ref="id12"/>
-			<label kind="assignment" x="-196" y="-42">ProcessEdges(),
+			<label kind="assignment" x="-289" y="-42">ProcessEdges(),
 t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id10"/>
 			<target ref="id11"/>
-			<label kind="synchronisation" x="-374" y="-25">transmit[ID]?</label>
+			<label kind="synchronisation" x="-416" y="-25">transmit[ID]?</label>
 		</transition>
 	</template>
 	<template>
