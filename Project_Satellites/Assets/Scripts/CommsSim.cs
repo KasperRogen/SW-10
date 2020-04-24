@@ -10,7 +10,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
     public int requestlistcount;
-    List<Request> requestList = new List<Request>();
+    public List<Request> requestList { get; set; } = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
     ConstellationVisualiser visualiser;
     public int nodethreads;
@@ -27,6 +27,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     private void Update()
     {
+        comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
+
         nodethreads = comms.Node.ThreadCount;
 
         logs.ForEach(log => Debug.LogWarning(log));
@@ -83,13 +85,9 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Send(uint? nextHop, Request request)
     {
-        Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID);
-
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 
         satMan.SentMessages.Add(new Tuple<Vector3, Vector3, Color>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), Color.yellow));
-
-
 
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
@@ -98,8 +96,13 @@ public class CommsSim : MonoBehaviour, ICommunicate
             if (request.MessageIdentifer == null)
                 request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
 
+            Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
             hop.Node.CommsModule.Receive(request);
             ActiveCommSat = null;
+        }
+        else
+        {
+            Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
         }
     }
 
@@ -119,12 +122,10 @@ public class CommsSim : MonoBehaviour, ICommunicate
                     {
                         OnResponseReceived -= GetResponse;
                         tcs.SetResult(e.Response);
+                        return;
                     }
 
                 }
-
-
-
 
                 if (request.ResponseExpected)
                 {
@@ -135,17 +136,16 @@ public class CommsSim : MonoBehaviour, ICommunicate
                     {
                         OnResponseReceived -= GetResponse;
                         tcs.SetResult(e.Response);
+                        return;
                     }    
                 } else if(request.AckExpected)
                 {
                     OnResponseReceived -= GetResponse;
                     tcs.SetResult(e.Response);
+                    return;
                 }
-
             }
         }
-
-        
 
         new Thread(() =>
         {

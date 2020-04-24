@@ -28,7 +28,7 @@ public class Request
 
     public Request() {
 
-
+        MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
 
     }
 
@@ -68,6 +68,8 @@ public class Request
         Command = command;
 
         Dir = Router.CommDir.CW;
+
+        MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
 
     }
 

@@ -18,6 +18,9 @@ public class PlanGenerator
         }
         else
         {
+            // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
+            myNode.CommsModule.requestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
+
             myNode.executingPlan = false;
             myNode.State = Node.NodeState.PLANNING;
             myNode.GeneratingPlan = request.Plan;
