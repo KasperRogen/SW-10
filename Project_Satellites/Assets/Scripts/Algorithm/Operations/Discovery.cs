@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
@@ -30,6 +30,11 @@ public class Discovery
         if(MyNode.LastDiscoveryID != request.MessageIdentifer)
         {
             MyNode.ReachableNodeCount = MyNode.Router.ReachableSats(MyNode).Count;
+            if (MyNode.CommsModule.Discover().Count < MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Count)
+            {
+                Heartbeat.CheckHeartbeat(MyNode);
+                return;
+            }
             MyNode.ActivePlan = new ConstellationPlan(new List<ConstellationPlanEntry>());
             MyNode.LastDiscoveryID = request.MessageIdentifer;
             MyNode.Router.NetworkMap.Entries.Clear();
