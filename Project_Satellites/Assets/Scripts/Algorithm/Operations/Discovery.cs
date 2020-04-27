@@ -30,11 +30,12 @@ public class Discovery
         if(MyNode.LastDiscoveryID != request.MessageIdentifer)
         {
             MyNode.ReachableNodeCount = MyNode.Router.ReachableSats(MyNode).Count;
-            if (MyNode.CommsModule.Discover().Count < MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Count)
+            if (MyNode.CommsModule.Discover().OrderBy(x => x.Value).SequenceEqual(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.OrderBy(x => x.Value)) == false)
             {
                 Heartbeat.CheckHeartbeat(MyNode);
                 return;
             }
+            MyNode.Router.BackupNetworkMap = MyNode.Router.NetworkMap;
             MyNode.ActivePlan = new ConstellationPlan(new List<ConstellationPlanEntry>());
             MyNode.LastDiscoveryID = request.MessageIdentifer;
             MyNode.Router.NetworkMap.Entries.Clear();
