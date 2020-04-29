@@ -145,6 +145,7 @@ public class Discovery
                 Vector3 position = entry.Position;
                 List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
                 ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
+                planEntry.NodeID = entry.ID; // NodeID must also be set as it caused problems executing a new plan generated after discovery
                 newEntries.Add(planEntry);
             }
 

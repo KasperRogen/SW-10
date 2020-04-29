@@ -154,29 +154,19 @@ public class DiscoveryRequest : Request
 }
 
 public class DetectFailureRequest : Request
-
 {
-
     public uint? NodeToCheck { get; set; }
-
     public List<Tuple<uint?, uint?>> DeadEdges { get; set; }
-
-
+    public List<uint?> FailedNeighbours { get; set; } // Neighbours to NodeToCheck that have already tried contacting it without success
 
     public DetectFailureRequest() {
 
-
-
     }
 
-
-
     public DetectFailureRequest(DetectFailureRequest other) : base(other) {
-
         NodeToCheck = other.NodeToCheck;
-
         DeadEdges = other.DeadEdges.ToList().ConvertAll(x => new Tuple<uint?, uint?>(x.Item1, x.Item2));
-
+        FailedNeighbours = new List<uint?>(other.FailedNeighbours);
     }
 
 

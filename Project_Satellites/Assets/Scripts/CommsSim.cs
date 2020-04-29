@@ -190,7 +190,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         await tcs.Task;
 
         // Trigger failure handling if no response after several attempts
-        if (request.GetType() != typeof(DetectFailureRequest) && tcs.Task.Result.ResponseCode == Response.ResponseCodes.TIMEOUT)
+        if (request.GetType() != typeof(DetectFailureRequest) && request.Command != Request.Commands.PING && tcs.Task.Result.ResponseCode == Response.ResponseCodes.TIMEOUT)
         {
             FailureDetection.FailureDetected(comms.Node, nextHop);
         }

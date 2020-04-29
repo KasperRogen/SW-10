@@ -62,12 +62,31 @@ public class PlanExecuter
             //Set my targetposition to the position i was assigned in the plan
             myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
 
-            // Find the ID of the node that has to travel the furthest comparing the active plan to the new plan
-            IEnumerable<Tuple<uint?, float>> travelDistanceByID = Enumerable.Zip(
-                    myNode.ActivePlan.Entries.Where(x => newRequest.Plan.Entries.Select(y => y.NodeID).Contains(x.NodeID)).OrderBy(x => x.NodeID),
-                    newRequest.Plan.Entries.OrderBy(x => x.NodeID),
-                    (x, y) => new Tuple<uint?, Vector3, Vector3>(x.NodeID, x.Position, y.Position))
-                .Select(x => new Tuple<uint?, float>(x.Item1, Vector3.Distance(x.Item2, x.Item3)));
+            // Entries in active plan that are also in the new plan
+            List<ConstellationPlanEntry> activeEntries = new List<ConstellationPlanEntry>();
+            // Entries in new plan
+            List<ConstellationPlanEntry> newEntries = request.Plan.Entries;
+            // IDs of entries in the new plan
+            IEnumerable<uint?> newEntryIDs = newRequest.Plan.Entries.Select(entry => entry.NodeID);
+            UnityEngine.Debug.Log(myNode.ActivePlan);
+            foreach (var x in newEntryIDs) {
+                UnityEngine.Debug.Log(x);
+            }
+            // Fill out activeEntries
+            foreach (ConstellationPlanEntry entry in myNode.ActivePlan.Entries) {
+                if (newEntryIDs.Contains(entry.NodeID)) {
+                    activeEntries.Add(entry);
+                }
+            }
+
+            // Order by ID pre-zip
+            activeEntries = activeEntries.OrderBy(entry => entry.NodeID).ToList();
+            newEntries = newEntries.OrderBy(entry => entry.NodeID).ToList();
+            // Zip active and new entries together on NodeID including Position of them both
+            IEnumerable<Tuple<uint?, Vector3, Vector3>> entriesZipped = Enumerable.Zip(activeEntries, newEntries, (ae, ne) => new Tuple<uint?, Vector3, Vector3>(ae.NodeID, ae.Position, ne.Position));
+            // Distance nodes have to travel based on active and new plan
+            IEnumerable<Tuple<uint?, float>> travelDistanceByID = entriesZipped.Select(entry => new Tuple<uint?, float>(entry.Item1, Vector3.Distance(entry.Item2, entry.Item3)));
+            // Find max travel distance and ID of node that has to travel that
             float maxTravelDistance = travelDistanceByID.Max(x => x.Item2);
             uint? maxTravelID = travelDistanceByID.Single(x => x.Item2 == maxTravelDistance).Item1;
 
