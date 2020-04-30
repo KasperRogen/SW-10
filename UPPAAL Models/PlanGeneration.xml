@@ -49,7 +49,7 @@ meta double radianIncrease;
 meta double radian = 0.0;
 */
 
-const int radius = 300;
+const int radius = 100;
 int startPositions[N];
 int targetPositions[N];
 
@@ -63,6 +63,7 @@ int chosenPos[N];
 int cost; // the cost to move to a target position
 
 int possiblePos[N];
+int nodesBestCost[N];
 
 
 UID nextHop() {
@@ -124,30 +125,16 @@ int Distance(int p1, int p2)
 }
 
 
-int minIndex()
-{
-  int minVal = 999;
-  int index;
-  
-  int i;
-  for (i=0; i&lt;N; i++)
-  {
-    if (possiblePos[i] &lt; minVal  &amp;&amp; possiblePos[i] != -1)
-    {
-      index = i;
-      minVal = possiblePos[i];
-    }
-  }
-  return index;
-}
-
 // check if node with id has already chosen a position
 bool isInPlan(int id)
 {
   int i;
   for (i=0; i&lt;N; i++)
   {
-    if (id == chosenPos[i]) { return true; }
+    if (id == chosenPos[i])
+    {
+      return true;
+    }
   }
   return false;
 }
@@ -159,6 +146,8 @@ void CalculatePositions()
   // Calculate cost to all target positions
   for (i=0; i&lt;N; i++)
   {
+    nodesBestCost[i] = -1; //initalize bestNodes
+
     if (chosenPos[i] == -1)
     {
       possiblePos[i] = Distance(startPositions[ID], targetPositions[i]);
@@ -171,9 +160,9 @@ void CalculatePositions()
 }
 
 
-int BestPosition(int id)
+void BestPosition(int id)
 {
-  int bestCost = 999;
+  int bestCost = -1;
   int bestPos;
   
   int i;
@@ -181,31 +170,32 @@ int BestPosition(int id)
   {
     int tempCost = Distance(startPositions[id], targetPositions[i]);
 
-    if (tempCost &lt; bestCost)
+    if (tempCost &lt; bestCost || bestCost == -1)
     {
       bestCost = tempCost;
       bestPos = i;
     }
   }
 
-  return bestPos;
+  if (bestCost &lt; nodesBestCost[bestPos] || nodesBestCost[bestPos] == -1)
+  {
+    nodesBestCost[bestPos] = bestCost;
+  } 
+
 }
 
 
 void ProcessPlan()
 {
-  int i;
-  int nodesBestPos[N];
-  
+  int myChosenPos = -1;
+  int myCost = -1;
+
+  int i;  
   for (i=0; i&lt;N; i++)
   {
     if (!isInPlan(i) &amp;&amp; i != ID)
     {
-        int bestPosition = BestPosition(i);
-    }
-    else
-    {
-      nodesBestPos[i] = -1;
+      BestPosition(i);
     }
   }
 
@@ -216,19 +206,19 @@ void ProcessPlan()
   {
     if (possiblePos[i] != -1)
     {
-      int index = minIndex();
       
-      if (nodesBestPos[index] == -1)
+      bool isBetter = possiblePos[i] &lt;= nodesBestCost[i] || nodesBestCost[i] == -1;
+      
+      if (isBetter &amp;&amp; (possiblePos[i] &lt; myCost || myCost == -1))
       {
-        chosenPos[index] = ID;
-        cost = Distance(startPositions[i], targetPositions[index]);
-      }
-      else
-      {
-        possiblePos[index] = -1;
+        myChosenPos = i;
+        myCost = possiblePos[i];
       }
     }
   }
+
+  chosenPos[myChosenPos] = ID;
+  cost = myCost;
 }</declaration>
 		<location id="id0" x="0" y="0">
 			<name x="-25" y="17">Receive</name>
@@ -310,6 +300,8 @@ void ProcessPlan()
 int cost; // the cost to move to a target position
 
 int possiblePos[N];
+int nodesBestCost[N];
+
 
 UID nextHop() {
   return (ID + 1) % N;
@@ -370,30 +362,16 @@ int Distance(int p1, int p2)
 }
 
 
-int minIndex()
-{
-  int minVal = 999;
-  int index;
-  
-  int i;
-  for (i=0; i&lt;N; i++)
-  {
-    if (possiblePos[i] &lt; minVal  &amp;&amp; possiblePos[i] != -1)
-    {
-      index = i;
-      minVal = possiblePos[i];
-    }
-  }
-  return index;
-}
-
 // check if node with id has already chosen a position
 bool isInPlan(int id)
 {
   int i;
   for (i=0; i&lt;N; i++)
   {
-    if (id == chosenPos[i]) { return true; }
+    if (id == chosenPos[i])
+    {
+      return true;
+    }
   }
   return false;
 }
@@ -405,6 +383,8 @@ void CalculatePositions()
   // Calculate cost to all target positions
   for (i=0; i&lt;N; i++)
   {
+    nodesBestCost[i] = -1; //initalize bestNodes
+
     if (chosenPos[i] == -1)
     {
       possiblePos[i] = Distance(startPositions[ID], targetPositions[i]);
@@ -417,9 +397,9 @@ void CalculatePositions()
 }
 
 
-int BestPosition(int id)
+void BestPosition(int id)
 {
-  int bestCost = 999;
+  int bestCost = -1;
   int bestPos;
   
   int i;
@@ -427,31 +407,32 @@ int BestPosition(int id)
   {
     int tempCost = Distance(startPositions[id], targetPositions[i]);
 
-    if (tempCost &lt; bestCost)
+    if (tempCost &lt; bestCost || bestCost == -1)
     {
       bestCost = tempCost;
       bestPos = i;
     }
   }
 
-  return bestPos;
+  if (bestCost &lt; nodesBestCost[bestPos] || nodesBestCost[bestPos] == -1)
+  {
+    nodesBestCost[bestPos] = bestCost;
+  } 
+
 }
 
 
 void ProcessPlan()
 {
-  int i;
-  int nodesBestPos[N];
-  
+  int myChosenPos = -1;
+  int myCost = -1;
+
+  int i;  
   for (i=0; i&lt;N; i++)
   {
     if (!isInPlan(i) &amp;&amp; i != ID)
     {
-        int bestPosition = BestPosition(i);
-    }
-    else
-    {
-      nodesBestPos[i] = -1;
+      BestPosition(i);
     }
   }
 
@@ -462,19 +443,19 @@ void ProcessPlan()
   {
     if (possiblePos[i] != -1)
     {
-      int index = minIndex();
       
-      if (nodesBestPos[index] == -1)
+      bool isBetter = possiblePos[i] &lt;= nodesBestCost[i] || nodesBestCost[i] == -1;
+      
+      if (isBetter &amp;&amp; (possiblePos[i] &lt; myCost || myCost == -1))
       {
-        chosenPos[index] = ID;
-        cost = Distance(startPositions[i], targetPositions[index]);
-      }
-      else
-      {
-        possiblePos[index] = -1;
+        myChosenPos = i;
+        myCost = possiblePos[i];
       }
     }
   }
+
+  chosenPos[myChosenPos] = ID;
+  cost = myCost;
 }</declaration>
 		<location id="id7" x="-6426" y="-5746">
 			<name x="-6451" y="-5729">Receive</name>
@@ -591,28 +572,6 @@ typedef int[1, 3] OffsetPosition;
 
 int nextPosition = 0;
 
-
-bool Destinct(){
-  bool result = true;
-  int i;
-  for (i=0; i&lt;N; i++)
-  {
-    int count = 0;
-    int j;
-    for (j=0; j&lt;N; j++)
-    {
-      if (chosenPos[j] == i) { count++;}
-    }
-    if (count &gt; 1) { result = false; }
-  }
-  return result;
-}
-
-bool Verify() {
-  return Destinct();
-}
-
-
 // returns position close to even distribution
 int EvenOffset(OffsetPosition oP)
 {
@@ -632,6 +591,46 @@ int EvenOffset(OffsetPosition oP)
         offset += offset / 4;
   }
   return offset;
+}
+
+
+bool AllTargetsChosen()
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (chosenPos[i] == -1)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Destinct(){
+  bool result = true;
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    int count = 0;
+    int j;
+    for (j=0; j&lt;N; j++)
+    {
+      if (chosenPos[j] == i)
+      { 
+        count++;
+      }
+    }
+    if (count &gt; 1)
+    {
+      result = false; 
+    }
+  }
+  return result;
+}
+
+bool Verify() {
+  return AllTargetsChosen() &amp;&amp; Destinct();
 }</declaration>
 		<location id="id14" x="-340" y="0">
 			<committed/>
@@ -711,11 +710,25 @@ nextPosition += distanceBetweenNodes</label>
 	<template>
 		<name>PlanGenerationHole</name>
 		<declaration>int setup;
-const int distanceBetweenNodes = radius / N;
-typedef int[1, 3] OffsetPosition;
+const int distanceBetweenNodes = radius / (N + 1);
+const int distanceBetweenTargets = radius / N;
 
-int nextPosition = 0;
+int nextNodePosition = distanceBetweenNodes;
+int nextTargetPosition = 0;
 
+
+bool AllTargetsChosen()
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (chosenPos[i] == -1)
+    {
+      return false;
+    }
+  }
+  return true;
+}
 
 bool Destinct(){
   bool result = true;
@@ -726,38 +739,24 @@ bool Destinct(){
     int j;
     for (j=0; j&lt;N; j++)
     {
-      if (chosenPos[j] == i) { count++;}
+      if (chosenPos[j] == i)
+      { 
+        count++;
+      }
     }
-    if (count &gt; 1) { result = false; }
+    if (count &gt; 1)
+    {
+      result = false; 
+    }
   }
   return result;
 }
 
 bool Verify() {
-  return Destinct();
+  return AllTargetsChosen() &amp;&amp; Destinct();
 }
 
-
-// returns position close to even distribution
-int EvenOffset(OffsetPosition oP)
-{
-  
-  int offset = distanceBetweenNodes / 2;
-
-  if (oP == 1) // CounterClockwise
-  {
-    offset -= offset / 4;
-  }
-  else if(oP == 2) // Middle
-  {
-    // do nothing 
-  }
-  else if(oP == 3) // Clockwise
-  {
-        offset += offset / 4;
-  }
-  return offset;
-}</declaration>
+</declaration>
 		<location id="id22" x="-476" y="0">
 			<committed/>
 		</location>
@@ -792,22 +791,22 @@ int EvenOffset(OffsetPosition oP)
 		<transition>
 			<source ref="id24"/>
 			<target ref="id22"/>
-			<label kind="assignment" x="-688" y="-85">chosenPos[setup] = -1,
+			<label kind="assignment" x="-765" y="-93">chosenPos[setup] = -1,
 setup++,
-nextPosition += distanceBetweenNodes</label>
+nextNodePosition += distanceBetweenNodes,
+nextTargetPosition += distanceBetweenTargets</label>
 		</transition>
 		<transition>
 			<source ref="id25"/>
 			<target ref="id24"/>
-			<label kind="select" x="-663" y="110">offset : OffsetPosition</label>
-			<label kind="assignment" x="-663" y="127">targetPositions[setup] = nextPosition + EvenOffset(offset)</label>
+			<label kind="assignment" x="-680" y="119">targetPositions[setup] = nextTargetPosition</label>
 			<nail x="-680" y="102"/>
 		</transition>
 		<transition>
 			<source ref="id22"/>
 			<target ref="id25"/>
 			<label kind="guard" x="-467" y="34">setup &lt; N</label>
-			<label kind="assignment" x="-467" y="51">startPositions[setup] = nextPosition</label>
+			<label kind="assignment" x="-467" y="51">startPositions[setup] = nextNodePosition</label>
 		</transition>
 		<transition>
 			<source ref="id27"/>
@@ -836,7 +835,7 @@ start here or before creating
 constellation?</label>
 		</transition>
 	</template>
-	<system>system RingNodeSync, PlanGeneration;</system>
+	<system>system RingNodeAsync, PlanGeneration;</system>
 	<queries>
 		<query>
 			<formula>***** SYNC QUERIES *****</formula>
@@ -904,6 +903,10 @@ constellation?</label>
 		</query>
 		<query>
 			<formula>A&lt;&gt; PlanGeneration.Correct</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGenerationHole.Correct</formula>
 			<comment></comment>
 		</query>
 		<query>
