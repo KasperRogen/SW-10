@@ -27,6 +27,20 @@ public class ConstellationPlanEntry : IComparable
         compareFunction = func;
     }
 
+    public ConstellationPlanEntry(uint? nodeID, Vector3 position, List<ConstellationPlanField> fields, CompareFunction func)
+    {
+        Position = position;
+        NodeID = nodeID;
+        Fields = new Dictionary<string, ConstellationPlanField>();
+
+        foreach (ConstellationPlanField field in fields)
+        {
+            Fields.Add(field.Key, field);
+        }
+
+        compareFunction = func;
+    }
+
     public int CompareTo(object obj)
     {
         return compareFunction(this, obj as ConstellationPlanEntry);

@@ -65,3 +65,18 @@ public class PositionResponse : Response
     }
 
 }
+
+public class NodeAdditionResponse : Response
+{
+    public Vector3 Position { get; set; }
+    public List<uint?> Neighbours { get; set; }
+    public NodeAdditionResponse(uint? _sourceID, uint? _destinationID, ResponseCodes _responsecode, string _messageIdentifier, Vector3 _position, List<uint?> _neighbours)
+    {
+        this.SourceID = _sourceID;
+        this.DestinationID = _destinationID;
+        this.ResponseCode = _responsecode;
+        this.MessageIdentifer = _messageIdentifier;
+        Position = _position;
+        this.Neighbours = _neighbours;
+    }
+}

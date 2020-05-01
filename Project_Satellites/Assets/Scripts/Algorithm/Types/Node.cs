@@ -12,7 +12,6 @@ public class Node : INode
     public override Vector3 Position { get; set; }
     public override Vector3 TargetPosition { get; set; }
 
-    public string LastDiscoveryID = "";
 
     public override bool Active
     {
@@ -127,6 +126,20 @@ public class Node : INode
                 case Request.Commands.POSITION:
                     PositionResponse response = new PositionResponse(ID, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer, Position);
                     CommsModule.Send(request.SourceID, response);
+                    break;
+
+                case Request.Commands.ADDITION:
+
+                    List<uint?> neighbours = CommsModule.Discover();
+                    AdditionRequest addition = (request as AdditionRequest).DeepCopy();
+
+                    List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
+                    addition.plan.Entries.Add(new ConstellationPlanEntry(ID, Position, fields, (x, y) => 1));
+                    ActivePlan = addition.plan;
+                    Router.UpdateNetworkMap(addition.plan);
+
+                    NodeAdditionResponse additionResponse = new NodeAdditionResponse(ID, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer, Position, neighbours);
+                    CommsModule.Send(request.SourceID, additionResponse);
                     break;
 
                 default:

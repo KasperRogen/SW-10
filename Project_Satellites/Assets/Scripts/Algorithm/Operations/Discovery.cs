@@ -15,7 +15,8 @@ public class Discovery
             Command = Request.Commands.DISCOVER,
             DestinationID = myNode.ID,
             SourceID = myNode.ID,
-            EdgeSet = new NetworkMap()
+            SenderID = myNode.ID,
+            Alterations = new List<NetworkMapAlteration>()
         };
 
         myNode.CommsModule.Send(myNode.ID, discoveryRequest);
@@ -27,139 +28,116 @@ public class Discovery
     /// </summary>
     public static async System.Threading.Tasks.Task DiscoverAsync(INode MyNode, DiscoveryRequest request)
     {
+        bool _isIntroduced = true;
+
+        if (MyNode.LastDiscoveryID == "" || MyNode.LastDiscoveryID == null)
+            _isIntroduced = false;
+
         if(MyNode.LastDiscoveryID != request.MessageIdentifer)
         {
             MyNode.ReachableNodeCount = MyNode.Router.ReachableSats(MyNode).Count;
-            if (MyNode.CommsModule.Discover().OrderBy(x => x.Value).SequenceEqual(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.OrderBy(x => x.Value)) == false)
-            {
+            List<uint?> DiscoveredNeighbours = MyNode.CommsModule.Discover();
+            if(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Any(neighbour => DiscoveredNeighbours.Contains(neighbour) == false)){
                 Heartbeat.CheckHeartbeat(MyNode);
                 return;
             }
-            MyNode.Router.BackupNetworkMap = MyNode.Router.NetworkMap;
-            MyNode.ActivePlan = new ConstellationPlan(new List<ConstellationPlanEntry>());
-            MyNode.LastDiscoveryID = request.MessageIdentifer;
-            MyNode.Router.NetworkMap.Entries.Clear();
-            MyNode.Router.NetworkMap.Entries.Add(new NetworkMapEntry(MyNode.ID, MyNode.Position));
-            MyNode.Router.ClearNetworkMap();
         }
             
         bool newKnowledge = false;
         bool alteredSet = false;
         MyNode.State = Node.NodeState.DISCOVERY;
-        
+        MyNode.LastDiscoveryID = request.MessageIdentifer;
 
-        //Request all nodes reachable by the commsModule
-        List<uint?> ReachableNodes = MyNode.CommsModule.Discover();
-        
-        //Add these reachable nodes to my neighbours
-        MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.AddRange(ReachableNodes);
-        MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours = MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Distinct().ToList();
-        
-        //If the request doesn't contain my node, add it
-        if(request.EdgeSet.Entries.Select(set => set.ID).Contains(MyNode.ID) == false)
+        foreach (NetworkMapAlteration alteration in request.Alterations)
         {
-            request.EdgeSet.Entries.Add(new NetworkMapEntry(MyNode.ID, new List<uint?>(), MyNode.Position));
-        }
-
-        
-
-
-        //Add any nodes not in my networkmap
-        foreach(NetworkMapEntry set in request.EdgeSet.Entries)
-        {
-            if(MyNode.Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(set.ID) == false)
+            if(alteration.GetType() == typeof(NetworkMapAddition))
             {
-                //I don't have this node as entry in my networkmap, add it
-                NetworkMapEntry setClone = new NetworkMapEntry(set.ID, set.Neighbours, set.Position);
-                MyNode.Router.NetworkMap.Entries.Add(setClone);
-                newKnowledge = true;
-            } else if(set.Neighbours.Any(neighbour => MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours.Contains(neighbour) == false)) //If we already know of it, add any neighbours
-            {
-                //A new neighbour is identified, for a node in my networkmap, add it.
-                MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours.AddRange(set.Neighbours);
-                MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours = MyNode.Router.NetworkMap.GetEntryByID(set.ID).Neighbours.Distinct().ToList();
-                newKnowledge = true;
+                NetworkMapAddition addition = alteration as NetworkMapAddition;
+                if(MyNode.Router.NetworkMap.GetEntryByID(addition.Entry.ID) == null)
+                {
+                    newKnowledge = true;
+                    MyNode.Router.NetworkMap.Entries.Add(addition.Entry);
+                }
             }
-
         }
 
-        foreach(NetworkMapEntry entry in MyNode.Router.NetworkMap.Entries)
+        foreach (NetworkMapAlteration alteration in request.Alterations)
         {
-            if(request.EdgeSet.Entries.Select(set => set.ID).Contains(entry.ID) == false)
+            if (alteration.GetType() == typeof(NetworkMapAddition))
             {
-                //The request edgeset doesn't contain this entry. add it
-                request.EdgeSet.Entries.Add(entry.DeepClone());
-                alteredSet = true;
-            } else if(entry.Neighbours.Any(neighbour => request.EdgeSet.GetEntryByID(entry.ID).Neighbours.Contains(neighbour) == false))
-            {
-                //The request edgeset doesn't have this given neighbour for the entry. add it
-                request.EdgeSet.GetEntryByID(entry.ID).Neighbours.AddRange(entry.Neighbours);
-                request.EdgeSet.GetEntryByID(entry.ID).Neighbours = request.EdgeSet.GetEntryByID(entry.ID).Neighbours.Distinct().ToList();
-                alteredSet = true;
+                NetworkMapAddition addition = alteration as NetworkMapAddition;
+                if (MyNode.Router.NetworkMap.GetEntryByID(addition.Entry.ID) != null)
+                {
+                    
+                    foreach (uint? newNodeNeighbour in addition.Entry.Neighbours)
+                    {
+                        if(MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour).Neighbours.Contains(addition.Entry.ID) == false)
+                        {
+                            newKnowledge = true;
+                            MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour).Neighbours.Add(addition.Entry.ID);
+                        }
+                        
+                    }
+
+                }
             }
-
         }
 
 
-
-        //For each of my neighbours
-        foreach (uint? neighbour in MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours)
+        //Additions
+        foreach (uint? node in MyNode.CommsModule.Discover().Except(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours))
         {
-            if(MyNode.Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(neighbour) == false)
+            if(MyNode.Router.NetworkMap.GetEntryByID(node) == null)
             {
-                if (neighbour == MyNode.ID)
-                    continue;
-
-                MyNode.Router.AddNodeToGraph(neighbour);
-
-                Request positionRequest = new Request()
+               
+                
+                AdditionRequest additionRequest = new AdditionRequest()
                 {
                     SourceID = MyNode.ID,
-                    DestinationID = neighbour,
-                    Command = Request.Commands.POSITION,
+                    SenderID = MyNode.ID,
+                    DestinationID = node,
+                    Command = Request.Commands.ADDITION,
                     AckExpected = false,
-                    ResponseExpected = true
+                    ResponseExpected = true,
+                    plan = MyNode.ActivePlan
                 };
-                uint? nextHop = MyNode.Router.NextHop(MyNode.ID, positionRequest.DestinationID);
-                PositionResponse response = await MyNode.CommsModule.SendAsync(nextHop, positionRequest, 2000, 3) as PositionResponse;
+                NodeAdditionResponse response = await MyNode.CommsModule.SendAsync(additionRequest.DestinationID, additionRequest, 2000, 3) as NodeAdditionResponse;
                 Vector3 position = response.Position;
-                NetworkMapEntry neigbourEntry = new NetworkMapEntry(neighbour, position);
+                List<uint?> nodeNeighbours = response.Neighbours;
+                
+                NetworkMapEntry neigbourEntry = new NetworkMapEntry(node, nodeNeighbours, position);
                 NetworkMapEntry ent = new NetworkMapEntry(neigbourEntry.ID, neigbourEntry.Neighbours, neigbourEntry.Position);
+
+                MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Add(node);
                 MyNode.Router.NetworkMap.Entries.Add(ent);
-                request.EdgeSet.Entries.Add(ent);
+
+                request.Alterations.Add(new NetworkMapAddition(ent));
+                
+
                 newKnowledge = true;
                 alteredSet = true;
+
             }
         }
 
-    
+
 
         MyNode.Router.UpdateGraph();
 
 
-        if (alteredSet || newKnowledge)
+        if (alteredSet || newKnowledge || _isIntroduced == false)
         {
-            List<ConstellationPlanEntry> newEntries = new List<ConstellationPlanEntry>();
-
-            foreach(NetworkMapEntry entry in MyNode.Router.NetworkMap.Entries)
-            {
-                Vector3 position = entry.Position;
-                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
-                ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
-                newEntries.Add(planEntry);
-            }
-
-            MyNode.ActivePlan = new ConstellationPlan(newEntries);
-
             DiscoveryRequest newRequest = request.DeepCopy();
 
             newRequest.DestinationID = MyNode.Router.NextSequential(MyNode, Router.CommDir.CW);
             newRequest.SourceID = MyNode.ID;
+            newRequest.SenderID = MyNode.ID;
+            newRequest.AckExpected = true;
             uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
-            MyNode.CommsModule.Send(nextHop, newRequest);
+            await MyNode.CommsModule.SendAsync(nextHop, newRequest, 1000, 3);
         } else
         {
-            if(MyNode.Router.ReachableSats(MyNode).Count > MyNode.ReachableNodeCount)
+            if(request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
             {
                 ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(MyNode.Router.ReachableSats(MyNode).Count, 7.152f);
 
