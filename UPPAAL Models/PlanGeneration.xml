@@ -673,8 +673,8 @@ nextPosition += distanceBetweenNodes</label>
 		<transition>
 			<source ref="id20"/>
 			<target ref="id21"/>
-			<label kind="select" x="-671" y="110">offset : OffsetPosition</label>
-			<label kind="assignment" x="-663" y="136">targetPositions[setup] = nextPosition + EvenOffset(offset)</label>
+			<label kind="select" x="-654" y="110">offset : OffsetPosition</label>
+			<label kind="assignment" x="-756" y="127">targetPositions[setup] = nextPosition + EvenOffset(offset)</label>
 			<nail x="-680" y="102"/>
 		</transition>
 		<transition>
@@ -786,12 +786,12 @@ bool Verify() {
 		<transition>
 			<source ref="id22"/>
 			<target ref="id23"/>
-			<label kind="guard" x="-442" y="-34">setup == N</label>
+			<label kind="guard" x="-442" y="-25">setup == N</label>
 		</transition>
 		<transition>
 			<source ref="id24"/>
 			<target ref="id22"/>
-			<label kind="assignment" x="-765" y="-93">chosenPos[setup] = -1,
+			<label kind="assignment" x="-722" y="-93">chosenPos[setup] = -1,
 setup++,
 nextNodePosition += distanceBetweenNodes,
 nextTargetPosition += distanceBetweenTargets</label>
@@ -830,9 +830,6 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<target ref="id26"/>
 			<label kind="select" x="-314" y="-42">node : UID</label>
 			<label kind="assignment" x="-314" y="-25">start = node</label>
-			<label kind="comments" x="-357" y="-110">Difference between chosen
-start here or before creating
-constellation?</label>
 		</transition>
 	</template>
 	<system>system RingNodeAsync, PlanGeneration;</system>

@@ -707,7 +707,7 @@ ProcessEdges()</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Verified &amp;&amp; time &lt;= N</formula>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Verified &amp;&amp; time &lt;= (2*N) +1</formula>
 			<comment></comment>
 		</query>
 		<query>

@@ -157,7 +157,7 @@ bool isSubdivided()
 		</location>
 		<location id="id2" x="-68" y="68">
 			<name x="-59" y="25">Transmit</name>
-			<label kind="invariant" x="-51" y="42">t &lt;= 1</label>
+			<label kind="invariant" x="-57" y="42">t &lt;= 1</label>
 		</location>
 		<location id="id3" x="-238" y="68">
 			<name x="-263" y="34">Respond</name>
@@ -192,11 +192,11 @@ bool isSubdivided()
 			<name x="527" y="8">Done</name>
 			<committed/>
 		</location>
-		<location id="id12" x="748" y="-34">
-			<name x="731" y="-68">Split</name>
+		<location id="id12" x="714" y="-34">
+			<name x="697" y="-68">Split</name>
 		</location>
-		<location id="id13" x="748" y="68">
-			<name x="714" y="85">Subdivided</name>
+		<location id="id13" x="714" y="68">
+			<name x="680" y="85">Subdivided</name>
 		</location>
 		<location id="id14" x="-238" y="-68">
 			<name x="-221" y="-76">OutOfReach</name>
@@ -210,20 +210,20 @@ bool isSubdivided()
 		<transition>
 			<source ref="id2"/>
 			<target ref="id10"/>
-			<label kind="guard" x="51" y="170">start == ID</label>
+			<label kind="guard" x="80" y="170">start == ID</label>
 			<nail x="-68" y="170"/>
 			<nail x="272" y="170"/>
 		</transition>
 		<transition>
 			<source ref="id11"/>
 			<target ref="id13"/>
-			<label kind="guard" x="561" y="42">isSubdivided() == true</label>
+			<label kind="guard" x="552" y="42">isSubdivided() == true</label>
 			<nail x="544" y="68"/>
 		</transition>
 		<transition>
 			<source ref="id11"/>
 			<target ref="id12"/>
-			<label kind="guard" x="561" y="-59">isSubdivided() == false</label>
+			<label kind="guard" x="552" y="-59">isSubdivided() == false</label>
 			<nail x="544" y="-34"/>
 		</transition>
 		<transition>
@@ -304,7 +304,7 @@ t = 0</label>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id7"/>
-			<label kind="guard" x="-399" y="-136">isDead() == true</label>
+			<label kind="guard" x="-403" y="-134">isDead() == true</label>
 		</transition>
 		<transition>
 			<source ref="id5"/>
@@ -329,7 +329,7 @@ CheckFailed()</label>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id1"/>
-			<label kind="guard" x="-408" y="-25">start != ID &amp;&amp;
+			<label kind="guard" x="-403" y="-31">start != ID &amp;&amp;
 isDead() == false &amp;&amp;
 isOutOfReach() == false</label>
 		</transition>
@@ -461,12 +461,12 @@ bool isSubdivided()
 			<name x="-501" y="76">Receive</name>
 		</location>
 		<location id="id18" x="-170" y="102">
-			<name x="-161" y="59">Transmit</name>
-			<label kind="invariant" x="-153" y="76">t &lt;= 10</label>
+			<name x="-167" y="57">Transmit</name>
+			<label kind="invariant" x="-164" y="72">t &lt;= 10</label>
 		</location>
 		<location id="id19" x="-340" y="102">
-			<name x="-357" y="59">Respond</name>
-			<label kind="invariant" x="-357" y="76">t &lt;= 15</label>
+			<name x="-366" y="58">Respond</name>
+			<label kind="invariant" x="-361" y="73">t &lt;= 15</label>
 		</location>
 		<location id="id20" x="34" y="0">
 			<name x="9" y="-42">Retry</name>
@@ -477,8 +477,8 @@ bool isSubdivided()
 			<label kind="invariant" x="17" y="127">t &lt;= 5</label>
 		</location>
 		<location id="id22" x="204" y="0">
-			<name x="170" y="9">FailedTrans</name>
-			<label kind="invariant" x="187" y="26">t &lt;= 10</label>
+			<name x="170" y="12">FailedTrans</name>
+			<label kind="invariant" x="185" y="27">t &lt;= 10</label>
 		</location>
 		<location id="id23" x="-510" y="-136">
 			<name x="-527" y="-170">Dead</name>
@@ -497,18 +497,18 @@ bool isSubdivided()
 			<name x="425" y="43">Done</name>
 			<committed/>
 		</location>
-		<location id="id28" x="646" y="0">
-			<name x="629" y="-34">Split</name>
+		<location id="id28" x="612" y="0">
+			<name x="599" y="-35">Split</name>
 		</location>
-		<location id="id29" x="646" y="102">
-			<name x="612" y="119">Subdivided</name>
+		<location id="id29" x="612" y="102">
+			<name x="578" y="119">Subdivided</name>
 		</location>
 		<init ref="id15"/>
 		<transition>
 			<source ref="id18"/>
 			<target ref="id26"/>
-			<label kind="synchronisation" x="25" y="170">respond[ID]?</label>
-			<label kind="assignment" x="34" y="187">failures = 0</label>
+			<label kind="synchronisation" x="-28" y="170">respond[ID]?</label>
+			<label kind="assignment" x="-25" y="185">failures = 0</label>
 			<nail x="-136" y="204"/>
 			<nail x="136" y="204"/>
 		</transition>
@@ -520,20 +520,20 @@ bool isSubdivided()
 		<transition>
 			<source ref="id18"/>
 			<target ref="id26"/>
-			<label kind="guard" x="-51" y="238">start == ID</label>
+			<label kind="guard" x="-22" y="237">start == ID</label>
 			<nail x="-170" y="238"/>
 			<nail x="170" y="238"/>
 		</transition>
 		<transition>
 			<source ref="id27"/>
 			<target ref="id29"/>
-			<label kind="guard" x="459" y="76">isSubdivided() == true</label>
+			<label kind="guard" x="450" y="76">isSubdivided() == true</label>
 			<nail x="442" y="102"/>
 		</transition>
 		<transition>
 			<source ref="id27"/>
 			<target ref="id28"/>
-			<label kind="guard" x="459" y="-25">isSubdivided() == false</label>
+			<label kind="guard" x="450" y="-25">isSubdivided() == false</label>
 			<nail x="442" y="0"/>
 		</transition>
 		<transition>
@@ -615,7 +615,7 @@ t = 0</label>
 		<transition>
 			<source ref="id15"/>
 			<target ref="id23"/>
-			<label kind="guard" x="-501" y="-102">isDead() == true</label>
+			<label kind="guard" x="-505" y="-98">isDead() == true</label>
 		</transition>
 		<transition>
 			<source ref="id21"/>
@@ -642,7 +642,7 @@ t = 0</label>
 		<transition>
 			<source ref="id15"/>
 			<target ref="id17"/>
-			<label kind="guard" x="-501" y="0">start != ID &amp;&amp;
+			<label kind="guard" x="-503" y="-1">start != ID &amp;&amp;
 isDead() == false &amp;&amp;
 isOutOfReach() == false</label>
 		</transition>
