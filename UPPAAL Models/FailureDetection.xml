@@ -21,7 +21,7 @@ bool singleSplit;
 bool split;
 
 const int len = 2;
-int deadNodes[len] = {0, 0};
+int deadNodes[len] = {-1, -1};
 
 meta UID sender;
 meta UID failedNode;
@@ -724,7 +724,7 @@ n1 : UID</label>
 deadNodes[0] = n1</label>
 		</transition>
 	</template>
-	<system>system RingNodeAsync, FailureDetection;
+	<system>system RingNodeSync, FailureDetection;
     </system>
 	<queries>
 		<query>
@@ -752,7 +752,7 @@ deadNodes[0] = n1</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; totalFailures &gt; 3 &amp;&amp; (forall (i : UID) RingNodeSync(i).Split || RingNodeSync(i).Subdivided || RingNodeSync(i).Dead || RingNodeSync(i).OutOfReach) </formula>
+			<formula>E&lt;&gt; totalFailures &lt;= 2 &amp;&amp; (forall (i : UID) RingNodeSync(i).Split || RingNodeSync(i).Subdivided || RingNodeSync(i).Dead || RingNodeSync(i).OutOfReach) </formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -760,11 +760,19 @@ deadNodes[0] = n1</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] forall(i : UID) RingNodeSync(i).Done imply time &lt;= (N * 2) + 1</formula>
+			<formula>A[] forall (i : UID) RingNodeSync(i).Done imply time &lt;= (N * 2) + 1</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] forall(i : UID) RingNodeSync(i).Done imply RingNodeSync(i).t &lt;= N * 2</formula>
+			<formula>A[] forall (i : UID) RingNodeSync(i).Done imply RingNodeSync(i).t &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -781,6 +789,18 @@ deadNodes[0] = n1</label>
 		</query>
 		<query>
 			<formula>A&lt;&gt; FailureDetection.SingleSplit imply forall (i : UID) (RingNodeSync(i).Dead &amp;&amp; deadNodes[0] == i) || RingNodeSync(i).Split </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
 			<comment></comment>
 		</query>
 		<query>

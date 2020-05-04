@@ -927,6 +927,18 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
+			<formula>A&lt;&gt; PlanGenerationHole.Complete &amp;&amp; time &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N - 1)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
 			<formula>A[] comms &lt;= N</formula>
 			<comment></comment>
 		</query>
@@ -935,7 +947,7 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula></formula>
+			<formula>E&lt;&gt; PlanGenerationHole.Complete &amp;&amp; comms &lt;= (N - 1)</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -1003,7 +1015,11 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; deadlock &amp;&amp; (!PlanGeneration &amp;&amp; !Ring.PlanGeneration)</formula>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (!PlanGeneration.Correct &amp;&amp; !PlanGeneration.Wrong)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (!PlanGenerationHole.Correct &amp;&amp; !PlanGenerationHole.Wrong)</formula>
 			<comment></comment>
 		</query>
 		<query>
