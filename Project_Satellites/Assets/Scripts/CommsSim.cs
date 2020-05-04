@@ -31,6 +31,10 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         nodethreads = comms.Node.ThreadCount;
 
+
+
+
+
         logs.ForEach(log => Debug.LogWarning(log));
         logs.Clear();
     }

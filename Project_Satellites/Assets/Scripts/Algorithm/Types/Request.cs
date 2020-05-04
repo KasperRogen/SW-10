@@ -8,7 +8,7 @@ public class Request
 {
     public enum Commands
     {
-        GENERATE, EXECUTE, DETECTFAILURE, HEARTBEAT, PING, DISCOVER, POSITION
+        GENERATE, EXECUTE, DETECTFAILURE, HEARTBEAT, PING, DISCOVER, POSITION, ADDITION
     }
 
     public uint? SourceID { get; set; }
@@ -123,13 +123,14 @@ public class DiscoveryRequest : Request
 
 {
 
-    public NetworkMap EdgeSet { get; set; }
+    public List<NetworkMapAlteration> Alterations { get; set; }
+
 
 
 
     public DiscoveryRequest(DiscoveryRequest other) : base(other) {
 
-        EdgeSet = other.EdgeSet; //TODO: THIS MIGHT BREAK STUFF
+        Alterations = other.Alterations; //TODO: THIS MIGHT BREAK STUFF
 
     }
 
@@ -181,5 +182,28 @@ public class DetectFailureRequest : Request
 
 
 
+    
+
+
+
+}
+
+public class AdditionRequest : Request
+{
+    public ConstellationPlan plan;
+    public AdditionRequest(AdditionRequest other) : base(other)
+    {
+        plan = other.plan; //TODO: THIS MIGHT BREAK STUFF
+    }
+
+    public AdditionRequest()
+    {
+        SenderID = SourceID;
+    }
+
+    public AdditionRequest DeepCopy()
+    {
+        return new AdditionRequest(this);
+    }
 }
 

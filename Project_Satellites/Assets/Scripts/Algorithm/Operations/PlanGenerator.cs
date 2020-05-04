@@ -11,7 +11,7 @@ public class PlanGenerator
     /// </summary>
     public static void GeneratePlan(INode myNode, PlanRequest request)
     {
-        //If the request isn't meant for this node, just return. Node.cs will relay the message
+        //If the request isn't meant for this node, just return. Node.cs will relay the message   61674131 
         if (request.DestinationID != myNode.ID)
         {
             return;
@@ -26,7 +26,8 @@ public class PlanGenerator
             myNode.GeneratingPlan = request.Plan;
 
             //OptimalOneRevolutionPlanGeneration(myNode, request);
-            SingleRevolutionPlanGeneration(myNode, request);
+            //GreedySingleRevolutionPlanGeneration(myNode, request);
+            SingleRevolutionPlanGeneration(myNode, request);    
             //MultipleRevolutionsPlanGeneration(myNode, request);
         }
     }
@@ -221,6 +222,75 @@ public class PlanGenerator
         }
     }
 
+
+    private static void GreedySingleRevolutionPlanGeneration(INode myNode, PlanRequest request)
+    {
+        PlanRequest newRequest = request.DeepCopy();
+        newRequest.SenderID = myNode.ID;
+        newRequest.AckExpected = true;
+
+
+
+        List<NodeLocationMatch> matches = new List<NodeLocationMatch>();
+        ConstellationPlan newPlan = request.Plan.DeepCopy();
+        // Only find location to take if this node hasnt already taken one
+        if (request.Plan.Entries.Select(x => x.NodeID).Contains(myNode.ID) == false)
+        {
+
+
+            foreach (NetworkMapEntry node in myNode.Router.NetworkMap.Entries.OrderBy(entry => entry.ID))
+            {
+                List<Vector3> OrderedPositions = newPlan.Entries.Select(entry => entry.Position).ToList();
+                OrderedPositions = OrderedPositions.Except(matches.Select(match => match.Position)).ToList();
+                OrderedPositions = OrderedPositions.OrderBy(position => Vector3.Distance(node.Position, position)).ToList();
+                
+                matches.Add(new NodeLocationMatch(node.ID, OrderedPositions.First()));
+            }
+
+            ConstellationPlanEntry entryToTake = newPlan.Entries.Find(entry => 
+                entry.Position == matches.Find(match => 
+                match.NodeID == myNode.ID).Position);
+
+            entryToTake.NodeID = myNode.ID;
+            entryToTake.Fields["DeltaV"].Value = Vector3.Distance(entryToTake.Position, myNode.Position);
+
+            newRequest.Plan = newPlan;
+            myNode.GeneratingPlan = newRequest.Plan;
+        }
+
+        // If last location is filled, execute the plan
+        if (newRequest.Plan.Entries.All(x => x.NodeID != null))
+        {
+            newRequest.Command = Request.Commands.EXECUTE;
+            newRequest.SourceID = myNode.ID;
+
+            PlanExecuter.ExecutePlan(myNode, newRequest);
+        }
+        else
+        {
+            uint? nextSeq = myNode.Router.NextSequential(myNode, newRequest.Dir);
+
+            if (nextSeq == null)
+            {
+                Router.CommDir newDir = newRequest.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
+                newRequest.Dir = newDir;
+                nextSeq = myNode.Router.NextSequential(myNode, newDir);
+            }
+
+            newRequest.DestinationID = nextSeq;
+
+            if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq))
+            {
+                myNode.CommsModule.Send(nextSeq, newRequest);
+            }
+            else
+            {
+                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+                myNode.CommsModule.Send(nextHop, newRequest);
+            }
+        }
+    }
+
     private static void OptimalOneRevolutionPlanGeneration(INode myNode, PlanRequest request)
     {
         ConstellationPlan temporaryPlan = request.Plan.DeepCopy();
@@ -263,6 +333,18 @@ public class PlanGenerator
                 uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
                 myNode.CommsModule.Send(nextHop, newRequest);
             }
+        }
+    }
+
+    private class NodeLocationMatch
+    {
+        public uint? NodeID;
+        public Vector3 Position;
+
+        public NodeLocationMatch(uint? nodeID, Vector3 position)
+        {
+            NodeID = nodeID;
+            Position = position;
         }
     }
 }

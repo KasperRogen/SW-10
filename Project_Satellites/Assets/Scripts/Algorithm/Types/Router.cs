@@ -19,6 +19,11 @@ public class Router : IRouter
     private Dictionary<uint?, uint> nodeToNodeIDMapping = new Dictionary<uint?, uint>();
     private float satRange = 5f;
 
+    
+
+    private NetworkMap _backupNetworkMap;
+    public override NetworkMap BackupNetworkMap { get => _backupNetworkMap; set => _backupNetworkMap = value; }
+
     private NetworkMap _networkMap;
     public override NetworkMap NetworkMap { get => _networkMap;  set => _networkMap = value; }
 
@@ -146,6 +151,7 @@ public class Router : IRouter
         IEnumerable<uint> path = result.GetPath();
         int a = path.Count();
         uint? nextHop = nodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
+
         return nextHop;
     }
 
@@ -171,13 +177,21 @@ public class Router : IRouter
             }
 
             //Order sats by distance to myself
-            neighbors = neighbors.OrderBy(sat => sat.Item2).ToList();
+            neighbors = neighbors.OrderBy(sat => sat.Item2).ToList();//Only distinct please
 
 
             if (entry.NodeID != null)
             {
-                NetworkMap.GetEntryByID(entry.NodeID).Neighbours = neighbors.Select(sat => sat.Item1).ToList();
-                NetworkMap.GetEntryByID(entry.NodeID).Position = entry.Position;
+                if (NetworkMap.GetEntryByID(entry.NodeID) == null)
+                {
+                    NetworkMap.Entries.Add(new NetworkMapEntry(entry.NodeID, neighbors.Select(sat => sat.Item1).ToList(), entry.Position));
+                } else
+                {
+                    NetworkMap.GetEntryByID(entry.NodeID).Neighbours = neighbors.Select(sat => sat.Item1).ToList();
+                    NetworkMap.GetEntryByID(entry.NodeID).Position = entry.Position;
+                }
+
+                
             }
 
         }
