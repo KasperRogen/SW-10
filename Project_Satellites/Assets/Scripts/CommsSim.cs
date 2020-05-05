@@ -48,12 +48,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
 
 
-            if (comms.Node.ID == 9)
-            {
-                CommsSim.logs.Add(comms.Node.Router.NetworkMap.GetEntryByID(13)?.Position.ToString());
-            }
 
-            Thread.Sleep(250);
+            Thread.Sleep(250 / Constants.TimeScale);
             
             comms.Node.Router.AddNodeToGraph(comms.Node.ID);
             if(request.SenderID != null)
@@ -100,13 +96,13 @@ public class CommsSim : MonoBehaviour, ICommunicate
             if (request.MessageIdentifer == null)
                 request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
 
-            Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
+            Debug.Log(request.Dir + ": " + comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
             hop.Node.CommsModule.Receive(request);
             ActiveCommSat = null;
         }
         else
         {
-            Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
+            Debug.Log(request.Dir + ": " + comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
         }
     }
 
@@ -164,12 +160,12 @@ public class CommsSim : MonoBehaviour, ICommunicate
                 if (AckReceived == false)
                 {
                     Send(nextHop, request);
-                    Thread.Sleep(timeout);
+                    Thread.Sleep(timeout / Constants.TimeScale);
 
                     // Delay and retry with increasing delay
                     if (tcs.Task.IsCompleted == false)
                     {
-                        Thread.Sleep(retryDelay);
+                        Thread.Sleep(retryDelay / Constants.TimeScale);
                         retryDelay *= 2;
                     }
                     else
@@ -271,7 +267,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         new Thread(() =>
         {
-            Thread.Sleep(450);
+            Thread.Sleep(450 / Constants.TimeScale);
 
             if (response.DestinationID == comms.Node.ID)
             {

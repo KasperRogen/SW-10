@@ -68,10 +68,6 @@ public class PlanExecuter
             List<ConstellationPlanEntry> newEntries = request.Plan.Entries;
             // IDs of entries in the new plan
             IEnumerable<uint?> newEntryIDs = newRequest.Plan.Entries.Select(entry => entry.NodeID);
-            UnityEngine.Debug.Log(myNode.ActivePlan);
-            foreach (var x in newEntryIDs) {
-                UnityEngine.Debug.Log(x);
-            }
             // Fill out activeEntries
             foreach (ConstellationPlanEntry entry in myNode.ActivePlan.Entries) {
                 if (newEntryIDs.Contains(entry.NodeID)) {
@@ -97,10 +93,11 @@ public class PlanExecuter
             }
 
             myNode.ActivePlan = newRequest.Plan;
-            
+
+            myNode.Router.ClearNetworkMap();
             myNode.Router.UpdateNetworkMap(newRequest.Plan);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(1000 / Constants.TimeScale);
             myNode.State = Node.NodeState.PASSIVE;
 
         }
@@ -111,13 +108,13 @@ public class PlanExecuter
     {
         while (Vector3.Distance(myNode.Position, myNode.TargetPosition) > 0.01f)
         {
-            await Task.Delay(100);
+            await Task.Delay(100 / Constants.TimeScale);
         }
 
         // If ReachableNodes contains any that are not in networkmap neighbours -> Any new neighbours
         if (myNode.CommsModule.Discover().Except(myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours).Count() > 0)
         {
-            Discovery.StartDiscovery(myNode);
+            Discovery.StartDiscovery(myNode, true);
         }
     }
 }

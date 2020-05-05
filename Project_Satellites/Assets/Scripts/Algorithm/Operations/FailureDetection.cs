@@ -144,58 +144,7 @@ public class FailureDetection
 
 
 
-    /// <summary>Should be used on the node when it detects a failure
-
-    /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
-
-    /// </summary>
-
-    public async static void FailureDetected(INode myNode, uint? failedNode)
-
-    {
-
-        //Remove edge from router, ensuring it won't try to route through the failed node
-
-        myNode.Router.DeleteEdge(myNode.ID, failedNode);
-
-
-
-        //Get a immidiate neighbour to the failed node
-
-        uint? neighbourID = myNode.Router.NetworkMap.GetEntryByID(failedNode).Neighbours[0]; //TODO: what if we are only neighbour? what if there are more? or a best?
-
-        uint? nextHop = myNode.Router.NextHop(myNode.ID, neighbourID);
-
-
-
-        DetectFailureRequest request = new DetectFailureRequest
-
-        {
-
-            DestinationID = neighbourID,
-
-            SourceID = myNode.ID,
-
-            SenderID = myNode.ID,
-
-            Command = Request.Commands.DETECTFAILURE,
-
-            ResponseExpected = false,
-
-            AckExpected = true,
-
-            NodeToCheck = failedNode,
-
-            DeadEdges = new List<Tuple<uint?, uint?>> {new Tuple<uint?, uint?>(myNode.ID, failedNode) }
-
-        };
-
-
-
-        await myNode.CommsModule.SendAsync(nextHop, request, 1000, 3);
-
-    }
-
+    
     /// <summary>Should be used on the node when it detects a failure
     /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
     /// </summary>

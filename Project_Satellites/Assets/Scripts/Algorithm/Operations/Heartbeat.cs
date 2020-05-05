@@ -49,7 +49,7 @@ public class Heartbeat
             if (request.DestinationID != myNode.ID)
                 return;
 
-            Thread.Sleep(500);
+            Thread.Sleep(500 / Constants.TimeScale);
             Response response = new Response()
             { 
                 SourceID = myNode.ID,

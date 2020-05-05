@@ -124,6 +124,8 @@ public class DiscoveryRequest : Request
 {
 
     public List<NetworkMapAlteration> Alterations { get; set; }
+    public bool firstPassDone { get; set; }
+    public bool requireFullSync { get; set; }
 
 
 
@@ -131,7 +133,8 @@ public class DiscoveryRequest : Request
     public DiscoveryRequest(DiscoveryRequest other) : base(other) {
 
         Alterations = other.Alterations; //TODO: THIS MIGHT BREAK STUFF
-
+        firstPassDone = other.firstPassDone;
+        requireFullSync = other.requireFullSync;
     }
 
 
@@ -140,6 +143,7 @@ public class DiscoveryRequest : Request
 
 
         SenderID = SourceID;
+        firstPassDone = false;
     }
 
 

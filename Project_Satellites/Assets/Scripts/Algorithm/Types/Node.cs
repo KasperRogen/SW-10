@@ -57,7 +57,7 @@ public class Node : INode
         {
             while (true)
             {
-                Thread.Sleep(1000);
+                Thread.Sleep(1000 / Constants.TimeScale);
                 Request request = CommsModule.FetchNextRequest();
                 if(request != null)
                 {

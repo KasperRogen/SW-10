@@ -51,11 +51,7 @@ public class Router : IRouter
     // Always sends clockwise or counterclockwise (cant remember which one).
     public uint? NextSequential(INode source, CommDir dir)
     {
-        if (node.ID == 9)
-        {
-            CommsSim.logs.Add(node.Router.NetworkMap.GetEntryByID(13)?.Position.ToString());
-        }
-
+        
         Vector3 EarthPosition = Vector3.Zero;
         
 
@@ -107,7 +103,12 @@ public class Router : IRouter
         reachableNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.ID).Neighbours);
         nodesToCheck.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.ID).Neighbours);
 
-        while(nodesToCheck.Count > 0)
+        if (node.ID == 10)
+        {
+            int q = 10;
+        }
+
+        while (nodesToCheck.Count > 0)
         {
             uint? node = nodesToCheck[0];
             checkedNodes.Add(node);
@@ -161,6 +162,8 @@ public class Router : IRouter
         if (plan == null)
             return;
 
+        NetworkMap newMap = new NetworkMap();
+
         foreach (ConstellationPlanEntry entry in plan.Entries)
         {
             List<Tuple<uint?, float>> neighbors = new List<Tuple<uint?, float>>();
@@ -182,20 +185,21 @@ public class Router : IRouter
 
             if (entry.NodeID != null)
             {
-                if (NetworkMap.GetEntryByID(entry.NodeID) == null)
+                if (newMap.GetEntryByID(entry.NodeID) == null)
                 {
-                    NetworkMap.Entries.Add(new NetworkMapEntry(entry.NodeID, neighbors.Select(sat => sat.Item1).ToList(), entry.Position));
+                    newMap.Entries.Add(new NetworkMapEntry(entry.NodeID, neighbors.Select(sat => sat.Item1).ToList(), entry.Position));
                 } else
                 {
-                    NetworkMap.GetEntryByID(entry.NodeID).Neighbours = neighbors.Select(sat => sat.Item1).ToList();
-                    NetworkMap.GetEntryByID(entry.NodeID).Position = entry.Position;
+                    newMap.GetEntryByID(entry.NodeID).Neighbours = neighbors.Select(sat => sat.Item1).ToList();
+                    newMap.GetEntryByID(entry.NodeID).Position = entry.Position;
                 }
 
                 
             }
 
         }
-
+        NetworkMap = newMap;
+        nodeToNodeIDMapping.Clear();
         UpdateGraph();
     }
 
