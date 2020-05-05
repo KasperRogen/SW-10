@@ -2,7 +2,7 @@
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
 	<declaration>// Place global declarations here.
-const int N = 11;
+const int N = 15;
 
 clock time;
 int[0, 2*N] comms;
@@ -724,7 +724,7 @@ n1 : UID</label>
 deadNodes[0] = n1</label>
 		</transition>
 	</template>
-	<system>system RingNodeSync, FailureDetection;
+	<system>system RingNodeAsync, FailureDetection;
     </system>
 	<queries>
 		<query>
@@ -740,7 +740,7 @@ deadNodes[0] = n1</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; comms &gt; (N - 2) * 2 &amp;&amp; (forall (i : UID) RingNodeSync(i).Split || RingNodeSync(i).Subdivided || RingNodeSync(i).Dead || RingNodeSync(i).OutOfReach) </formula>
+			<formula>E&lt;&gt; comms &lt; N &amp;&amp; (forall (i : UID) RingNodeSync(i).Split || RingNodeSync(i).Subdivided || RingNodeSync(i).Dead || RingNodeSync(i).OutOfReach) </formula>
 			<comment></comment>
 		</query>
 		<query>
