@@ -16,20 +16,28 @@ public class FailureDetection
     public async static void DetectFailure(INode myNode, DetectFailureRequest request)
     {
         //Update router, ensure we don't try to route through the bad connection
-        request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
-        //Response r = new Response();
-        //r.DestinationID = request.SenderID;
-        //r.SourceID = myNode.ID;
-        //r.ResponseCode = Response.ResponseCodes.OK;
-        //r.MessageIdentifer = request.MessageIdentifer;
-        //myNode.CommsModule.Send(r.DestinationID, r);
+        request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
+
+        //Response r = new Response();
+
+        //r.DestinationID = request.SenderID;
+
+        //r.SourceID = myNode.ID;
+
+        //r.ResponseCode = Response.ResponseCodes.OK;
+
+        //r.MessageIdentifer = request.MessageIdentifer;
+
+        //myNode.CommsModule.Send(r.DestinationID, r);
+
         if (myNode.ID == request.DestinationID)
         {
             bool failedNodeDead = false;
 
             //If we don't have a live already, we assume the connection has been determined to be bad
             if(myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(request.NodeToCheck) == false)// TODO: Probably safer check here
-            {                failedNodeDead = true;
+            {
+                failedNodeDead = true;
             }
             else
             {
@@ -40,12 +48,16 @@ public class FailureDetection
                     Command = Request.Commands.PING,
                     AckExpected = false,
                     ResponseExpected = true
-                };
-                Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
+                };
+
+                Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
+
                 if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
-                {                    failedNodeDead = true;
+                {
+                    failedNodeDead = true;
                 }
-            }
+            }
+
             if (failedNodeDead) {
                 myNode.Router.DeleteEdge(myNode.ID, request.NodeToCheck);
 
@@ -92,11 +104,16 @@ public class FailureDetection
                 }
             }
         }
-    }
-
-    /// <summary>Should be used on the node when it detects a failure
-    /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
-    /// </summary>
+    }
+
+
+
+    /// <summary>Should be used on the node when it detects a failure
+
+    /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
+
+    /// </summary>
+
     public async static void FailureDetected(INode myNode, uint? failedNode)
     {
         //Remove edge from router, ensuring it won't try to route through the failed node
