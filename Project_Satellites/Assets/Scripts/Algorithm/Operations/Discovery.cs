@@ -40,13 +40,10 @@ public class Discovery
             int q = 10;
         }
 
-        if (MyNode.LastDiscoveryID != request.MessageIdentifer)
-        {
-            List<uint?> DiscoveredNeighbours = MyNode.CommsModule.Discover();
-            if(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Any(neighbour => DiscoveredNeighbours.Contains(neighbour) == false)){
-                Heartbeat.CheckHeartbeat(MyNode);
-                return;
-            }
+        List<uint?> DiscoveredNeighbours = MyNode.CommsModule.Discover();
+        if(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Any(neighbour => DiscoveredNeighbours.Contains(neighbour) == false)){
+            Heartbeat.CheckHeartbeat(MyNode);
+            return;
         }
             
         bool newKnowledge = false;
