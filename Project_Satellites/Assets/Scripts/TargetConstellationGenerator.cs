@@ -14,8 +14,7 @@ public class TargetConstellationGenerator : MonoBehaviour
     public bool EnableAutotest = false;
     public bool EnableManualDesign = false;
     public LayerMask ManualDesignMask;
-
-    bool autotestRunning = false;
+    
     ConstellationPlan plan = null;
     public int RandomSeed;
     public GameObject SatLocationPlaceholderPrefab;

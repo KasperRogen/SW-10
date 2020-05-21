@@ -9,12 +9,10 @@ using System.Threading;
 public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
-    public int requestlistcount;
     public List<Request> requestList { get; set; } = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
     ConstellationVisualiser visualiser;
-    public int nodethreads;
-
+   
     public static List<string> logs = new List<string>();
 
     SatManager satMan;
@@ -28,8 +26,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
     private void Update()
     {
         comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
-
-        nodethreads = comms.Node.ThreadCount;
+        
 
 
 
@@ -56,7 +53,6 @@ public class CommsSim : MonoBehaviour, ICommunicate
             comms.Node.Router.AddNodeToGraph(request.SenderID);
 
             requestList.Add(request);
-            requestlistcount = requestList.Count;
 
 
             if (request.AckExpected)
@@ -208,8 +204,6 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         List<SatelliteComms> commsList = new List<SatelliteComms>();
 
-        int desiredSatCount = 2;
-
 
         foreach (SatelliteComms sat in satMan.satellites
             .Where(sat => sat.Node.ID != comms.Node.ID && sat.Node.Active)
@@ -275,10 +269,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
             }
             else
             {
-                comms.Node.ThreadCount++;
                 uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
                 Send(nextHop, response);
-                comms.Node.ThreadCount--;
 
             }
         }).Start();

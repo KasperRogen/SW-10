@@ -78,12 +78,6 @@ public class Node : INode
     }
 
 
-    public override bool Equals(object obj)
-    {
-        return ID == (obj as INode).ID;
-    }
-
-
     public override void Communicate(Request request)
     {
 
@@ -92,8 +86,6 @@ public class Node : INode
 
         new Thread(async () =>
         {
-            ThreadCount++;
-            IsBusy = true;
 
             
 
@@ -164,9 +156,6 @@ public class Node : INode
                     await CommsModule.SendAsync(nextHop, request, 1000, 3);
                 }
             }
-            IsBusy = false;
-
-            ThreadCount--;
         }).Start();
             
     }

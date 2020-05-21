@@ -14,8 +14,6 @@ public abstract class INode
     public abstract Router Router { get; set; }
     public abstract bool Active { get; set; }
     public ICommunicate CommsModule { get; set; }
-    public int ThreadCount = 0;
-    public bool IsBusy { get; set; }
     public bool executingPlan;
     public bool justChangedPlan;
     public string LastDiscoveryID;

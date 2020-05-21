@@ -159,63 +159,7 @@ public class FailureDetection
         }
     }
 
-
-
     
-    /// <summary>Should be used on the node when it detects a failure
-    /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
-    /// </summary>
-    /*public async static void FailureDetected(INode myNode, uint? failedNode)
-    {
-        //Remove edge from router, ensuring it won't try to route through the failed node
-        myNode.Router.DeleteEdge(myNode.ID, failedNode);
-
-        //Get a immidiate neighbour to the failed node
-        uint? neighbourID = myNode.Router.NetworkMap.GetEntryByID(failedNode).Neighbours[0]; //TODO: what if we are only neighbour? what if there are more? or a best?
-        uint? nextHop = myNode.Router.NextHop(myNode.ID, neighbourID);
-
-        DetectFailureRequest request = new DetectFailureRequest
-        {
-            DestinationID = neighbourID,
-            SourceID = myNode.ID,
-            SenderID = myNode.ID,
-            Command = Request.Commands.DETECTFAILURE,
-            ResponseExpected = true,
-            AckExpected = true,
-            NodeToCheck = failedNode,
-            DeadEdges = new List<Tuple<uint?, uint?>> {new Tuple<uint?, uint?>(myNode.ID, failedNode) }
-        };
-
-        // TODO: Response here is just response from nexthop and not response from neighbour to failed node.
-        // We should probably support this by being able to both send and route both requests and responses across the network.
-        // OBS: Recovery code below is never run because of the above reasons. It does not wait for the "response request" that is sent to it.
-        Response response = await myNode.CommsModule.SendAsync(nextHop, request, 30000, 3);
-
-        if(response.ResponseCode == Response.ResponseCodes.ERROR)
-        {
-            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
-
-
-            PlanRequest recoveryRequest = new PlanRequest
-            {
-                SourceID = myNode.ID,
-                DestinationID = myNode.ID,
-                Command = Request.Commands.GENERATE,
-                Plan = RecoveryPlan,
-                Dir = Router.CommDir.CW
-            };
-
-            if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
-            {
-                recoveryRequest.Dir = Router.CommDir.CCW;
-            }
-
-                myNode.CommsModule.Send(myNode.ID, recoveryRequest);
-            return;
-        }
-
-    }
-    */
 
     public static void Recovery(INode myNode)
     {

@@ -19,11 +19,6 @@ public class Router : IRouter
     private Dictionary<uint?, uint> nodeToNodeIDMapping = new Dictionary<uint?, uint>();
     private float satRange = 5f;
 
-    
-
-    private NetworkMap _backupNetworkMap;
-    public override NetworkMap BackupNetworkMap { get => _backupNetworkMap; set => _backupNetworkMap = value; }
-
     private NetworkMap _networkMap;
     public override NetworkMap NetworkMap { get => _networkMap;  set => _networkMap = value; }
 
@@ -103,10 +98,6 @@ public class Router : IRouter
         reachableNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.ID).Neighbours);
         nodesToCheck.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.ID).Neighbours);
 
-        if (node.ID == 10)
-        {
-            int q = 10;
-        }
 
         while (nodesToCheck.Count > 0)
         {
@@ -224,10 +215,7 @@ public class Router : IRouter
             nodeToNodeIDMapping[entry.ID] = nodeID;
         }
 
-        if(node.ID == 12)
-        {
-            int i = 0;
-        }
+
 
         foreach (NetworkMapEntry entry in NetworkMap.Entries)
         {

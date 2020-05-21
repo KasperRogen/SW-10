@@ -35,11 +35,6 @@ public class Discovery
             _isIntroduced = false;
 
 
-        if(MyNode.ID == 12)
-        {
-            int q = 10;
-        }
-
         List<uint?> DiscoveredNeighbours = MyNode.CommsModule.Discover();
         if(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Any(neighbour => DiscoveredNeighbours.Contains(neighbour) == false)){
             Heartbeat.CheckHeartbeat(MyNode);
