@@ -9,7 +9,7 @@ public static class Constants
 
     public static float EarthRadius;
 
-    public static int TimeScale = 1;
+    public static int TimeScale = 4;
 
     public static float ScaleToSize(float input)
     {

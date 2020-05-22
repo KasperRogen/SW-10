@@ -28,27 +28,36 @@ public class Discovery
     /// </summary>
     public static async System.Threading.Tasks.Task DiscoverAsync(INode MyNode, DiscoveryRequest request)
     {
-        bool _isIntroduced = true;
+        bool _isIntroduced;
 
         if (MyNode.LastDiscoveryID == "" || MyNode.LastDiscoveryID == null)
+        {
             _isIntroduced = false;
+        } else
+        {
+            _isIntroduced = true;
+        }
 
-
+        //Fetch immidiate neighbours
         List<uint?> DiscoveredNeighbours = MyNode.CommsModule.Discover();
-        if(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours.Any(neighbour => DiscoveredNeighbours.Contains(neighbour) == false)){
+
+        //Check my neighbours, if any "old" neighbours wasn't detected above, heartbeat them
+        if(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours
+            .Any(neighbour => DiscoveredNeighbours.Contains(neighbour) == false)){
             Heartbeat.CheckHeartbeat(MyNode);
             return;
         }
             
         bool newKnowledge = false;
         bool alteredSet = false;
+
         MyNode.State = Node.NodeState.DISCOVERY;
         MyNode.LastDiscoveryID = request.MessageIdentifer;
 
         
 
 
-
+        //if any additions are new informatio to me, store in networkmap
         foreach (NetworkMapAlteration alteration in request.Alterations)
         {
             if(alteration.GetType() == typeof(NetworkMapAddition))
@@ -59,25 +68,18 @@ public class Discovery
                     newKnowledge = true;
                     MyNode.Router.NetworkMap.Entries.Add(addition.Entry);
                 }
-            }
-        }
 
-        foreach (NetworkMapAlteration alteration in request.Alterations.ToList())
-        {
-            if (alteration.GetType() == typeof(NetworkMapAddition))
-            {
-                NetworkMapAddition netAddition = alteration as NetworkMapAddition;
-                if (MyNode.Router.NetworkMap.GetEntryByID(netAddition.Entry.ID) != null)
+                if (MyNode.Router.NetworkMap.GetEntryByID(addition.Entry.ID) != null)
                 {
-                    
-                    foreach (uint? newNodeNeighbour in netAddition.Entry.Neighbours)
+
+                    foreach (uint? newNodeNeighbour in addition.Entry.Neighbours)
                     {
-                        if(MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour)?.Neighbours.Contains(netAddition.Entry.ID) == false)
+                        if (MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour)?.Neighbours.Contains(addition.Entry.ID) == false)
                         {
                             newKnowledge = true;
-                            MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour)?.Neighbours.Add(netAddition.Entry.ID);
+                            MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour)?.Neighbours.Add(addition.Entry.ID);
                         }
-                        
+
                     }
 
                 }
@@ -129,7 +131,7 @@ public class Discovery
         
         if (alteredSet || newKnowledge || _isIntroduced == false || request.requireFullSync)
         {
-            List<ConstellationPlanEntry> newEntries = new List<ConstellationPlanEntry>();
+            List<ConstellationPlanEntry> newPlanEntries = new List<ConstellationPlanEntry>();
 
             foreach(NetworkMapEntry entry in MyNode.Router.NetworkMap.Entries)
             {
@@ -137,10 +139,10 @@ public class Discovery
                 List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
                 ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
                 planEntry.NodeID = entry.ID; // NodeID must also be set as it caused problems executing a new plan generated after discovery
-                newEntries.Add(planEntry);
+                newPlanEntries.Add(planEntry);
             }
 
-            MyNode.ActivePlan = new ConstellationPlan(newEntries);
+            MyNode.ActivePlan = new ConstellationPlan(newPlanEntries);
 
             DiscoveryRequest newRequest = request.DeepCopy();
 
