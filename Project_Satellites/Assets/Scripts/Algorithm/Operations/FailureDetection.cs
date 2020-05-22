@@ -18,44 +18,11 @@ public class FailureDetection
         //Update router, ensure we don't try to route through the bad connection
         request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
 
-        //Response r = new Response();
-
-        //r.DestinationID = request.SenderID;
-
-        //r.SourceID = myNode.ID;
-
-        //r.ResponseCode = Response.ResponseCodes.OK;
-
-        //r.MessageIdentifer = request.MessageIdentifer;
-
-        //myNode.CommsModule.Send(r.DestinationID, r);
-
         if (myNode.ID == request.DestinationID)
         {
             bool failedNodeDead = false;
 
-            //If we don't have a live already, we assume the connection has been determined to be bad
-            if(myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(request.NodeToCheck) == false)// TODO: Probably safer check here
-            {
-                failedNodeDead = true;
-            }
-            else
-            {
-                Request ping = new Request() {
-                    SourceID = myNode.ID,
-                    DestinationID = request.NodeToCheck,
-                    Command = Request.Commands.PING,
-                    AckExpected = false,
-                    ResponseExpected = true
-                };
-
-                Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
-
-                if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR)
-                {
-                    failedNodeDead = true;
-                }
-            }
+            failedNodeDead = await CheckNode(myNode, request);
 
             if (failedNodeDead) {
                 myNode.Router.DeleteEdge(myNode.ID, request.NodeToCheck);
@@ -66,45 +33,77 @@ public class FailureDetection
 
                 // Start recovery plan gen without failedNode in case myNode is the only neighbour
                 if (neighboursToCheck.Count == 0) {
-                    ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
-
-                    PlanRequest recoveryRequest = new PlanRequest {
-                        SourceID = myNode.ID,
-                        DestinationID = myNode.ID,
-                        Command = Request.Commands.GENERATE,
-                        Plan = RecoveryPlan,
-                        Dir = Router.CommDir.CW
-                    };
-
-                    if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null) {
-                        recoveryRequest.Dir = Router.CommDir.CCW;
-                    }
-
-                    PlanGenerator.GeneratePlan(myNode, recoveryRequest);
+                    ExcludeNode(myNode);
                 } else { // Otherwise ask another neighbour to try to contact failedNode
-                    uint? neighbourID = neighboursToCheck[0];
-                    uint? nextHop = myNode.Router.NextHop(myNode.ID, neighbourID);
-                    var deadEdges = new List<Tuple<uint?, uint?>>(request.DeadEdges);
-                    deadEdges.Add(new Tuple<uint?, uint?>(myNode.ID, request.NodeToCheck));
-
-                    DetectFailureRequest DFrequest = new DetectFailureRequest {
-                        DestinationID = neighbourID,
-                        SourceID = myNode.ID,
-                        Command = Request.Commands.DETECTFAILURE,
-                        ResponseExpected = false,
-                        AckExpected = true,
-                        NodeToCheck = request.NodeToCheck,
-                        DeadEdges = deadEdges,
-                        FailedNeighbours = failedNeighbours
-                    };
-
-                    await myNode.CommsModule.SendAsync(nextHop, DFrequest, 1000, 3);
+                    ForwardRequest(myNode, request, failedNeighbours, neighboursToCheck);
                 }
             }
         }
     }
 
+    public async static Task<bool> CheckNode(INode myNode, DetectFailureRequest request) {
+        bool failedNodeDead = false;
 
+        //If we don't have a live already, we assume the connection has been determined to be bad
+        if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(request.NodeToCheck) == false)// TODO: Probably safer check here
+        {
+            failedNodeDead = true;
+        } else {
+            Request ping = new Request() {
+                SourceID = myNode.ID,
+                DestinationID = request.NodeToCheck,
+                Command = Request.Commands.PING,
+                AckExpected = false,
+                ResponseExpected = true
+            };
+
+            Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
+
+            if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR) {
+                failedNodeDead = true;
+            }
+        }
+
+        return failedNodeDead;
+    }
+
+    public static void ExcludeNode(INode myNode) {
+        ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
+
+        PlanRequest recoveryRequest = new PlanRequest {
+            SourceID = myNode.ID,
+            DestinationID = myNode.ID,
+            Command = Request.Commands.GENERATE,
+            Plan = RecoveryPlan,
+            Dir = Router.CommDir.CW
+        };
+
+        if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null) {
+            recoveryRequest.Dir = Router.CommDir.CCW;
+        }
+
+        PlanGenerator.GeneratePlan(myNode, recoveryRequest);
+    }
+
+    public async static void ForwardRequest(INode myNode, DetectFailureRequest request, List<uint?> failedNeighbours, List<uint?> neighboursToCheck) {
+        uint? neighbourID = neighboursToCheck[0];
+        uint? nextHop = myNode.Router.NextHop(myNode.ID, neighbourID);
+        var deadEdges = new List<Tuple<uint?, uint?>>(request.DeadEdges);
+        deadEdges.Add(new Tuple<uint?, uint?>(myNode.ID, request.NodeToCheck));
+
+        DetectFailureRequest DFrequest = new DetectFailureRequest {
+            DestinationID = neighbourID,
+            SourceID = myNode.ID,
+            Command = Request.Commands.DETECTFAILURE,
+            ResponseExpected = false,
+            AckExpected = true,
+            NodeToCheck = request.NodeToCheck,
+            DeadEdges = deadEdges,
+            FailedNeighbours = failedNeighbours
+        };
+
+        await myNode.CommsModule.SendAsync(nextHop, DFrequest, 1000, 3);
+    }
 
     /// <summary>Should be used on the node when it detects a failure
 

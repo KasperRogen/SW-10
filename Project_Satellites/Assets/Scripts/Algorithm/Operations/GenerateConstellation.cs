@@ -52,13 +52,22 @@ public class GenerateConstellation
     public static ConstellationPlan GenerateRecoveryConstellation(Vector3 midpoint, int nodeCount)
     {
         // Calculate positions evenly spread starting from midpoint
+        List<Vector3> targetPositions = CalculatePositions(midpoint, nodeCount);
+
+        // Create constellation plan based on target positions
+        ConstellationPlan plan = CreatePlan(targetPositions);
+
+        return plan;
+    }
+
+    public static List<Vector3> CalculatePositions(Vector3 midpoint, int nodeCount) {
         List<Vector3> targetPositions = new List<Vector3> { midpoint };
         int middleCount = nodeCount / 2;
         float radius = Vector3.Distance(Vector3.Zero, midpoint);
         float angle = 5 / radius; // TODO: 5 is sat comms range, should be changed to some constant
         Vector3 tempVector = midpoint;
 
-        for (int i = middleCount - 1; i >= 0 ; i--) {
+        for (int i = middleCount - 1; i >= 0; i--) {
             tempVector = Vector3.Transform(tempVector, Quaternion.CreateFromAxisAngle(Vector3.UnitY, -angle));
             targetPositions.Add(tempVector);
         }
@@ -70,7 +79,10 @@ public class GenerateConstellation
             targetPositions.Add(tempVector);
         }
 
-        // Create constellation plan based on target positions
+        return targetPositions;
+    }
+
+    public static ConstellationPlan CreatePlan(List<Vector3> targetPositions) {
         List<ConstellationPlanEntry> entries = new List<ConstellationPlanEntry>();
 
         foreach (Vector3 targetPosition in targetPositions) {
