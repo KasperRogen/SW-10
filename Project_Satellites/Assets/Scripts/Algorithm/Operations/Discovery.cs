@@ -15,7 +15,6 @@ public class Discovery
             Command = Request.Commands.DISCOVER,
             DestinationID = myNode.ID,
             SourceID = myNode.ID,
-            SenderID = myNode.ID,
             requireFullSync = requireFullSync,
             Alterations = new List<NetworkMapAlteration>()
         };
@@ -97,7 +96,6 @@ public class Discovery
                 AdditionRequest additionRequest = new AdditionRequest()
                 {
                     SourceID = MyNode.ID,
-                    SenderID = MyNode.ID,
                     DestinationID = node,
                     Command = Request.Commands.ADDITION,
                     AckExpected = false,
@@ -182,7 +180,6 @@ public class Discovery
             }
 
             newRequest.SourceID = MyNode.ID;
-            newRequest.SenderID = MyNode.ID;
             newRequest.AckExpected = true;
             uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
             await MyNode.CommsModule.SendAsync(nextHop, newRequest, 1000, 3);

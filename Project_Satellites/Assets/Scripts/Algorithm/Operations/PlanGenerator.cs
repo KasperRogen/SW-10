@@ -25,326 +25,117 @@ public class PlanGenerator
             myNode.State = Node.NodeState.PLANNING;
             myNode.GeneratingPlan = request.Plan;
 
-            //OptimalOneRevolutionPlanGeneration(myNode, request);
-            //GreedySingleRevolutionPlanGeneration(myNode, request);
-            SingleRevolutionPlanGeneration(myNode, request);    
-            //MultipleRevolutionsPlanGeneration(myNode, request);
+            PlanRequest newRequest = request.DeepCopy();
+            newRequest.AckExpected = true;
+
+            List<NodeLocationMatch> matches = CalculatePositions(myNode, newRequest);
+            ConstellationPlan newPlan = ProcessPlan(matches, newRequest, myNode);
+            Transmit(newRequest, myNode);
+
+
         }
     }
 
-    /// <summary> Used for finding and "taking" optimal spot for given satellite
-    /// <para>Functions as part of GeneratePlan method</para>
-    /// </summary>
-    static ConstellationPlan TakeSlot(INode myNode, ConstellationPlan plan, int entryIndex, float newValue)
+    private static void Transmit(PlanRequest request, INode myNode)
     {
-        //Create a new plan as copy of current plan
-        ConstellationPlan newPlan = new ConstellationPlan(plan.Entries);
 
-        //Find cheapest slot to take
-        ConstellationPlanEntry currentSlot = newPlan.Entries.Find(entry => entry.NodeID != null && entry.NodeID == myNode.ID);
 
-        //TODO: MAKE "TRADING" WORK
-        //if (currentSlot != null && plan.Entries[entryIndex].NodeID != null)
-        //{
-        //    currentSlot.NodeID = plan.Entries[entryIndex].NodeID;
-        //    currentSlot.Fields["DeltaV"].Value = Position.Distance(currentSlot.Position, currentSlot.Node.Position);
-        //}
+        // If last location is filled, execute the plan
+        if (request.Plan.Entries.All(x => x.NodeID != null))
+        {
+            request.Command = Request.Commands.EXECUTE;
+            request.SourceID = myNode.ID;
 
-        newPlan.Entries[entryIndex].NodeID = myNode.ID;
-        newPlan.Entries[entryIndex].Fields["DeltaV"].Value = newValue;
-
-        return newPlan;
-    }
-
-    private static void MultipleRevolutionsPlanGeneration(INode myNode, PlanRequest request)
-    {
-        ConstellationPlan newPlan = null;
-
-        // Phase 1: All locations are taken one by one by a node
-        //If this node currently has no location in the target constellation
-        if (request.Plan.Entries.Any(entry => entry.NodeID == myNode.ID) == false) {
-            ConstellationPlanEntry slotToTake = request.Plan.Entries.Where(entry => entry.NodeID == null) //Only allow satellite to take free locations
-            .Aggregate((CurrentBest, currentTest) => //Iterate each entry
-            Vector3.Distance(currentTest.Position, myNode.Position) <=  //This entry currently being tested to improve over current best
-            Vector3.Distance(CurrentBest.Position, myNode.Position) ?  //current best 
-            currentTest : CurrentBest); //return best candidate of currenttest and currentbest
-
-            newPlan = TakeSlot(myNode, request.Plan, request.Plan.Entries.IndexOf(slotToTake), Vector3.Distance(slotToTake.Position, myNode.Position));
+            PlanExecuter.ExecutePlan(myNode, request);
         }
-        // Phase 2: Nodes can swap locations if it optimises the cost
-        //TODO: Fix problem with requirering knowledge about all nodes in order to "trade" with them
-        else if (request.Plan.Entries.Any(entry => entry.NodeID == null) == false) {
-            Dictionary<int, float> fieldDeltaVPairs = new Dictionary<int, float>();
-
-            //Calculate cost of each location in target constellation
-            for (int i = 0; i < request.Plan.Entries.Count; i++) {
-                if (request.Plan.Entries[i].NodeID != myNode.ID) // Exclude location that current node has taken.
-                {
-                    float requiredDeltaV = Vector3.Distance(myNode.Position, request.Plan.Entries[i].Position);
-                    fieldDeltaVPairs.Add(i, requiredDeltaV);
-                }
-            }
-
-            foreach (KeyValuePair<int, float> pair in fieldDeltaVPairs.OrderBy(x => x.Value)) {
-                if (request.Plan.TrySwapNodes(myNode.ID, myNode.Position, request.Plan.Entries[pair.Key].NodeID, request.Plan.Entries[pair.Key].Position, out newPlan)) {
-                    newPlan.LastEditedBy = myNode.ID;
-                    myNode.State = Node.NodeState.OVERRIDE;
-                    break;
-                } else {
-                    newPlan = null;
-                }
-            }
-        }
-
-        PlanRequest newRequest = request.DeepCopy();
-        newRequest.SenderID = myNode.ID;
-
-        //If we have made any changes to the plan
-        if (newPlan != null && newPlan != newRequest.Plan) {
-            newRequest.Plan = newPlan;
-            myNode.justChangedPlan = true;
-            newRequest.Plan.LastEditedBy = myNode.ID;
-
-            myNode.GeneratingPlan = newRequest.Plan;
-        }
-
-        //If we were the last node to edit the plan, and we didn't edit the plan in the current pass
-        //We know the plan has taken an entire revolution without being changed, hence is at optimum,
-        //Start executing the plan
-        if (newRequest.Plan.LastEditedBy == myNode.ID && myNode.justChangedPlan == false) {
-            newRequest.Command = Request.Commands.EXECUTE;
-            newRequest.DestinationID = myNode.ID;
-            newRequest.SourceID = myNode.ID;
-
-
-            //Notify self about execution
-            //TODO: SOMETHING MORE ELEGANT THAN THIS :D
-            myNode.CommsModule.Send(myNode.ID, newRequest);
-        } else {
-            myNode.justChangedPlan = false;
-            
-            //Pass the plan to the next sequential node
+        else
+        {
             uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
-
-            newRequest.DestinationID = nextSeq;
-
-            if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq)) {
-                myNode.CommsModule.Send(nextSeq, newRequest);
-            } else {
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-                newRequest.DestinationID = nextSeq;
-                myNode.CommsModule.Send(nextHop, newRequest);
-            }
-        }
-    }
-
-    private static void SingleRevolutionPlanGeneration(INode myNode, PlanRequest request)
-    {
-        PlanRequest newRequest = request.DeepCopy();
-        newRequest.SenderID = myNode.ID;
-
-        // Only find location to take if this node hasnt already taken one
-        if (request.Plan.Entries.Select(x => x.NodeID).Contains(myNode.ID) == false)
-        {
-            ConstellationPlan newPlan = request.Plan.DeepCopy();
-            KeyValuePair<Vector3, float> locationToTakeWithDistance; // Is filled by loop below
-            bool foundLocation = false;
-            IOrderedEnumerable<KeyValuePair<Vector3, float>> freeLocationsWithDistancesOrdered = newPlan.Entries
-                .Where(x => x.NodeID == null)
-                .Select(x => new KeyValuePair<Vector3, float>(x.Position, Vector3.Distance(myNode.Position, x.Position)))
-                .OrderBy(x => x.Value);
-
-            foreach (KeyValuePair<Vector3, float> freeLocationWithDistance in freeLocationsWithDistancesOrdered) {
-                IEnumerable<ConstellationPlanEntry> nodesCanDoCheaper = myNode.ActivePlan.Entries
-                    .Where(x => Vector3.Distance(x.Position, freeLocationWithDistance.Key) < freeLocationWithDistance.Value);
-
-                // If no other node can take this location cheaper, then this node gets it
-                if (nodesCanDoCheaper.Count() == 0) {
-                    locationToTakeWithDistance = freeLocationWithDistance;
-                    foundLocation = true;
-                    break;
-                } else {
-                    foreach (ConstellationPlanEntry nodeCanDoCheaper in nodesCanDoCheaper) {
-                        var freeLocationswithDistancesCheaperNode = newPlan.Entries
-                            .Where(x => x.NodeID == null)
-                            .Select(x => new KeyValuePair<Vector3, float>(x.Position, Vector3.Distance(nodeCanDoCheaper.Position, x.Position)));
-
-                        // Otherwise check if cheaper node has other locations it can take, that are cheaper, then this node gets the location
-                        if (freeLocationswithDistancesCheaperNode.Any(x => x.Value < freeLocationWithDistance.Value)) {
-                            locationToTakeWithDistance = freeLocationWithDistance;
-                            foundLocation = true;
-                            break;
-                        }
-                    }
-
-                    // Break outer loop if location is found
-                    if (foundLocation) {
-                        break;
-                    }
-                }
-            }
-
-            ConstellationPlanEntry entryToTake = newPlan.Entries.Single(x => x.Position == locationToTakeWithDistance.Key);
-            entryToTake.NodeID = myNode.ID;
-            entryToTake.Fields["DeltaV"].Value = locationToTakeWithDistance.Value;
-
-            newRequest.Plan = newPlan;
-            myNode.GeneratingPlan = newRequest.Plan;
-        }
-
-        // If last location is filled, execute the plan
-        if (newRequest.Plan.Entries.All(x => x.NodeID != null))
-        {
-            newRequest.Command = Request.Commands.EXECUTE;
-            newRequest.SourceID = myNode.ID;
-
-            PlanExecuter.ExecutePlan(myNode, newRequest);
-        }
-        else
-        {
-            uint? nextSeq = myNode.Router.NextSequential(myNode, newRequest.Dir);
-
-            if(nextSeq == null)
-            {
-                Router.CommDir newDir = newRequest.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
-                newRequest.Dir = newDir;
-                nextSeq = myNode.Router.NextSequential(myNode, newDir);
-            }
-
-            newRequest.DestinationID = nextSeq;
-
-            if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq)) {
-                myNode.CommsModule.Send(nextSeq, newRequest);
-            } else {
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-                myNode.CommsModule.Send(nextHop, newRequest);
-            }
-        }
-    }
-
-
-    private static void GreedySingleRevolutionPlanGeneration(INode myNode, PlanRequest request)
-    {
-        PlanRequest newRequest = request.DeepCopy();
-        newRequest.SenderID = myNode.ID;
-        newRequest.AckExpected = true;
-
-
-
-        List<NodeLocationMatch> matches = new List<NodeLocationMatch>();
-        ConstellationPlan newPlan = request.Plan.DeepCopy();
-        // Only find location to take if this node hasnt already taken one
-        if (request.Plan.Entries.Select(x => x.NodeID).Contains(myNode.ID) == false)
-        {
-
-
-            foreach (NetworkMapEntry node in myNode.Router.NetworkMap.Entries.OrderBy(entry => entry.ID))
-            {
-                List<Vector3> OrderedPositions = newPlan.Entries.Select(entry => entry.Position).ToList();
-                OrderedPositions = OrderedPositions.Except(matches.Select(match => match.Position)).ToList();
-                OrderedPositions = OrderedPositions.OrderBy(position => Vector3.Distance(node.Position, position)).ToList();
-                
-                matches.Add(new NodeLocationMatch(node.ID, OrderedPositions.First()));
-            }
-
-            ConstellationPlanEntry entryToTake = newPlan.Entries.Find(entry => 
-                entry.Position == matches.Find(match => 
-                match.NodeID == myNode.ID).Position);
-
-            entryToTake.NodeID = myNode.ID;
-            entryToTake.Fields["DeltaV"].Value = Vector3.Distance(entryToTake.Position, myNode.Position);
-
-            newRequest.Plan = newPlan;
-            myNode.GeneratingPlan = newRequest.Plan;
-        }
-
-        // If last location is filled, execute the plan
-        if (newRequest.Plan.Entries.All(x => x.NodeID != null))
-        {
-            newRequest.Command = Request.Commands.EXECUTE;
-            newRequest.SourceID = myNode.ID;
-
-            PlanExecuter.ExecutePlan(myNode, newRequest);
-        }
-        else
-        {
-            uint? nextSeq = myNode.Router.NextSequential(myNode, newRequest.Dir);
 
             if (nextSeq == null)
             {
-                Router.CommDir newDir = newRequest.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
-                newRequest.Dir = newDir;
+                Router.CommDir newDir = request.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
+                request.Dir = newDir;
                 nextSeq = myNode.Router.NextSequential(myNode, newDir);
             }
 
-            newRequest.DestinationID = nextSeq;
+            request.DestinationID = nextSeq;
 
             if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq))
             {
-                myNode.CommsModule.Send(nextSeq, newRequest);
+                myNode.CommsModule.Send(nextSeq, request);
             }
             else
             {
                 uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-                myNode.CommsModule.Send(nextHop, newRequest);
+                myNode.CommsModule.Send(nextHop, request);
             }
         }
     }
 
-    private static void OptimalOneRevolutionPlanGeneration(INode myNode, PlanRequest request)
+    private static ConstellationPlan ProcessPlan(List<NodeLocationMatch> matches, PlanRequest request, INode myNode)
     {
-        ConstellationPlan temporaryPlan = request.Plan.DeepCopy();
-        temporaryPlan.Entries.ForEach(x => x.Fields["DeltaV"].Value = float.MaxValue);
-        ConstellationPlan currentBestPlan = temporaryPlan.DeepCopy(); // Current best plan with worst-case DeltaV usage
-        IEnumerable<IList<ConstellationPlanEntry>> permutations = Utility.Permutations(myNode.ActivePlan.Entries);
+        //Find entries not taken by other nodes
+        List<ConstellationPlanEntry> FreeEntries = request.Plan.Entries
+            .Where(entry => entry.NodeID == null && matches.Select(match => match.Position) //Select positions from matches
+            .Contains(entry.Position) == false).ToList();
 
-        foreach (IList<ConstellationPlanEntry> permutation in permutations)
-        {
-            for (int i = 0; i < permutation.Count(); i++) {
-                temporaryPlan.Entries[i].NodeID = permutation[i].NodeID;
-                temporaryPlan.Entries[i].Fields["DeltaV"].Value = Vector3.Distance(permutation[i].Position, temporaryPlan.Entries[i].Position);
-            }
+        //Order by distance to my node
+        FreeEntries.OrderBy(entry => Vector3.Distance(myNode.Position, entry.Position));
 
-            if (temporaryPlan.Cost() < currentBestPlan.Cost()) 
-            {
-                currentBestPlan = temporaryPlan.DeepCopy();
-            }
-        }
+        //Lowest distance is my best entry.
+        ConstellationPlanEntry bestEntry = FreeEntries.First();
+        bestEntry = request.Plan.Entries.Find(entry => entry.Position == bestEntry.Position);
 
-        int indexOfEntryToTake = currentBestPlan.Entries.FindIndex(x => x.NodeID == myNode.ID);
+        //Take the location in the plan
+        bestEntry.NodeID = myNode.ID;
+        bestEntry.Fields["DeltaV"].Value = Vector3.Distance(bestEntry.Position, myNode.Position);
 
-        PlanRequest newRequest = request.DeepCopy();
-        newRequest.Plan.Entries[indexOfEntryToTake] = currentBestPlan.Entries[indexOfEntryToTake].DeepCopy();
-        newRequest.SenderID = myNode.ID;
+        myNode.GeneratingPlan = request.Plan;
 
-        // If last location is filled, execute the plan
-        if (newRequest.Plan.Entries.All(x => x.NodeID != null)) {
-            newRequest.Command = Request.Commands.EXECUTE;
-            newRequest.SourceID = myNode.ID;
-
-            PlanExecuter.ExecutePlan(myNode, newRequest);
-        } else {
-            uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
-            newRequest.DestinationID = nextSeq;
-
-            if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq)) {
-                myNode.CommsModule.Send(nextSeq, newRequest);
-            } else {
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-                myNode.CommsModule.Send(nextHop, newRequest);
-            }
-        }
+        //Return the plan
+        return request.Plan;
     }
+
+    private static List<NodeLocationMatch> CalculatePositions(INode myNode, PlanRequest Request)
+    {
+        List<NodeLocationMatch> matches = new List<NodeLocationMatch>();
+
+        foreach (NetworkMapEntry node in myNode.Router.NetworkMap.Entries.OrderBy(entry => entry.ID))
+        {
+            if (node.ID == myNode.ID || Request.Plan.Entries.Any(entry => entry.NodeID == node.ID))
+                continue;
+            
+
+            //Find all locations
+            List<Vector3> OrderedPositions = Request.Plan.Entries
+                .Where(entry => entry.NodeID == null)
+                .Select(entry => entry.Position).ToList();
+            
+
+            //Find closest location for given node
+            OrderedPositions = OrderedPositions.OrderBy(position => Vector3.Distance(node.Position, position)).ToList();
+
+          
+            //Save node-location match
+            matches.Add(new NodeLocationMatch(node.ID, OrderedPositions.First(), Vector3.Distance(node.Position, OrderedPositions.First())));
+        }
+
+        return matches;
+    }
+
 
     private class NodeLocationMatch
     {
         public uint? NodeID;
         public Vector3 Position;
+        public float Distance;
 
-        public NodeLocationMatch(uint? nodeID, Vector3 position)
+        public NodeLocationMatch(uint? nodeID, Vector3 position, float distance)
         {
             NodeID = nodeID;
             Position = position;
+            Distance = distance;
         }
     }
 }

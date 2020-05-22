@@ -39,8 +39,7 @@ public class Request
         SourceID = other.SourceID;
 
         DestinationID = other.DestinationID;
-
-        SenderID = other.SenderID;
+        
 
         Command = other.Command;
 
@@ -60,8 +59,7 @@ public class Request
     {
 
         SourceID = sourceID;
-
-        SenderID = sourceID;
+        
 
         DestinationID = destinationID;
 
@@ -141,8 +139,7 @@ public class DiscoveryRequest : Request
 
     public DiscoveryRequest() {
 
-
-        SenderID = SourceID;
+        
         firstPassDone = false;
     }
 
@@ -202,7 +199,6 @@ public class AdditionRequest : Request
 
     public AdditionRequest()
     {
-        SenderID = SourceID;
     }
 
     public AdditionRequest DeepCopy()

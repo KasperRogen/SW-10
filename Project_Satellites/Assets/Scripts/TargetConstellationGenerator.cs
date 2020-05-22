@@ -100,7 +100,6 @@ public class TargetConstellationGenerator : MonoBehaviour
             Command = Request.Commands.GENERATE,
             SourceID = targetSat.ID,
             DestinationID = targetSat.ID,
-            SenderID = targetSat.ID,
             MessageIdentifer = "42",
             Plan = plan
         };

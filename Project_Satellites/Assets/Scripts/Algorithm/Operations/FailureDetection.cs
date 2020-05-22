@@ -44,7 +44,6 @@ public class FailureDetection
                 Request ping = new Request() {
                     SourceID = myNode.ID,
                     DestinationID = request.NodeToCheck,
-                    SenderID = myNode.ID,
                     Command = Request.Commands.PING,
                     AckExpected = false,
                     ResponseExpected = true
@@ -91,7 +90,6 @@ public class FailureDetection
                     DetectFailureRequest DFrequest = new DetectFailureRequest {
                         DestinationID = neighbourID,
                         SourceID = myNode.ID,
-                        SenderID = myNode.ID,
                         Command = Request.Commands.DETECTFAILURE,
                         ResponseExpected = false,
                         AckExpected = true,
@@ -146,7 +144,6 @@ public class FailureDetection
             DetectFailureRequest request = new DetectFailureRequest {
                 DestinationID = neighbourID,
                 SourceID = myNode.ID,
-                SenderID = myNode.ID,
                 Command = Request.Commands.DETECTFAILURE,
                 ResponseExpected = false,
                 AckExpected = true,

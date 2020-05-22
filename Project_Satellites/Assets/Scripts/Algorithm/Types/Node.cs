@@ -141,7 +141,6 @@ public class Node : INode
 
             if (request.DestinationID != ID)
             {
-                request.SenderID = ID;
                 if (Router.NetworkMap.GetEntryByID(ID).Neighbours.Contains(request.DestinationID))
                 {
                     await CommsModule.SendAsync(request.DestinationID, request, 1000, 3);

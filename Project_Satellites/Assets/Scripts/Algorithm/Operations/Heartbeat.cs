@@ -22,7 +22,6 @@ public class Heartbeat
             {
                 SourceID = myNode.ID,
                 DestinationID = node,
-                SenderID = myNode.ID,
                 Command = Request.Commands.HEARTBEAT,
                 AckExpected = true,
                 ResponseExpected = true
