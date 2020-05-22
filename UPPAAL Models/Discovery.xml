@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
-	<declaration>const int N = 6; // Number of satellites
+	<declaration>const int N = 5; // Number of satellites
 
 clock time;
 
@@ -33,6 +33,8 @@ int[0, N] mapLen = 0;
 edge networkMap[N];
 
 bool secondPass = false;
+bool isTerminated = false;
+
 
 UID nextHop () {
   return (ID + 1) % N;
@@ -66,14 +68,17 @@ bool EdgeEqual(edge e1, edge e2)
   return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
 }
 
-
+// Checks if a given edge already exists in the networkmap
 bool ExistsInNetwork(edge e)
 {
   int i;
   for (i=0; i&lt;mapLen; i++)
   {
     bool check = EdgeEqual(e, networkMap[i]);
-    if (check == true) { return true; } 
+    if (check == true) 
+    {
+      return true;
+    } 
   }
   return false;
 }
@@ -95,7 +100,7 @@ void TryAdd(edge e)
 }
 
 
-// Look at the meta edgeList, add all edges that we it didn't have knowledge about
+// Look at the transmitted edgeList, add all edges that we it didn't have knowledge about
 void ProcessEdges()
 {
   int i;
@@ -106,7 +111,7 @@ void ProcessEdges()
 }
 
 
-// Reset the edgeList and len meta variable and fills it with this nodes edge knowledge
+// Reset the edgeList and len variable and fills it with this nodes edge knowledge
 void TransmitEdges()
 {
   int i;
@@ -118,7 +123,7 @@ void TransmitEdges()
 }
 
 
-// Build the expected complete network map and check if they all exist in the node's network map
+// Verification - Build the expected complete network map and check if they all exist in the node's network map
 bool Verify()
 {
   int i;
@@ -158,45 +163,59 @@ bool Verify()
 			<committed/>
 		</location>
 		<location id="id7" x="544" y="340">
-			<name x="561" y="332">Done</name>
+			<name x="510" y="357">Done</name>
 			<committed/>
 		</location>
-		<location id="id8" x="544" y="238">
-			<name x="518" y="204">Verified</name>
+		<location id="id8" x="773" y="280">
+			<name x="747" y="238">Verified</name>
 		</location>
-		<location id="id9" x="544" y="442">
-			<name x="518" y="459">Wrong</name>
+		<location id="id9" x="773" y="391">
+			<name x="756" y="416">Wrong</name>
+		</location>
+		<location id="id10" x="688" y="340">
+			<name x="705" y="331">Terminate</name>
+			<committed/>
+		</location>
+		<location id="id11" x="544" y="238">
+			<name x="534" y="204">TermWait</name>
 		</location>
 		<init ref="id6"/>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="442" y="204">transmit[ID]?</label>
+			<label kind="assignment" x="391" y="221">isTerminated = true</label>
+			<nail x="467" y="238"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id11"/>
+			<label kind="guard" x="552" y="255">start == ID &amp;&amp;
+!isTerminated</label>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id9"/>
+			<label kind="guard" x="654" y="391">Verify() == false</label>
+			<nail x="688" y="391"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id8"/>
+			<label kind="guard" x="662" y="255">Verify() == true</label>
+			<nail x="688" y="280"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id10"/>
+			<label kind="guard" x="569" y="340">start != ID ||
+isTerminated</label>
+		</transition>
 		<transition>
 			<source ref="id5"/>
 			<target ref="id2"/>
 			<label kind="guard" x="59" y="212">start == ID</label>
 			<nail x="170" y="238"/>
-		</transition>
-		<transition>
-			<source ref="id9"/>
-			<target ref="id9"/>
-			<label kind="synchronisation" x="620" y="433">transmit[ID]?</label>
-			<nail x="612" y="476"/>
-			<nail x="612" y="408"/>
-		</transition>
-		<transition>
-			<source ref="id7"/>
-			<target ref="id9"/>
-			<label kind="guard" x="552" y="382">Verify() == false</label>
-		</transition>
-		<transition>
-			<source ref="id8"/>
-			<target ref="id8"/>
-			<label kind="synchronisation" x="620" y="230">transmit[ID]?</label>
-			<nail x="612" y="204"/>
-			<nail x="612" y="272"/>
-		</transition>
-		<transition>
-			<source ref="id7"/>
-			<target ref="id8"/>
-			<label kind="guard" x="552" y="280">Verify() == true</label>
 		</transition>
 		<transition>
 			<source ref="id3"/>
@@ -253,7 +272,7 @@ int[0, N] mapLen = 0;
 edge networkMap[N];
 
 bool secondPass = false;
-
+bool isTerminated = false;
 
 UID nextHop () {
   return (ID + 1) % N;
@@ -288,13 +307,17 @@ bool EdgeEqual(edge e1, edge e2)
 }
 
 
+// Checks if a given edge already exists in the networkmap
 bool ExistsInNetwork(edge e)
 {
   int i;
   for (i=0; i&lt;mapLen; i++)
   {
     bool check = EdgeEqual(e, networkMap[i]);
-    if (check == true) { return true; } 
+    if (check == true)
+    { 
+      return true;
+    } 
   }
   return false;
 }
@@ -311,7 +334,7 @@ void TryAdd(edge e)
 }
 
 
-// Look at the meta edgeList, add all edges that we it didn't have knowledge about
+// Look at the transmitted edgeList, add all edges that we it didn't have knowledge about
 void ProcessEdges()
 {
   int i;
@@ -322,7 +345,7 @@ void ProcessEdges()
 }
 
 
-// Reset the edgeList and len meta variable and fills it with this nodes edge knowledge
+// Reset the edgeList and len variable and fill it with this nodes edge knowledge
 void TransmitEdges()
 {
   int i;
@@ -334,7 +357,7 @@ void TransmitEdges()
 }
 
 
-// Build the expected complete network map and check if they all exist in the node's network map
+// Verification - Build the expected complete network map and check if they all exist in the node's network map
 bool Verify()
 {
   int i;
@@ -349,129 +372,143 @@ bool Verify()
 
   return true;
 }</declaration>
-		<location id="id10" x="-442" y="0">
+		<location id="id12" x="-442" y="0">
 			<name x="-510" y="-8">Receive</name>
 		</location>
-		<location id="id11" x="-306" y="0">
+		<location id="id13" x="-306" y="0">
 			<name x="-332" y="17">Process</name>
 			<committed/>
 		</location>
-		<location id="id12" x="-170" y="0">
+		<location id="id14" x="-170" y="0">
 			<name x="-187" y="17">Wait</name>
 			<label kind="invariant" x="-187" y="34">t &lt;= 10</label>
 		</location>
-		<location id="id13" x="34" y="0">
+		<location id="id15" x="34" y="0">
 			<committed/>
 		</location>
-		<location id="id14" x="-442" y="102">
+		<location id="id16" x="-442" y="102">
 			<committed/>
 		</location>
-		<location id="id15" x="-306" y="-102">
+		<location id="id17" x="-306" y="-102">
 			<name x="-323" y="-238">Start</name>
 			<urgent/>
 		</location>
-		<location id="id16" x="-306" y="-204">
+		<location id="id18" x="-306" y="-204">
 			<committed/>
 		</location>
-		<location id="id17" x="204" y="0">
-			<name x="221" y="-8">Done</name>
+		<location id="id19" x="204" y="-102">
+			<name x="194" y="-136">TermWait</name>
+		</location>
+		<location id="id20" x="204" y="0">
+			<name x="170" y="17">Done</name>
 			<committed/>
 		</location>
-		<location id="id18" x="204" y="-102">
-			<name x="178" y="-136">Verified</name>
+		<location id="id21" x="348" y="0">
+			<name x="365" y="-9">Terminate</name>
+			<committed/>
 		</location>
-		<location id="id19" x="204" y="102">
-			<name x="178" y="119">Wrong</name>
+		<location id="id22" x="433" y="51">
+			<name x="416" y="76">Wrong</name>
 		</location>
-		<init ref="id16"/>
+		<location id="id23" x="433" y="-60">
+			<name x="407" y="-102">Verified</name>
+		</location>
+		<init ref="id18"/>
 		<transition>
-			<source ref="id12"/>
-			<target ref="id13"/>
+			<source ref="id15"/>
+			<target ref="id20"/>
+			<label kind="guard" x="51" y="-25">secondPass == true</label>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id15"/>
 			<label kind="guard" x="-85" y="-59">t &gt;= 1</label>
 			<label kind="synchronisation" x="-127" y="-25">transmit[nextHop()]!</label>
 			<label kind="assignment" x="-153" y="-42">TransmitEdges(), comms++</label>
 			<nail x="-68" y="0"/>
 		</transition>
 		<transition>
-			<source ref="id15"/>
-			<target ref="id12"/>
+			<source ref="id17"/>
+			<target ref="id14"/>
 			<label kind="guard" x="-280" y="-127">start == ID</label>
 			<nail x="-170" y="-102"/>
 		</transition>
 		<transition>
-			<source ref="id19"/>
-			<target ref="id19"/>
-			<label kind="synchronisation" x="280" y="93">transmit[ID]?</label>
-			<nail x="272" y="136"/>
-			<nail x="272" y="68"/>
-		</transition>
-		<transition>
-			<source ref="id17"/>
-			<target ref="id19"/>
-			<label kind="guard" x="212" y="42">Verify() == false</label>
-		</transition>
-		<transition>
-			<source ref="id18"/>
-			<target ref="id18"/>
-			<label kind="synchronisation" x="280" y="-110">transmit[ID]?</label>
-			<nail x="272" y="-136"/>
-			<nail x="272" y="-68"/>
-		</transition>
-		<transition>
-			<source ref="id17"/>
-			<target ref="id18"/>
-			<label kind="guard" x="212" y="-60">Verify() == true</label>
-		</transition>
-		<transition>
-			<source ref="id13"/>
-			<target ref="id17"/>
-			<label kind="guard" x="51" y="-25">secondPass == true</label>
-		</transition>
-		<transition>
-			<source ref="id13"/>
-			<target ref="id14"/>
+			<source ref="id15"/>
+			<target ref="id16"/>
 			<label kind="guard" x="-280" y="76">secondPass == false</label>
 			<nail x="34" y="102"/>
 		</transition>
 		<transition>
-			<source ref="id16"/>
-			<target ref="id15"/>
+			<source ref="id18"/>
+			<target ref="id17"/>
 			<label kind="assignment" x="-298" y="-170">AddNeighbours()</label>
 		</transition>
 		<transition>
-			<source ref="id15"/>
-			<target ref="id10"/>
+			<source ref="id17"/>
+			<target ref="id12"/>
 			<label kind="guard" x="-408" y="-127">start != ID</label>
 			<nail x="-442" y="-102"/>
 		</transition>
 		<transition>
-			<source ref="id14"/>
-			<target ref="id10"/>
+			<source ref="id16"/>
+			<target ref="id12"/>
 			<label kind="assignment" x="-433" y="42">secondPass = true</label>
 		</transition>
 		<transition>
-			<source ref="id11"/>
-			<target ref="id12"/>
+			<source ref="id13"/>
+			<target ref="id14"/>
 			<label kind="assignment" x="-289" y="-42">ProcessEdges(),
 t = 0</label>
 		</transition>
 		<transition>
-			<source ref="id10"/>
-			<target ref="id11"/>
+			<source ref="id12"/>
+			<target ref="id13"/>
 			<label kind="synchronisation" x="-416" y="-25">transmit[ID]?</label>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id20"/>
+			<label kind="synchronisation" x="102" y="-136">transmit[ID]?</label>
+			<label kind="assignment" x="51" y="-119">isTerminated = true</label>
+			<nail x="127" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id19"/>
+			<label kind="guard" x="212" y="-68">start == ID &amp;&amp;
+!isTerminated</label>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id22"/>
+			<label kind="guard" x="314" y="51">Verify() == false</label>
+			<nail x="348" y="51"/>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id23"/>
+			<label kind="guard" x="322" y="-85">Verify() == true</label>
+			<nail x="348" y="-60"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="guard" x="238" y="0">start != ID ||
+isTerminated</label>
 		</transition>
 	</template>
 	<template>
 		<name>Discovery</name>
-		<location id="id20" x="-272" y="0">
+		<location id="id24" x="-272" y="0">
 			<committed/>
 		</location>
-		<location id="id21" x="-136" y="0">
+		<location id="id25" x="-136" y="0">
 		</location>
-		<init ref="id20"/>
+		<init ref="id24"/>
 		<transition>
-			<source ref="id20"/>
-			<target ref="id21"/>
+			<source ref="id24"/>
+			<target ref="id25"/>
 			<label kind="select" x="-229" y="-42">i : UID</label>
 			<label kind="assignment" x="-230" y="-25">start = i</label>
 		</transition>
@@ -511,6 +548,18 @@ t = 0</label>
 			<comment></comment>
 		</query>
 		<query>
+			<formula>A[] forall (i : UID) RingNodeSync(i).Start imply RingNodeSync(i).Terminate</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Wrong || RingNodeSync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
 			<formula>A[] comms &lt;= N * 2</formula>
 			<comment></comment>
 		</query>
@@ -540,6 +589,18 @@ t = 0</label>
 		</query>
 		<query>
 			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; time &lt;= N * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Start imply RingNodeAsync(i).Terminate</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Wrong || RingNodeAsync(i).Verified</formula>
 			<comment></comment>
 		</query>
 		<query>
