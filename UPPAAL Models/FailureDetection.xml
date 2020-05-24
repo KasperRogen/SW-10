@@ -2,7 +2,7 @@
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
 	<declaration>// Place global declarations here.
-const int N = 10;
+const int N = 30;
 
 clock time;
 int[0, 2*N] comms;
@@ -24,7 +24,7 @@ const int len = 2;
 int deadNodes[len] = {-1, -1};
 
 meta UID sender;
-UID failedNode; // previously meta variable - caused verification problems - was partly solved
+meta UID failedNode;
 meta bool isFailed;
 
 
@@ -315,6 +315,7 @@ sndPass  = true</label>
 			<label kind="guard" x="-51" y="68">t &gt;= 1 &amp;&amp; start != ID</label>
 			<label kind="synchronisation" x="-51" y="85">transmit[nextHop()]!</label>
 			<label kind="assignment" x="-51" y="102">sender = ID,
+failedNode = failedNodeID,
 t = 0</label>
 		</transition>
 		<transition>
