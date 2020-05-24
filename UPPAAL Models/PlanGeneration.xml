@@ -8,6 +8,7 @@ clock time;
 typedef int[0, N-1] UID;
 
 chan transmit[N];
+chan execute[N];
 chan complete;
 
 meta UID sender;
@@ -86,7 +87,7 @@ int Distance(int p1, int p2)
 }
 
 
-// Check if node with id has already chosen a target postion position
+// Check if node with id has already chosen a target postion
 bool isInPlan(int id)
 {
   int i;
@@ -101,7 +102,7 @@ bool isInPlan(int id)
 }
 
 
-bool isPlanFull()
+bool IsPlanFull()
 {
   int i;
   for (i=0; i&lt;N; i++)
@@ -196,83 +197,123 @@ void ProcessPlan()
   chosenPos[myChosenPos] = ID;
   cost = myCost;
 }</declaration>
-		<location id="id0" x="0" y="0">
+		<location id="id0" x="442" y="0">
+			<name x="459" y="-11">CheckPlan</name>
+			<committed/>
+		</location>
+		<location id="id1" x="442" y="102">
+			<name x="397" y="113">Transmit</name>
+			<label kind="invariant" x="414" y="129">t &lt;= 1</label>
+		</location>
+		<location id="id2" x="442" y="-102">
+			<name x="376" y="-153">StartExecute</name>
+			<label kind="invariant" x="417" y="-136">t &lt;= 1</label>
+		</location>
+		<location id="id3" x="289" y="0">
+			<name x="263" y="17">Process</name>
+			<committed/>
+		</location>
+		<location id="id4" x="612" y="102">
+			<name x="573" y="114">WaitExecute</name>
+		</location>
+		<location id="id5" x="0" y="0">
 			<name x="-25" y="17">Receive</name>
 		</location>
-		<location id="id1" x="136" y="0">
-			<name x="110" y="17">Process</name>
+		<location id="id6" x="136" y="0">
+			<name x="110" y="17">Calculate</name>
 			<urgent/>
 		</location>
-		<location id="id2" x="578" y="0">
-			<name x="550" y="13">Transmit</name>
-			<label kind="invariant" x="558" y="31">t &lt;= 1</label>
-		</location>
-		<location id="id3" x="731" y="0">
-			<name x="698" y="17">Terminate</name>
-		</location>
-		<location id="id4" x="68" y="-59">
+		<location id="id7" x="68" y="-59">
 			<name x="51" y="-93">Start</name>
 			<urgent/>
 		</location>
-		<location id="id5" x="306" y="0">
+		<location id="id8" x="722" y="0">
+			<name x="739" y="-8">Terminate</name>
+		</location>
+		<location id="id9" x="612" y="-102">
+			<name x="595" y="-139">Wait</name>
+		</location>
+		<location id="id10" x="722" y="-102">
+			<name x="710" y="-141">Complete</name>
 			<committed/>
 		</location>
-		<location id="id6" x="467" y="-85">
-			<name x="450" y="-119">Done</name>
-			<committed/>
+		<location id="id11" x="722" y="102">
+			<name x="710" y="112">SendExecute</name>
+			<label kind="invariant" x="711" y="131">t &lt;= 1</label>
 		</location>
-		<location id="id7" x="467" y="0">
-			<committed/>
-		</location>
-		<init ref="id4"/>
+		<init ref="id7"/>
 		<transition>
-			<source ref="id7"/>
-			<target ref="id2"/>
-			<label kind="guard" x="484" y="-25">!isPlanFull()</label>
-		</transition>
-		<transition>
-			<source ref="id7"/>
-			<target ref="id6"/>
-			<label kind="guard" x="391" y="-59">isPlanFull()</label>
-		</transition>
-		<transition>
-			<source ref="id5"/>
-			<target ref="id7"/>
-			<label kind="assignment" x="323" y="-25">ProcessPlan(), t = 0</label>
-		</transition>
-		<transition>
-			<source ref="id6"/>
-			<target ref="id3"/>
-			<label kind="synchronisation" x="569" y="-110">complete!</label>
-			<nail x="731" y="-85"/>
-		</transition>
-		<transition>
-			<source ref="id1"/>
-			<target ref="id5"/>
-			<label kind="assignment" x="161" y="-25">CalculatePositions()</label>
+			<source ref="id11"/>
+			<target ref="id8"/>
+			<label kind="guard" x="726" y="35">t &gt;= 1</label>
+			<label kind="synchronisation" x="725" y="48">execute[nextHop()]!</label>
+			<label kind="assignment" x="726" y="64">comms++</label>
 		</transition>
 		<transition>
 			<source ref="id4"/>
-			<target ref="id1"/>
-			<label kind="guard" x="93" y="-76">ID == start</label>
-			<nail x="136" y="-59"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="620" y="68">execute[ID]?</label>
+			<label kind="assignment" x="646" y="85">t = 0</label>
 		</transition>
 		<transition>
-			<source ref="id4"/>
-			<target ref="id0"/>
-			<label kind="guard" x="-25" y="-76">ID != start</label>
-			<nail x="0" y="-59"/>
+			<source ref="id10"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="654" y="-59">complete!</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="627" y="-125">execute[ID]?</label>
 		</transition>
 		<transition>
 			<source ref="id2"/>
-			<target ref="id3"/>
-			<label kind="guard" x="629" y="-51">t &gt;= 1</label>
-			<label kind="synchronisation" x="595" y="-34">transmit[nextHop()]!</label>
-			<label kind="assignment" x="620" y="-17">comms++</label>
+			<target ref="id9"/>
+			<label kind="guard" x="498" y="-152">t &gt;= 1</label>
+			<label kind="synchronisation" x="463" y="-136">execute[nextHop()]!</label>
+			<label kind="assignment" x="490" y="-122">comms++</label>
 		</transition>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id1"/>
+			<label kind="guard" x="365" y="42">!IsPlanFull()</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id2"/>
+			<label kind="guard" x="368" y="-68">IsPlanFull()</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id0"/>
+			<label kind="assignment" x="306" y="-25">ProcessPlan(), t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id3"/>
+			<label kind="assignment" x="153" y="-25">CalculatePositions()</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id6"/>
+			<label kind="guard" x="93" y="-76">ID == start</label>
+			<nail x="136" y="-59"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id5"/>
+			<label kind="guard" x="-25" y="-76">ID != start</label>
+			<nail x="0" y="-59"/>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id4"/>
+			<label kind="guard" x="503" y="51">t &gt;= 1</label>
+			<label kind="synchronisation" x="467" y="68">transmit[nextHop()]!</label>
+			<label kind="assignment" x="495" y="83">comms++</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id6"/>
 			<label kind="synchronisation" x="27" y="-23">transmit[ID]?</label>
 		</transition>
 	</template>
@@ -282,7 +323,6 @@ void ProcessPlan()
 		<declaration>clock t;
 
 int cost; // the cost to move to a target position
-bool isTerminated;
 
 int possiblePos[N]; // the target positions that this node can take, and their cost
 int nodesBestCost[N]; // the best target positions that other nodes can take.
@@ -335,7 +375,7 @@ int Distance(int p1, int p2)
 }
 
 
-// Check if node with id has already chosen a target postion position
+// Check if node with id has already chosen a target postion 
 bool isInPlan(int id)
 {
   int i;
@@ -347,6 +387,20 @@ bool isInPlan(int id)
     }
   }
   return false;
+}
+
+
+bool IsPlanFull()
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (chosenPos[i] == -1)
+    {
+      return false;
+    }
+  }
+  return true;
 }
 
 
@@ -375,16 +429,19 @@ void BestPosition(int id)
 {
   int bestCost = -1;
   int bestPos;
-  
+
   int i;
   for (i=0; i&lt;N; i++)
   {
-    int tempCost = Distance(startPositions[id], targetPositions[i]);
-
-    if (tempCost &lt; bestCost || bestCost == -1)
+    if (chosenPos[i] == -1)
     {
-      bestCost = tempCost;
-      bestPos = i;
+      int tempCost = Distance(startPositions[id], targetPositions[i]);
+
+      if (tempCost &lt; bestCost || bestCost == -1)
+      {
+        bestCost = tempCost;
+        bestPos = i;
+      }
     }
   }
 
@@ -392,7 +449,6 @@ void BestPosition(int id)
   {
     nodesBestCost[bestPos] = bestCost;
   } 
-
 }
 
 
@@ -402,7 +458,8 @@ void ProcessPlan()
   int myCost = -1;
 
   int i;  
-  // Calculates all nodes best postition
+
+  // Calculates all remaining nodes best postition
   for (i=0; i&lt;N; i++)
   {
     if (!isInPlan(i) &amp;&amp; i != ID)
@@ -411,15 +468,13 @@ void ProcessPlan()
     }
   }
 
-  // Loop over all possible positions. The the best target position, that isn't other nodes best.
+  // Loop over all possible positions. Take the best target position, that isn't other nodes best.
   for (i=0; i&lt;N; i++)
   {
-    if (possiblePos[i] != -1)
+    if (possiblePos[i] != -1 &amp;&amp; nodesBestCost[i] == -1)
     {
       
-      bool isBetter = possiblePos[i] &lt;= nodesBestCost[i] || nodesBestCost[i] == -1;
-      
-      if (isBetter &amp;&amp; (possiblePos[i] &lt; myCost || myCost == -1))
+      if (possiblePos[i] &lt; myCost || myCost == -1)
       {
         myChosenPos = i;
         myCost = possiblePos[i];
@@ -430,94 +485,123 @@ void ProcessPlan()
   chosenPos[myChosenPos] = ID;
   cost = myCost;
 }</declaration>
-		<location id="id8" x="-6426" y="-5746">
-			<name x="-6451" y="-5729">Receive</name>
+		<location id="id12" x="722" y="102">
+			<name x="685" y="115">SendExecute</name>
+			<label kind="invariant" x="705" y="131">t &lt;= 10</label>
 		</location>
-		<location id="id9" x="-6290" y="-5746">
-			<name x="-6316" y="-5729">Process</name>
+		<location id="id13" x="722" y="0">
+			<name x="739" y="-8">Terminate</name>
+		</location>
+		<location id="id14" x="612" y="102">
+			<name x="573" y="114">WaitExecute</name>
+		</location>
+		<location id="id15" x="722" y="-102">
+			<name x="696" y="-141">Complete</name>
+			<committed/>
+		</location>
+		<location id="id16" x="612" y="-102">
+			<name x="595" y="-139">Wait</name>
+		</location>
+		<location id="id17" x="442" y="-102">
+			<name x="400" y="-153">StartExecute</name>
+			<label kind="invariant" x="425" y="-136">t &lt;= 10</label>
+		</location>
+		<location id="id18" x="442" y="0">
+			<name x="459" y="-11">CheckPlan</name>
+			<committed/>
+		</location>
+		<location id="id19" x="442" y="102">
+			<name x="415" y="112">Transmit</name>
+			<label kind="invariant" x="424" y="127">t &lt;= 10</label>
+		</location>
+		<location id="id20" x="289" y="0">
+			<name x="263" y="17">Process</name>
+			<committed/>
+		</location>
+		<location id="id21" x="0" y="0">
+			<name x="-25" y="17">Receive</name>
+		</location>
+		<location id="id22" x="136" y="0">
+			<name x="110" y="17">Calculate</name>
 			<urgent/>
 		</location>
-		<location id="id10" x="-6358" y="-5814">
-			<name x="-6375" y="-5848">Start</name>
+		<location id="id23" x="68" y="-59">
+			<name x="51" y="-93">Start</name>
 			<urgent/>
 		</location>
-		<location id="id11" x="-6120" y="-5746">
-			<committed/>
-		</location>
-		<location id="id12" x="-5950" y="-5746">
-			<name x="-5975" y="-5737">Transmit</name>
-			<label kind="invariant" x="-5967" y="-5720">t &lt;= 10</label>
-		</location>
-		<location id="id13" x="-5644" y="-5814">
-			<committed/>
-		</location>
-		<location id="id14" x="-5780" y="-5746">
-			<name x="-5823" y="-5738">Done</name>
-			<committed/>
-		</location>
-		<location id="id15" x="-5644" y="-5746">
-			<name x="-5668" y="-5733">TermWait</name>
-		</location>
-		<location id="id16" x="-5780" y="-5644">
-			<name x="-5763" y="-5653">Terminate</name>
-		</location>
-		<init ref="id10"/>
+		<init ref="id23"/>
 		<transition>
 			<source ref="id12"/>
-			<target ref="id14"/>
-			<label kind="guard" x="-5890" y="-5797">t &gt;= 1</label>
-			<label kind="synchronisation" x="-5937" y="-5782">transmit[nextHop()]!</label>
-			<label kind="assignment" x="-5907" y="-5766">comms++</label>
+			<target ref="id13"/>
+			<label kind="guard" x="726" y="35">t &gt;= 1</label>
+			<label kind="synchronisation" x="725" y="48">execute[nextHop()]!</label>
+			<label kind="assignment" x="726" y="64">comms++</label>
 		</transition>
 		<transition>
-			<source ref="id11"/>
+			<source ref="id14"/>
 			<target ref="id12"/>
-			<label kind="assignment" x="-6103" y="-5771">ProcessPlan(), t = 0</label>
-		</transition>
-		<transition>
-			<source ref="id9"/>
-			<target ref="id11"/>
-			<label kind="assignment" x="-6264" y="-5771">CalculatePositions()</label>
-		</transition>
-		<transition>
-			<source ref="id10"/>
-			<target ref="id9"/>
-			<label kind="guard" x="-6341" y="-5831">ID == start</label>
-			<nail x="-6290" y="-5814"/>
-		</transition>
-		<transition>
-			<source ref="id10"/>
-			<target ref="id8"/>
-			<label kind="guard" x="-6443" y="-5831">ID != start</label>
-			<nail x="-6426" y="-5814"/>
-		</transition>
-		<transition>
-			<source ref="id8"/>
-			<target ref="id9"/>
-			<label kind="synchronisation" x="-6400" y="-5771">transmit[ID]?</label>
-		</transition>
-		<transition>
-			<source ref="id13"/>
-			<target ref="id14"/>
-			<label kind="synchronisation" x="-5754" y="-5852">complete!</label>
-			<label kind="assignment" x="-5782" y="-5835">isTerminated = true</label>
-			<nail x="-5780" y="-5814"/>
+			<label kind="synchronisation" x="620" y="68">execute[ID]?</label>
+			<label kind="assignment" x="646" y="85">t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id15"/>
 			<target ref="id13"/>
-			<label kind="synchronisation" x="-5732" y="-5789">transmit[ID]?</label>
+			<label kind="synchronisation" x="654" y="-59">complete!</label>
 		</transition>
 		<transition>
-			<source ref="id14"/>
+			<source ref="id16"/>
 			<target ref="id15"/>
-			<label kind="guard" x="-5763" y="-5746">start == ID &amp;&amp;
-!isTerminated</label>
+			<label kind="synchronisation" x="627" y="-125">execute[ID]?</label>
 		</transition>
 		<transition>
-			<source ref="id14"/>
+			<source ref="id17"/>
 			<target ref="id16"/>
-			<label kind="guard" x="-5776" y="-5692">start != ID || isTerminated</label>
+			<label kind="guard" x="503" y="-141">t &gt;= 1</label>
+			<label kind="synchronisation" x="467" y="-125">execute[nextHop()]!</label>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id19"/>
+			<label kind="guard" x="365" y="42">!IsPlanFull()</label>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id17"/>
+			<label kind="guard" x="368" y="-68">IsPlanFull()</label>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id18"/>
+			<label kind="assignment" x="306" y="-25">ProcessPlan(), t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id20"/>
+			<label kind="assignment" x="153" y="-25">CalculatePositions()</label>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id22"/>
+			<label kind="guard" x="93" y="-76">ID == start</label>
+			<nail x="136" y="-59"/>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id21"/>
+			<label kind="guard" x="-25" y="-76">ID != start</label>
+			<nail x="0" y="-59"/>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id14"/>
+			<label kind="guard" x="503" y="51">t &gt;= 1</label>
+			<label kind="synchronisation" x="467" y="68">transmit[nextHop()]!</label>
+			<label kind="assignment" x="495" y="83">comms++</label>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id22"/>
+			<label kind="synchronisation" x="27" y="-23">transmit[ID]?</label>
 		</transition>
 	</template>
 	<template>
@@ -592,81 +676,81 @@ bool Destinct(){
 bool Verify() {
   return AllTargetsChosen() &amp;&amp; Destinct();
 }</declaration>
-		<location id="id17" x="-340" y="0">
+		<location id="id24" x="-340" y="0">
 			<name x="-373" y="12">StartNode</name>
 			<committed/>
 		</location>
-		<location id="id18" x="-204" y="0">
+		<location id="id25" x="-204" y="0">
 			<name x="-219" y="12">Wait</name>
 		</location>
-		<location id="id19" x="-68" y="0">
+		<location id="id26" x="-68" y="0">
 			<name x="-51" y="-8">Complete</name>
 			<committed/>
 		</location>
-		<location id="id20" x="68" y="68">
+		<location id="id27" x="68" y="68">
 			<name x="85" y="59">Wrong</name>
 		</location>
-		<location id="id21" x="68" y="-68">
+		<location id="id28" x="68" y="-68">
 			<name x="85" y="-76">Correct</name>
 		</location>
-		<location id="id22" x="-476" y="0">
+		<location id="id29" x="-476" y="0">
 			<name x="-569" y="7">StartPositions</name>
 			<committed/>
 		</location>
-		<location id="id23" x="-476" y="102">
+		<location id="id30" x="-476" y="102">
 			<name x="-461" y="92">TargetPositions</name>
 			<committed/>
 		</location>
-		<location id="id24" x="-680" y="0">
+		<location id="id31" x="-680" y="0">
 			<name x="-758" y="-10">Increment</name>
 			<committed/>
 		</location>
-		<init ref="id22"/>
+		<init ref="id29"/>
 		<transition>
-			<source ref="id22"/>
-			<target ref="id17"/>
+			<source ref="id29"/>
+			<target ref="id24"/>
 			<label kind="guard" x="-442" y="-34">setup == N</label>
 		</transition>
 		<transition>
-			<source ref="id24"/>
-			<target ref="id22"/>
+			<source ref="id31"/>
+			<target ref="id29"/>
 			<label kind="assignment" x="-707" y="-84">chosenPos[setup] = -1,
 setup++,
 nextPosition += distanceBetweenNodes</label>
 		</transition>
 		<transition>
-			<source ref="id23"/>
-			<target ref="id24"/>
+			<source ref="id30"/>
+			<target ref="id31"/>
 			<label kind="select" x="-654" y="110">offset : OffsetPosition</label>
 			<label kind="assignment" x="-756" y="127">targetPositions[setup] = nextPosition + EvenOffset(offset)</label>
 			<nail x="-680" y="102"/>
 		</transition>
 		<transition>
-			<source ref="id22"/>
-			<target ref="id23"/>
+			<source ref="id29"/>
+			<target ref="id30"/>
 			<label kind="guard" x="-467" y="34">setup &lt; N</label>
 			<label kind="assignment" x="-467" y="51">startPositions[setup] = nextPosition</label>
 		</transition>
 		<transition>
-			<source ref="id19"/>
-			<target ref="id20"/>
+			<source ref="id26"/>
+			<target ref="id27"/>
 			<label kind="guard" x="-60" y="68">Verify() == false</label>
 			<nail x="-68" y="68"/>
 		</transition>
 		<transition>
-			<source ref="id19"/>
-			<target ref="id21"/>
+			<source ref="id26"/>
+			<target ref="id28"/>
 			<label kind="guard" x="-60" y="-93">Verify() == true</label>
 			<nail x="-68" y="-68"/>
 		</transition>
 		<transition>
-			<source ref="id18"/>
-			<target ref="id19"/>
+			<source ref="id25"/>
+			<target ref="id26"/>
 			<label kind="synchronisation" x="-170" y="-25">complete?</label>
 		</transition>
 		<transition>
-			<source ref="id17"/>
-			<target ref="id18"/>
+			<source ref="id24"/>
+			<target ref="id25"/>
 			<label kind="select" x="-314" y="-42">node : UID</label>
 			<label kind="assignment" x="-314" y="-25">start = node</label>
 		</transition>
@@ -748,87 +832,87 @@ bool Verify() {
 }
 
 </declaration>
-		<location id="id25" x="-476" y="0">
+		<location id="id32" x="-476" y="0">
 			<name x="-521" y="5">Setup</name>
 			<committed/>
 		</location>
-		<location id="id26" x="-340" y="0">
+		<location id="id33" x="-340" y="0">
 			<name x="-370" y="14">StartNode</name>
 			<committed/>
 		</location>
-		<location id="id27" x="-680" y="0">
+		<location id="id34" x="-680" y="0">
 			<name x="-761" y="-10">Increment</name>
 			<committed/>
 		</location>
-		<location id="id28" x="-476" y="102">
+		<location id="id35" x="-476" y="102">
 			<name x="-456" y="96">TargetPosition</name>
 			<committed/>
 		</location>
-		<location id="id29" x="-204" y="0">
+		<location id="id36" x="-204" y="0">
 			<name x="-221" y="17">Wait</name>
 		</location>
-		<location id="id30" x="-68" y="0">
+		<location id="id37" x="-68" y="0">
 			<name x="-51" y="-8">Complete</name>
 			<committed/>
 		</location>
-		<location id="id31" x="68" y="68">
+		<location id="id38" x="68" y="68">
 			<name x="85" y="59">Wrong</name>
 		</location>
-		<location id="id32" x="68" y="-68">
+		<location id="id39" x="68" y="-68">
 			<name x="85" y="-76">Correct</name>
 		</location>
-		<init ref="id25"/>
+		<init ref="id32"/>
 		<transition>
-			<source ref="id25"/>
-			<target ref="id26"/>
+			<source ref="id32"/>
+			<target ref="id33"/>
 			<label kind="guard" x="-442" y="-25">setup == N</label>
 		</transition>
 		<transition>
-			<source ref="id27"/>
-			<target ref="id25"/>
+			<source ref="id34"/>
+			<target ref="id32"/>
 			<label kind="assignment" x="-736" y="-97">chosenPos[setup] = -1,
 setup++,
 nextNodePosition += distanceBetweenNodes,
 nextTargetPosition += distanceBetweenTargets</label>
 		</transition>
 		<transition>
-			<source ref="id28"/>
-			<target ref="id27"/>
+			<source ref="id35"/>
+			<target ref="id34"/>
 			<label kind="select" x="-671" y="119">offset : OffsetPosition</label>
 			<label kind="assignment" x="-799" y="136">targetPositions[setup] = nextTargetPosition + ExtraOffset(offset)</label>
 			<nail x="-680" y="102"/>
 		</transition>
 		<transition>
-			<source ref="id25"/>
-			<target ref="id28"/>
+			<source ref="id32"/>
+			<target ref="id35"/>
 			<label kind="guard" x="-467" y="34">setup &lt; N</label>
 			<label kind="assignment" x="-467" y="51">startPositions[setup] = nextNodePosition</label>
 		</transition>
 		<transition>
-			<source ref="id30"/>
-			<target ref="id31"/>
+			<source ref="id37"/>
+			<target ref="id38"/>
 			<label kind="guard" x="-60" y="68">Verify() == false</label>
 			<nail x="-68" y="68"/>
 		</transition>
 		<transition>
-			<source ref="id30"/>
-			<target ref="id32"/>
+			<source ref="id37"/>
+			<target ref="id39"/>
 			<label kind="guard" x="-60" y="-93">Verify() == true</label>
 			<nail x="-68" y="-68"/>
 		</transition>
 		<transition>
-			<source ref="id29"/>
-			<target ref="id30"/>
+			<source ref="id36"/>
+			<target ref="id37"/>
 			<label kind="synchronisation" x="-170" y="-25">complete?</label>
 		</transition>
 		<transition>
-			<source ref="id26"/>
-			<target ref="id29"/>
+			<source ref="id33"/>
+			<target ref="id36"/>
 			<label kind="select" x="-314" y="-42">node : UID</label>
 			<label kind="assignment" x="-314" y="-25">start = node</label>
 		</transition>
 	</template>
-	<system>system RingNodeSync, PlanGenerationHole;</system>
+	<system>system RingNodeSync, PlanGeneration;</system>
 	<queries>
 		<query>
 			<formula>***** SYNC QUERIES *****</formula>
@@ -840,14 +924,6 @@ nextTargetPosition += distanceBetweenTargets</label>
 		</query>
 		<query>
 			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Terminate</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] forall (i : UID) RingNodeSync(i).cost &lt;= 6</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] (sum (i: UID) RingNodeSync(i).cost) &lt;= 6 * N</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -868,14 +944,6 @@ nextTargetPosition += distanceBetweenTargets</label>
 		</query>
 		<query>
 			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Terminate</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] forall (i : UID) RingNodeAsync(i).cost &lt;= 6</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] (sum (i: UID) RingNodeAsync(i).cost) &lt;= 6 * N</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -911,23 +979,11 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= N</formula>
+			<formula>A&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N * 2) - 1</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N - 1)</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; PlanGenerationHole.Complete &amp;&amp; time &lt;= (N - 1)</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>E&lt;&gt; PlanGenerationHole.Complete &amp;&amp; time &lt;= (N - 2)</formula>
+			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N * 2) - 2</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -935,15 +991,27 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] comms &lt;= (N - 1)</formula>
+			<formula>A&lt;&gt; PlanGenerationHole.Complete &amp;&amp; time &lt;= (N * 2) - 1</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; comms &lt;= (N - 2)</formula>
+			<formula>E&lt;&gt; PlanGenerationHole.Complete &amp;&amp; time &lt;= (N * 2) - 2</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; PlanGenerationHole.Complete &amp;&amp; comms &lt;= (N - 2)</formula>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= (N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; comms &lt;= (N * 2) - 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGenerationHole.Complete &amp;&amp; comms &lt;= (N * 2) - 2</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -959,11 +1027,11 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] forall (i: UID) RingNodeSync(i).TermWait imply start == RingNodeSync(i).ID</formula>
+			<formula>A[] forall (i: UID) RingNodeSync(i).Wait imply start == RingNodeSync(i).ID</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] forall (i: UID) RingNodeAsync(i).TermWait imply start == RingNodeAsync(i).ID</formula>
+			<formula>A[] forall (i: UID) RingNodeAsync(i).Wait imply start == RingNodeAsync(i).ID</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -979,11 +1047,11 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1 &amp;&amp; RingNodeSync(i).Done</formula>
+			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1 &amp;&amp; RingNodeSync(i).Terminate</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; exists (i : UID) chosenPos[i] == -1 &amp;&amp; RingNodeSync(i).Done</formula>
+			<formula>E&lt;&gt; exists (i : UID) chosenPos[i] == -1 &amp;&amp; RingNodeSync(i).Terminate</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -991,11 +1059,11 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1 &amp;&amp; RingNodeAsync(i).Done</formula>
+			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1 &amp;&amp; RingNodeAsync(i).Terminate</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; exists (i : UID) chosenPos[i] == -1 &amp;&amp; RingNodeAsync(i).Done</formula>
+			<formula>E&lt;&gt; exists (i : UID) chosenPos[i] == -1 &amp;&amp; RingNodeAsync(i).Terminate</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -1012,10 +1080,6 @@ nextTargetPosition += distanceBetweenTargets</label>
 		</query>
 		<query>
 			<formula>A[] !PlanGeneration.Wrong</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
 			<comment></comment>
 		</query>
 		<query>
