@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Numerics;
+using System.Threading.Tasks;
 
 public class Discovery
 {
@@ -28,65 +29,119 @@ public class Discovery
     /// </summary>
     public static async System.Threading.Tasks.Task DiscoverAsync(INode MyNode, DiscoveryRequest request)
     {
-        bool _isIntroduced;
 
-        if (MyNode.LastDiscoveryID == "" || MyNode.LastDiscoveryID == null)
-        {
-            _isIntroduced = false;
-        } else
-        {
-            _isIntroduced = true;
-        }
+        DiscoveryRequest requestClone = request;
 
-        //Fetch immidiate neighbours
-        List<uint?> DiscoveredNeighbours = MyNode.CommsModule.Discover();
-
-        //Check my neighbours, if any "old" neighbours wasn't detected above, heartbeat them
-        if(MyNode.Router.NetworkMap.GetEntryByID(MyNode.ID).Neighbours
-            .Any(neighbour => DiscoveredNeighbours.Contains(neighbour) == false)){
-            Heartbeat.CheckHeartbeat(MyNode);
-            return;
-        }
-            
-        bool newKnowledge = false;
-        bool alteredSet = false;
-
-        MyNode.State = Node.NodeState.DISCOVERY;
-        MyNode.LastDiscoveryID = request.MessageIdentifer;
+        CheckNeighbours(MyNode);
 
         
+        bool PropagationAllowed = (MyNode.LastDiscoveryID == "" || MyNode.LastDiscoveryID == null);
 
+        MyNode.State = Node.NodeState.DISCOVERY;
+        MyNode.LastDiscoveryID = requestClone.MessageIdentifer;
 
-        //if any additions are new informatio to me, store in networkmap
-        foreach (NetworkMapAlteration alteration in request.Alterations)
+        PropagationAllowed = PropagationAllowed || ImplementAlterations(requestClone, MyNode);
+        PropagationAllowed = PropagationAllowed || await CreateAdditions(MyNode, requestClone);
+
+        MyNode.Router.UpdateGraph();
+
+        CheckPropagation(PropagationAllowed, requestClone, MyNode);
+       
+
+        MyNode.State = Node.NodeState.PASSIVE;
+    }
+
+    private static async void CheckPropagation(bool PropagationAllowed, DiscoveryRequest request, INode MyNode)
+    {
+        if (PropagationAllowed || request.requireFullSync)
         {
-            if(alteration.GetType() == typeof(NetworkMapAddition))
+            List<ConstellationPlanEntry> newPlanEntries = new List<ConstellationPlanEntry>();
+
+            foreach (NetworkMapEntry entry in MyNode.Router.NetworkMap.Entries)
             {
-                NetworkMapAddition addition = alteration as NetworkMapAddition;
-                if(MyNode.Router.NetworkMap.GetEntryByID(addition.Entry.ID) == null)
-                {
-                    newKnowledge = true;
-                    MyNode.Router.NetworkMap.Entries.Add(addition.Entry);
-                }
+                Vector3 position = entry.Position;
+                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
+                ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
+                planEntry.NodeID = entry.ID; // NodeID must also be set as it caused problems executing a new plan generated after discovery
+                newPlanEntries.Add(planEntry);
+            }
 
-                if (MyNode.Router.NetworkMap.GetEntryByID(addition.Entry.ID) != null)
-                {
+            MyNode.ActivePlan = new ConstellationPlan(newPlanEntries);
 
-                    foreach (uint? newNodeNeighbour in addition.Entry.Neighbours)
+            DiscoveryRequest newRequest = request.DeepCopy();
+
+            newRequest.DestinationID = MyNode.Router.NextSequential(MyNode, request.Dir);
+
+            if (newRequest.DestinationID == null)
+            {
+                if (request.firstPassDone == true)
+                {
+                    if (request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
                     {
-                        if (MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour)?.Neighbours.Contains(addition.Entry.ID) == false)
+                        ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(MyNode.Router.ReachableSats(MyNode).Count, 7.152f);
+
+
+                        PlanRequest recoveryRequest = new PlanRequest
                         {
-                            newKnowledge = true;
-                            MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour)?.Neighbours.Add(addition.Entry.ID);
+                            SourceID = MyNode.ID,
+                            DestinationID = MyNode.ID,
+                            Command = Request.Commands.GENERATE,
+                            Plan = RecoveryPlan
+                        };
+
+                        if (MyNode.Router.NextSequential(MyNode, Router.CommDir.CW) == null)
+                        {
+                            recoveryRequest.Dir = Router.CommDir.CCW;
                         }
 
+                        MyNode.CommsModule.Send(MyNode.ID, recoveryRequest);
+                        return;
                     }
-
                 }
+                else
+                {
+                    newRequest.firstPassDone = true;
+                    newRequest.DestinationID = MyNode.Router.NextSequential(MyNode, Router.CommDir.CCW);
+                    newRequest.Dir = Router.CommDir.CCW;
+                }
+            }
+
+            newRequest.SourceID = MyNode.ID;
+            newRequest.AckExpected = true;
+            uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
+            await MyNode.CommsModule.SendAsync(nextHop, newRequest, 1000, 3);
+        }
+        else
+        {
+            if (request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
+            {
+                ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(MyNode.Router.ReachableSats(MyNode).Count, 7.152f);
+
+
+                PlanRequest recoveryRequest = new PlanRequest
+                {
+                    SourceID = MyNode.ID,
+                    DestinationID = MyNode.ID,
+                    Command = Request.Commands.GENERATE,
+                    Plan = RecoveryPlan
+                };
+
+                if (MyNode.Router.NextSequential(MyNode, Router.CommDir.CW) == null)
+                {
+                    recoveryRequest.Dir = Router.CommDir.CCW;
+                }
+
+                MyNode.CommsModule.Send(MyNode.ID, recoveryRequest);
+                return;
             }
         }
 
+    }
 
+    private static async Task<bool> CreateAdditions(INode MyNode, DiscoveryRequest request)
+    {
+
+        bool PropagationAllowed = false;
 
         //Additions
         foreach (uint? node in MyNode.CommsModule.Discover().Except(MyNode.Router.NetworkMap.Entries.Select(entry => entry.ID)))
@@ -117,100 +172,64 @@ public class Discovery
                 request.Alterations.Add(new NetworkMapAddition(ent));
 
 
-                newKnowledge = true;
-                alteredSet = true;
+                PropagationAllowed = true;
 
             }
         }
 
+        return PropagationAllowed;
+    }
 
+    private static bool ImplementAlterations(DiscoveryRequest request, INode MyNode)
+    {
+        bool PropagationAllowed = false;
 
-
-        MyNode.Router.UpdateGraph();
-
-        
-        if (alteredSet || newKnowledge || _isIntroduced == false || request.requireFullSync)
+        //if any additions are new informatio to me, store in networkmap
+        foreach (NetworkMapAlteration alteration in request.Alterations)
         {
-            List<ConstellationPlanEntry> newPlanEntries = new List<ConstellationPlanEntry>();
-
-            foreach(NetworkMapEntry entry in MyNode.Router.NetworkMap.Entries)
+            if (alteration.GetType() == typeof(NetworkMapAddition))
             {
-                Vector3 position = entry.Position;
-                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
-                ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
-                planEntry.NodeID = entry.ID; // NodeID must also be set as it caused problems executing a new plan generated after discovery
-                newPlanEntries.Add(planEntry);
-            }
-
-            MyNode.ActivePlan = new ConstellationPlan(newPlanEntries);
-
-            DiscoveryRequest newRequest = request.DeepCopy();
-
-            newRequest.DestinationID = MyNode.Router.NextSequential(MyNode, request.Dir);
-
-            if(newRequest.DestinationID == null)
-            {
-                if(request.firstPassDone == true)
+                NetworkMapAddition addition = alteration as NetworkMapAddition;
+                if (MyNode.Router.NetworkMap.GetEntryByID(addition.Entry.ID) == null)
                 {
-                    if (request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
+                    PropagationAllowed = true;
+                    MyNode.Router.NetworkMap.Entries.Add(addition.Entry);
+                }
+
+                if (MyNode.Router.NetworkMap.GetEntryByID(addition.Entry.ID) != null)
+                {
+
+                    foreach (uint? newNodeNeighbour in addition.Entry.Neighbours)
                     {
-                        ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(MyNode.Router.ReachableSats(MyNode).Count, 7.152f);
-
-
-                        PlanRequest recoveryRequest = new PlanRequest
+                        if (MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour)?.Neighbours.Contains(addition.Entry.ID) == false)
                         {
-                            SourceID = MyNode.ID,
-                            DestinationID = MyNode.ID,
-                            Command = Request.Commands.GENERATE,
-                            Plan = RecoveryPlan
-                        };
-
-                        if (MyNode.Router.NextSequential(MyNode, Router.CommDir.CW) == null)
-                        {
-                            recoveryRequest.Dir = Router.CommDir.CCW;
+                            PropagationAllowed = true;
+                            MyNode.Router.NetworkMap.GetEntryByID(newNodeNeighbour)?.Neighbours.Add(addition.Entry.ID);
                         }
 
-                        MyNode.CommsModule.Send(MyNode.ID, recoveryRequest);
-                        return;
                     }
-                } else
-                {
-                    newRequest.firstPassDone = true;
-                    newRequest.DestinationID = MyNode.Router.NextSequential(MyNode, Router.CommDir.CCW);
-                    newRequest.Dir = Router.CommDir.CCW;
+
                 }
-            }
-
-            newRequest.SourceID = MyNode.ID;
-            newRequest.AckExpected = true;
-            uint? nextHop = MyNode.Router.NextHop(MyNode.ID, newRequest.DestinationID);
-            await MyNode.CommsModule.SendAsync(nextHop, newRequest, 1000, 3);
-        } else
-        {
-            if(request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
-            {
-                ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(MyNode.Router.ReachableSats(MyNode).Count, 7.152f);
-
-
-                PlanRequest recoveryRequest = new PlanRequest
-                {
-                    SourceID = MyNode.ID,
-                    DestinationID = MyNode.ID,
-                    Command = Request.Commands.GENERATE,
-                    Plan = RecoveryPlan
-                };
-
-                if (MyNode.Router.NextSequential(MyNode, Router.CommDir.CW) == null)
-                {
-                    recoveryRequest.Dir = Router.CommDir.CCW;
-                }
-
-                MyNode.CommsModule.Send(MyNode.ID, recoveryRequest);
-                return;
             }
         }
 
+        return PropagationAllowed;
 
-        MyNode.State = Node.NodeState.PASSIVE;
+    }
+
+    private static void CheckNeighbours(INode myNode)
+    {
+        //Fetch immidiate neighbours
+        List<uint?> DiscoveredNeighbours = myNode.CommsModule.Discover();
+
+
+        //Check my neighbours, if any "old" neighbours wasn't detected above, heartbeat them
+        if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours
+            .Any(neighbour => DiscoveredNeighbours.Contains(neighbour) == false))
+        {
+            Heartbeat.CheckHeartbeat(myNode);
+            return;
+        }
+
     }
 }
