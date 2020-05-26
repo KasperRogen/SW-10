@@ -26,14 +26,16 @@ public class CommsSim : MonoBehaviour, ICommunicate
     private void Update()
     {
         comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
-        
 
 
 
 
 
-        logs.ForEach(log => Debug.LogWarning(log));
-        logs.Clear();
+        if (Constants.EnableDebug)
+        {
+            logs.ForEach(log => Debug.LogWarning(log));
+            logs.Clear();
+        }
     }
 
     public void Receive(Request request)
@@ -93,13 +95,16 @@ public class CommsSim : MonoBehaviour, ICommunicate
             if (request.MessageIdentifer == null)
                 request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
 
-            Debug.Log(request.Dir + ": " + comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
+            if(Constants.EnableDebug)
+                Debug.Log(request.Dir + ": " + comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
+
             hop.Node.CommsModule.Receive(request);
             ActiveCommSat = null;
         }
         else
         {
-            Debug.Log(request.Dir + ": " + comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
+            if (Constants.EnableDebug)
+                Debug.Log(request.Dir + ": " + comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
         }
     }
 
@@ -227,7 +232,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Send(uint? nextHop, Response response)
     {
-        Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + response.GetType() + ": " + response.ResponseCode + "." + "\t dst: " + response.DestinationID);
+        if (Constants.EnableDebug)
+            Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + response.GetType() + ": " + response.ResponseCode + "." + "\t dst: " + response.DestinationID);
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
 

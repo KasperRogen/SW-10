@@ -47,7 +47,6 @@ public class TargetConstellationGenerator : MonoBehaviour
 
 
         //Get reference to satellites
-        if (Sats.Count == 0)
             Sats = GameObject.FindGameObjectsWithTag("Satellite").ToList();
 
         List<uint?> reachableNodes = RequesterNode.Router.ReachableSats(RequesterNode).ToList();

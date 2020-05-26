@@ -21,7 +21,7 @@ public class ConstellationVisualiser : MonoBehaviour
     public Node.NodeState state;
     public GameObject MessageGO;
 
-    Dictionary<uint?, GameObject> commLineRenderes = new Dictionary<uint?, GameObject>();
+    Dictionary<uint?, LineRenderer> commLineRenderes = new Dictionary<uint?, LineRenderer>();
     uint? lastActiveComm;
 
     LineRenderer targetPositionLineRenderer;
@@ -32,9 +32,8 @@ public class ConstellationVisualiser : MonoBehaviour
 
     Node.NodeState lastState = Node.NodeState.PASSIVE;
 
-    public List<Transform> reachableSats = new List<Transform>();
+    public List<SatelliteComms> reachableSats = new List<SatelliteComms>();
     public List<uint?> KnownNeighbours = new List<uint?>();
-    public List<uint?> KnownNeighbourEntryIDs = new List<uint?>();
 
 
     private void Awake()
@@ -82,29 +81,33 @@ public class ConstellationVisualiser : MonoBehaviour
         SatManager._instance.SentMessages.Clear();
 
         reachableSats.Clear();
-        //TODO: THIS IS INSANELY EXPENSIVE. SHOULD BE IMPROVED
-
-        //If i have an entry in the neworkmap
 
 
-
-
+        
         KnownNeighbours = comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.ID)?.Neighbours;
-        KnownNeighbourEntryIDs = (comms.Node.Router.NetworkMap.Entries.Where(entry => KnownNeighbours.Contains(entry.ID)).Select(node => node.ID)).ToList();
-
+        
         reachableSats.Clear();
+
+        //var nonintersect = array1.Except(array2).Union( array2.Except(array1));
+
+        foreach (SatelliteComms node in reachableSats.Where(sat => KnownNeighbours.Contains(sat.Node.ID) == false)){
+            reachableSats.Remove(node);
+        }
 
         foreach (uint? node in KnownNeighbours)
         {
-            Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.GetComponent<SatelliteComms>().Node.ID == node).transform;
-            reachableSats.Add(nodeTransform);
+            if(reachableSats.Select(sat => sat.Node.ID).Contains(node) == false)
+            {
+                Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.Node.ID == node).transform;
+                reachableSats.Add(nodeTransform.GetComponent<SatelliteComms>());
+            }
         }
 
         List<uint?> reachableSatsID = new List<uint?>();
 
         for (int i = 0; i < reachableSats?.Count; i++)
         {
-            uint? id = reachableSats[i].GetComponent<SatelliteComms>().Node.ID;
+            uint? id = reachableSats[i].Node.ID;
             reachableSatsID.Add(id);
 
             if (commLineRenderes.ContainsKey(id) == false)
@@ -125,20 +128,21 @@ public class ConstellationVisualiser : MonoBehaviour
                 lineRenderer.SetPosition(0, this.transform.position);
                 lineRenderer.SetPosition(1, reachableSats[i].transform.position);
 
-                commLineRenderes.Add(id, commlineGO);
+                commLineRenderes.Add(id, lineRenderer);
             }
             else
             {
+                Transform _transform = reachableSats[i].transform;
+
                 Vector3 commLineDir = new Vector3
                 {
-                    x = reachableSats[i].position.x - comms.Node.Position.X,
-                    y = reachableSats[i].position.y - comms.Node.Position.Y,
-                    z = reachableSats[i].position.z - comms.Node.Position.Z,
+                    x = _transform.position.x - comms.Node.Position.X,
+                    y = _transform.position.y - comms.Node.Position.Y,
+                    z = _transform.position.z - comms.Node.Position.Z,
                 };
-
-                //TODO: something something vector3.right to commlinedir
-                LineRenderer lineRenderer = commLineRenderes[id].GetComponent<LineRenderer>();
-                lineRenderer.SetPosition(1, reachableSats[i].position/* + commLineDir.*/);
+                
+                LineRenderer lineRenderer = commLineRenderes[id];
+                lineRenderer.SetPosition(1, _transform.position);
                 lineRenderer.startWidth = 0.025f;
                 lineRenderer.endWidth = 0.025f;
             }
@@ -163,18 +167,18 @@ public class ConstellationVisualiser : MonoBehaviour
             }
             else
             {
-                commLineRenderes[key].GetComponent<LineRenderer>().SetPosition(0, this.transform.position);
+                commLineRenderes[key].SetPosition(0, this.transform.position);
             }
         }
 
 
         if (KnownNeighbours.Count >= 2)
         {
-            uint? nextSeq = comms.Node.Router.NextSequential(comms.Node, Router.CommDir.CW); //dies at 5th iteration
+            uint? nextSeq = comms.Node.Router.NextSequential(comms.Node, Router.CommDir.CW); 
 
             if (nextSeq != null && commLineRenderes.ContainsKey(nextSeq))
             {
-                LineRenderer nextSeqCommLine = commLineRenderes[nextSeq].GetComponent<LineRenderer>();
+                LineRenderer nextSeqCommLine = commLineRenderes[nextSeq];
                 nextSeqCommLine.startWidth = 0.1f;
                 nextSeqCommLine.endWidth = 0.1f;
             }
@@ -223,12 +227,12 @@ public class ConstellationVisualiser : MonoBehaviour
         if (commsSim.ActiveCommSat != null && commLineRenderes.ContainsKey(commsSim.ActiveCommSat.Node.ID))
         {
             uint? id = commsSim.ActiveCommSat.Node.ID;
-            commLineRenderes[id].GetComponent<LineRenderer>().material.SetColor("_BaseColor", CommsActiveMat);
+            commLineRenderes[id].material.SetColor("_BaseColor", CommsActiveMat);
             lastActiveComm = id;
         }
         else if (lastActiveComm != null && commLineRenderes.ContainsKey(lastActiveComm))
         {
-            commLineRenderes[lastActiveComm].GetComponent<LineRenderer>().material.SetColor("_BaseColor", CommsMat);
+            commLineRenderes[lastActiveComm].material.SetColor("_BaseColor", CommsMat);
         }
 
         // Remove all non-reachable links, then update position
@@ -282,6 +286,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
     public static void DrawLine(Vector3 pos, Vector3 dir)
     {
-        Debug.DrawRay(pos, dir, Color.red, 1);
+        if (Constants.EnableDebug)
+            Debug.DrawRay(pos, dir, Color.red, 1);
     }
 }
