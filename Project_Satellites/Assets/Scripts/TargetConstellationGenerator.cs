@@ -69,7 +69,6 @@ public class TargetConstellationGenerator : MonoBehaviour
         {
             //Create random angle for position of Targetposition
             angle = (360 / Sats.Count) * i;
-            angle += UnityEngine.Random.Range(-5, 5);
 
             Vector3 instantiationPos = Quaternion.Euler(0, angle, 0) * Vector3.forward;
 
