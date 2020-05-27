@@ -1,80 +1,71 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Numerics;
 
-public class PlanGenerator
+public static class PlanGenerator
 {
-    /// <summary>Performs work in order to find optimum location in new constellation for given node
-    /// <para>Recieves planrequest, finds best free location, or trades locations with other node in order to optimize net cost</para>
-    /// </summary>
     public static void GeneratePlan(INode myNode, PlanRequest request)
     {
-        //If the request isn't meant for this node, just return. Node.cs will relay the message   61674131 
         if (request.DestinationID != myNode.ID)
         {
             return;
         }
         else
         {
+            // <--- TODO: Maybe move this out of conditional branch to also clear failure requests on nodes while routing? --->
             // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
             myNode.CommsModule.requestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
 
+            // <--- TODO: Maybe set passive and executingplan = false when target position is reached instead of right away? --->
             myNode.executingPlan = false;
             myNode.State = Node.NodeState.PLANNING;
             myNode.GeneratingPlan = request.Plan;
 
             PlanRequest newRequest = request.DeepCopy();
-            newRequest.AckExpected = true;
 
             List<NodeLocationMatch> matches = CalculatePositions(myNode, newRequest);
-            ConstellationPlan newPlan = ProcessPlan(matches, newRequest, myNode);
-            Transmit(newRequest, myNode);
-
-
+            ConstellationPlan newPlan = ProcessPlan(myNode, newRequest, matches);
+            Transmit(myNode, newRequest);
         }
     }
 
-    private static void Transmit(PlanRequest request, INode myNode)
-    {
+    private static List<NodeLocationMatch> CalculatePositions(INode myNode, PlanRequest Request) {
+        List<NodeLocationMatch> matches = new List<NodeLocationMatch>();
 
+        foreach (NetworkMapEntry node in myNode.Router.NetworkMap.Entries.OrderBy(entry => entry.ID)) {
+            if (node.ID == myNode.ID || Request.Plan.Entries.Any(entry => entry.NodeID == node.ID)) {
+                continue;
+            }
 
-        // If last location is filled, execute the plan
-        if (request.Plan.Entries.All(x => x.NodeID != null))
-        {
-            request.Command = Request.Commands.EXECUTE;
-            request.SourceID = myNode.ID;
+            //Find all locations
+            List<Vector3> OrderedPositions = Request.Plan.Entries
+                .Where(entry => entry.NodeID == null)
+                .Select(entry => entry.Position).ToList();
 
-            PlanExecuter.ExecutePlan(myNode, request);
+            //Find closest location for given node
+            OrderedPositions = OrderedPositions.OrderBy(position => Vector3.Distance(node.Position, position)).ToList();
+
+            //Save node-location match
+            matches.Add(new NodeLocationMatch(node.ID, OrderedPositions.First(), Vector3.Distance(node.Position, OrderedPositions.First())));
         }
-        else
-        {
-            uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
 
-            if (nextSeq == null)
-            {
-                Router.CommDir newDir = request.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
-                request.Dir = newDir;
-                nextSeq = myNode.Router.NextSequential(myNode, newDir);
-            }
+        return matches;
+    }
 
-            request.DestinationID = nextSeq;
+    // <--- TODO: Move this to a public class? Seems like better practice. --->
+    private class NodeLocationMatch {
+        public uint? NodeID;
+        public Vector3 Position;
+        public float Distance;
 
-            if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq))
-            {
-                myNode.CommsModule.Send(nextSeq, request);
-            }
-            else
-            {
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-                myNode.CommsModule.Send(nextHop, request);
-            }
+        public NodeLocationMatch(uint? nodeID, Vector3 position, float distance) {
+            NodeID = nodeID;
+            Position = position;
+            Distance = distance;
         }
     }
 
-    private static ConstellationPlan ProcessPlan(List<NodeLocationMatch> matches, PlanRequest request, INode myNode)
-    {
+    private static ConstellationPlan ProcessPlan(INode myNode, PlanRequest request, List<NodeLocationMatch> matches) {
         //Find entries not taken by other nodes
         List<ConstellationPlanEntry> FreeEntries = request.Plan.Entries
             .Where(entry => entry.NodeID == null && matches.Select(match => match.Position) //Select positions from matches
@@ -97,45 +88,38 @@ public class PlanGenerator
         return request.Plan;
     }
 
-    private static List<NodeLocationMatch> CalculatePositions(INode myNode, PlanRequest Request)
+    private static void Transmit(INode myNode, PlanRequest request)
     {
-        List<NodeLocationMatch> matches = new List<NodeLocationMatch>();
-
-        foreach (NetworkMapEntry node in myNode.Router.NetworkMap.Entries.OrderBy(entry => entry.ID))
+        // If last location is filled, execute the plan
+        if (request.Plan.Entries.All(x => x.NodeID != null))
         {
-            if (node.ID == myNode.ID || Request.Plan.Entries.Any(entry => entry.NodeID == node.ID))
-                continue;
-            
+            request.Command = Request.Commands.EXECUTE;
+            request.SourceID = myNode.ID;
 
-            //Find all locations
-            List<Vector3> OrderedPositions = Request.Plan.Entries
-                .Where(entry => entry.NodeID == null)
-                .Select(entry => entry.Position).ToList();
-            
-
-            //Find closest location for given node
-            OrderedPositions = OrderedPositions.OrderBy(position => Vector3.Distance(node.Position, position)).ToList();
-
-          
-            //Save node-location match
-            matches.Add(new NodeLocationMatch(node.ID, OrderedPositions.First(), Vector3.Distance(node.Position, OrderedPositions.First())));
+            PlanExecuter.ExecutePlan(myNode, request);
         }
-
-        return matches;
+        else
+        {
+            ForwardRequest(myNode, request);
+        }
     }
 
+    private static void ForwardRequest(INode myNode, PlanRequest request) {
+        // <--- TODO: Similar to the forwarding logic in plan execute. Maybe streamline this? --->
+        uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
 
-    private class NodeLocationMatch
-    {
-        public uint? NodeID;
-        public Vector3 Position;
-        public float Distance;
+        if (nextSeq == null) {
+            request.Dir = request.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
+            nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
+        }
 
-        public NodeLocationMatch(uint? nodeID, Vector3 position, float distance)
-        {
-            NodeID = nodeID;
-            Position = position;
-            Distance = distance;
+        request.DestinationID = nextSeq;
+
+        if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq)) {
+            myNode.CommsModule.Send(nextSeq, request);
+        } else {
+            uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+            myNode.CommsModule.Send(nextHop, request);
         }
     }
 }

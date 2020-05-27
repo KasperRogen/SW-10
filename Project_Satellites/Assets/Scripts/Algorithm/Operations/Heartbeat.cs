@@ -5,11 +5,7 @@ using System.Linq;
 using System.Threading;
 using UnityEngine;
 
-public class Heartbeat
-{
-    /// <summary>Performs aliveness check on immidiate neighbours
-    /// <para>  </para>
-    /// </summary>
+public static class Heartbeat {
     public async static void CheckHeartbeat(INode myNode)
     {
         Node.NodeState previousState = myNode.State;
@@ -23,7 +19,7 @@ public class Heartbeat
                 SourceID = myNode.ID,
                 DestinationID = node,
                 Command = Request.Commands.HEARTBEAT,
-                AckExpected = true,
+                AckExpected = true, // TODO: Neccesary to both expect ack and response? Maybe just expect response?
                 ResponseExpected = true
             };
 
@@ -37,25 +33,24 @@ public class Heartbeat
         myNode.State = previousState;
     }
 
-    /// <summary>Responds responsecode "OK" to heartbeat
-    /// <para>  </para>
-    /// </summary>
-    internal static void RespondToHeartbeat(Node myNode, Request request)
+    public static void RespondToHeartbeat(Node myNode, Request request)
     {
+        if (request.DestinationID != myNode.ID) {
+            return;
+        }
+
+        Thread.Sleep(500 / Constants.TIME_SCALE);
+        Response response = new Response() {
+            SourceID = myNode.ID,
+            DestinationID = request.SenderID,
+            ResponseCode = Response.ResponseCodes.OK,
+            MessageIdentifer = request.MessageIdentifer
+        };
+        myNode.CommsModule.Send(response.DestinationID, response);
+
         new Thread(() =>
         {
-            if (request.DestinationID != myNode.ID)
-                return;
-
-            Thread.Sleep(500 / Constants.TimeScale);
-            Response response = new Response()
-            { 
-                SourceID = myNode.ID,
-                DestinationID = request.SenderID,
-                ResponseCode = Response.ResponseCodes.OK,
-                MessageIdentifer = request.MessageIdentifer
-            };
-            myNode.CommsModule.Send(response.DestinationID, response);
+            
             
         }).Start();
     }

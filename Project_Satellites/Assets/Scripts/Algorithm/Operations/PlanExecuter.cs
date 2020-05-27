@@ -1,33 +1,21 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
 using System.Linq;
 
-public class PlanExecuter
+public static class PlanExecuter
 {
-
-
-    /// <summary>Method for starting execution of the plan in planrequest
-    /// <para>  </para>
-    /// </summary>
     public static void ExecutePlan(INode myNode, PlanRequest request)
     {
-
-
         if (request.DestinationID != myNode.ID)
         {
-
             return;
-
         }
         else
         {
-
             myNode.State = Node.NodeState.EXECUTING;
-
             
             if (myNode.executingPlan)
             {
@@ -39,35 +27,19 @@ public class PlanExecuter
                 myNode.executingPlan = true;
             }
 
+            ForwardRequest(myNode, request);
 
-            PlanRequest newRequest = request.DeepCopy();
-
-            uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
-
-            if(nextSeq == null)
-            {
-                Router.CommDir newDir = request.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
-                newRequest.Dir = newDir;
-                nextSeq = myNode.Router.NextSequential(myNode, newDir);
-            }
-
-            if(nextSeq != null)
-            {
-                newRequest.SourceID = myNode.ID;
-                newRequest.DestinationID = nextSeq;
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-                myNode.CommsModule.Send(nextHop, newRequest);
-            }
-
-            //Set my targetposition to the position i was assigned in the plan
+            //Set my targetposition to the position I was assigned in the plan
             myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
 
+            // <--- TODO: Maybe not necessary to do discovery after execution,
+            // we can just assume everything is according to the plan and update networkmap based on that. --->
             // Entries in active plan that are also in the new plan
             List<ConstellationPlanEntry> activeEntries = new List<ConstellationPlanEntry>();
             // Entries in new plan
             List<ConstellationPlanEntry> newEntries = request.Plan.Entries;
             // IDs of entries in the new plan
-            IEnumerable<uint?> newEntryIDs = newRequest.Plan.Entries.Select(entry => entry.NodeID);
+            IEnumerable<uint?> newEntryIDs = request.Plan.Entries.Select(entry => entry.NodeID);
             // Fill out activeEntries
             foreach (ConstellationPlanEntry entry in myNode.ActivePlan.Entries) {
                 if (newEntryIDs.Contains(entry.NodeID)) {
@@ -92,29 +64,49 @@ public class PlanExecuter
                 DiscoveryIfNewNeighboursAfterExecuting(myNode);
             }
 
-            myNode.ActivePlan = newRequest.Plan;
+            // <--- TODO: Maybe not necessary to do discovery after execution,
+            // we can just assume everything is according to the plan and update networkmap based on that. --->
+
+            myNode.ActivePlan = request.Plan;
 
             myNode.Router.ClearNetworkMap();
-            myNode.Router.UpdateNetworkMap(newRequest.Plan);
+            myNode.Router.UpdateNetworkMap(request.Plan);
 
-            Thread.Sleep(1000 / Constants.TimeScale);
+            Thread.Sleep(Constants.ONE_SECOND_IN_MILLISECONDS / Constants.TIME_SCALE);
             myNode.State = Node.NodeState.PASSIVE;
 
+            // <--- TODO: Maybe set passive and executingplan = false when target position is reached instead of right away? --->
         }
-
     }
 
     private static async void DiscoveryIfNewNeighboursAfterExecuting(INode myNode)
     {
         while (Vector3.Distance(myNode.Position, myNode.TargetPosition) > 0.01f)
         {
-            await Task.Delay(100 / Constants.TimeScale);
+            await Task.Delay(100 / Constants.TIME_SCALE);
         }
 
         // If ReachableNodes contains any that are not in networkmap neighbours -> Any new neighbours
         if (myNode.CommsModule.Discover().Except(myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours).Count() > 0)
         {
             Discovery.StartDiscovery(myNode, true);
+        }
+    }
+
+    private static void ForwardRequest(INode myNode, PlanRequest request) {
+        PlanRequest newRequest = request.DeepCopy();
+        uint? nextSeq = myNode.Router.NextSequential(myNode, newRequest.Dir);
+
+        if (nextSeq == null) {
+            newRequest.Dir = newRequest.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
+            nextSeq = myNode.Router.NextSequential(myNode, newRequest.Dir);
+        }
+
+        if (nextSeq != null) {
+            newRequest.SourceID = myNode.ID;
+            newRequest.DestinationID = nextSeq;
+            uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+            myNode.CommsModule.Send(nextHop, newRequest);
         }
     }
 }

@@ -100,11 +100,13 @@ public class TargetConstellationGenerator : MonoBehaviour
             Command = Request.Commands.GENERATE,
             SourceID = targetSat.ID,
             DestinationID = targetSat.ID,
+            SenderID = 42,
+            Dir = Router.CommDir.CW,
+            AckExpected = true,
             MessageIdentifer = "42",
             Plan = plan
         };
-        targetSat.Communicate(request);
-
+        PlanGenerator.GeneratePlan(targetSat, request);
     }
 
 

@@ -25,7 +25,7 @@ public class SatelliteMovement : MonoBehaviour
         if (Vector3.Distance(transform.position, TargetPosition) > 0.01f)
         {
             Debug.DrawLine(transform.position, TargetPosition, Color.green);
-            float slerpSpeed = 1 * Constants.TimeScale;
+            float slerpSpeed = 1 * Constants.TIME_SCALE;
             float distance = Vector3.Distance(transform.position, TargetPosition);
             float finalSpeed = (distance / slerpSpeed);
             transform.position = Vector3.Slerp(transform.position, TargetPosition, Time.deltaTime / finalSpeed);
