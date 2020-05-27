@@ -9,6 +9,8 @@ public static class Constants
     public const int TIME_SCALE = 4;
     public const int ONE_SECOND_IN_MILLISECONDS = 1000;
 
+    public static bool EnableDebug = true;
+
     public static float ScaleToSize(float input)
     {
         return input / 1000000;

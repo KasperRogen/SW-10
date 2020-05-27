@@ -11,8 +11,9 @@ public static class Heartbeat {
         Node.NodeState previousState = myNode.State;
         myNode.State = Node.NodeState.HEARTBEAT;
 
+        List<uint?> Neighbours = myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.ToList();
         //Loop through all immidate neightbours
-        foreach (uint? node in myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.ToList()) //TODO: Should just communicate with reachable nodes instead of using networkmap
+        foreach (uint? node in Neighbours)
         {
             Request request = new Request()
             {

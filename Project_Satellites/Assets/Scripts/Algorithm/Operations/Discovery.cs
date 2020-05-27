@@ -29,22 +29,25 @@ public class Discovery
     /// </summary>
     public static async System.Threading.Tasks.Task DiscoverAsync(INode MyNode, DiscoveryRequest request)
     {
-
+        //Break References to request
         DiscoveryRequest requestClone = request;
 
+        //Check in any neighbours has gone missing
         CheckNeighbours(MyNode);
 
-        
+        //If the node hasn't been introducued yet, propagation is allowed
         bool PropagationAllowed = (MyNode.LastDiscoveryID == "" || MyNode.LastDiscoveryID == null);
 
         MyNode.State = Node.NodeState.DISCOVERY;
         MyNode.LastDiscoveryID = requestClone.MessageIdentifer;
 
-        PropagationAllowed = PropagationAllowed || ImplementAlterations(requestClone, MyNode);
-        PropagationAllowed = PropagationAllowed || await CreateAdditions(MyNode, requestClone);
+        //Propagation is allowed if a new node is added to the request, or a new node has been discovered
+        PropagationAllowed = ImplementAlterations(requestClone, MyNode) || PropagationAllowed;
+        PropagationAllowed = await CreateAdditions(MyNode, requestClone) || PropagationAllowed;
 
         MyNode.Router.UpdateGraph();
 
+        //If propagation is allowed, propagate.
         CheckPropagation(PropagationAllowed, requestClone, MyNode);
        
 
@@ -57,16 +60,18 @@ public class Discovery
         {
             List<ConstellationPlanEntry> newPlanEntries = new List<ConstellationPlanEntry>();
 
+            //update my constellationplan based on the new knowledge
             foreach (NetworkMapEntry entry in MyNode.Router.NetworkMap.Entries)
             {
                 Vector3 position = entry.Position;
                 List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
                 ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
-                planEntry.NodeID = entry.ID; // NodeID must also be set as it caused problems executing a new plan generated after discovery
+                planEntry.NodeID = entry.ID;
                 newPlanEntries.Add(planEntry);
             }
 
             MyNode.ActivePlan = new ConstellationPlan(newPlanEntries);
+
 
             DiscoveryRequest newRequest = request.DeepCopy();
 

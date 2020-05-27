@@ -13,7 +13,7 @@ public class SimulationManager : MonoBehaviour
     {
 #if UNITY_EDITOR
         QualitySettings.vSyncCount = 0;
-        Application.targetFrameRate = 15;
+        Application.targetFrameRate = 150;
 #endif
     }
     private void Start()

@@ -107,7 +107,7 @@ public class PlanRequest : Request
 
 
 
-    public PlanRequest DeepCopy()
+    public new PlanRequest DeepCopy()
 
     {
 
@@ -130,7 +130,7 @@ public class DiscoveryRequest : Request
 
     public DiscoveryRequest(DiscoveryRequest other) : base(other) {
 
-        Alterations = other.Alterations; //TODO: THIS MIGHT BREAK STUFF
+        Alterations = other.Alterations;
         firstPassDone = other.firstPassDone;
         requireFullSync = other.requireFullSync;
     }
@@ -145,7 +145,7 @@ public class DiscoveryRequest : Request
 
 
 
-    public DiscoveryRequest DeepCopy()
+    public new DiscoveryRequest DeepCopy()
 
     {
 
@@ -173,7 +173,7 @@ public class DetectFailureRequest : Request
 
 
 
-    public DetectFailureRequest DeepCopy()
+    public new DetectFailureRequest DeepCopy()
 
     {
 
@@ -194,14 +194,14 @@ public class AdditionRequest : Request
     public ConstellationPlan plan;
     public AdditionRequest(AdditionRequest other) : base(other)
     {
-        plan = other.plan; //TODO: THIS MIGHT BREAK STUFF
+        plan = other.plan;
     }
 
     public AdditionRequest()
     {
     }
 
-    public AdditionRequest DeepCopy()
+    public new AdditionRequest DeepCopy()
     {
         return new AdditionRequest(this);
     }

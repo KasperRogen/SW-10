@@ -23,8 +23,11 @@ public class SatArrenger : MonoBehaviour
         Vector3 horizontalOffset = new Vector3(transform.position.x * text.GetRenderedValues(true).x, 0, 0) * XOffsetScale;
         text.transform.position = baseOffset + verticalOffset + horizontalOffset;
 
-        Debug.DrawLine(Vector3.zero, baseOffset);
-        Debug.DrawLine(baseOffset, baseOffset + verticalOffset);
-        Debug.DrawLine(baseOffset + verticalOffset, horizontalOffset);
+        if (Constants.EnableDebug)
+        {
+            Debug.DrawLine(Vector3.zero, baseOffset);
+            Debug.DrawLine(baseOffset, baseOffset + verticalOffset);
+            Debug.DrawLine(baseOffset + verticalOffset, horizontalOffset);
+        }
     }
 }
