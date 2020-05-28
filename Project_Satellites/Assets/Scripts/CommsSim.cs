@@ -46,7 +46,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
 
 
-            Thread.Sleep(250 / Constants.TimeScale);
+            Thread.Sleep(250 / Constants.TIME_SCALE);
             
             comms.Node.Router.AddNodeToGraph(comms.Node.Id);
             if(request.SenderID != null)
@@ -160,12 +160,12 @@ public class CommsSim : MonoBehaviour, ICommunicate
                 if (AckReceived == false)
                 {
                     Send(nextHop, request);
-                    Thread.Sleep(timeout / Constants.TimeScale);
+                    Thread.Sleep(timeout / Constants.TIME_SCALE);
 
                     // Delay and retry with increasing delay
                     if (tcs.Task.IsCompleted == false)
                     {
-                        Thread.Sleep(retryDelay / Constants.TimeScale);
+                        Thread.Sleep(retryDelay / Constants.TIME_SCALE);
                         retryDelay *= 2;
                     }
                     else
@@ -266,7 +266,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         new Thread(() =>
         {
-            Thread.Sleep(450 / Constants.TimeScale);
+            Thread.Sleep(450 / Constants.TIME_SCALE);
 
             if (response.DestinationID == comms.Node.Id)
             {

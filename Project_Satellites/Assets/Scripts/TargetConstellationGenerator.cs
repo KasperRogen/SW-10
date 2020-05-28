@@ -92,13 +92,15 @@ public class TargetConstellationGenerator : MonoBehaviour
         INode targetSat = RequesterNode;
         PlanRequest request = new PlanRequest {
             Command = Request.Commands.GENERATE,
-            SourceID = targetSat.Id,
-            DestinationID = targetSat.Id,
+            SourceID = targetSat.ID,
+            DestinationID = targetSat.ID,
+            SenderID = 42,
+            Dir = Router.CommDir.CW,
+            AckExpected = true,
             MessageIdentifer = "42",
             Plan = plan
         };
-        targetSat.Communicate(request);
-
+        PlanGenerator.GeneratePlan(targetSat, request);
     }
 
 

@@ -49,7 +49,7 @@ public class Node : INode
             bool run = true;
             while (run)
             {
-                Thread.Sleep(1000 / Constants.TimeScale);
+                Thread.Sleep(1000 / Constants.TIME_SCALE);
                 Request request = CommsModule.FetchNextRequest();
                 if(request != null)
                 {

@@ -260,7 +260,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
     public IEnumerator DisplayMessageSent(Vector3 Origin, Vector3 Destination, float duration, float delay, Color color)
     {
-        yield return new WaitForSeconds(delay / Constants.TimeScale);
+        yield return new WaitForSeconds(delay / Constants.TIME_SCALE);
         GameObject Message = Instantiate(MessageGO, Origin, Quaternion.identity);
         Message.transform.GetChild(0).GetComponent<Renderer>().material.SetColor("_BaseColor", color);
         float Dist = Vector3.Distance(Origin, Destination);
