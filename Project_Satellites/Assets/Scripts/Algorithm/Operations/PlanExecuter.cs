@@ -9,7 +9,7 @@ public static class PlanExecuter
 {
     public static void ExecutePlan(INode myNode, PlanRequest request)
     {
-        if (request.DestinationID != myNode.ID)
+        if (request.DestinationID != myNode.Id)
         {
             return;
         }
@@ -122,9 +122,9 @@ public static class PlanExecuter
         }
 
         if (nextSeq != null) {
-            newRequest.SourceID = myNode.ID;
+            newRequest.SourceID = myNode.Id;
             newRequest.DestinationID = nextSeq;
-            uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+            uint? nextHop = myNode.Router.NextHop(myNode.Id, nextSeq);
             myNode.CommsModule.Send(nextHop, newRequest);
         }
     }

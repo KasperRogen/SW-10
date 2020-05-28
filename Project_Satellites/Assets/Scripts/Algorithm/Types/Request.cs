@@ -203,6 +203,7 @@ public class NetworkUpdateRequest : Request
     public NetworkUpdateRequest(List<uint?> deadNodes)
     {
         DeadNodes = deadNodes;
+        Command = Commands.UPDATENETWORKMAP;
     }
 
     public NetworkUpdateRequest(NetworkUpdateRequest other) : base(other)

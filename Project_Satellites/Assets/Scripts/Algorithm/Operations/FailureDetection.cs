@@ -77,7 +77,7 @@ public class FailureDetection
             Dir = Router.CommDir.CW
         };
 
-        NetworkUpdateRequest updateRequest = new NetworkUpdateRequest(new NetworkUpdateRequest(new List<uint?>() { request.NodeToCheck }));
+        NetworkUpdateRequest updateRequest = new NetworkUpdateRequest(new List<uint?>() { request.NodeToCheck });
         recoveryRequest.DependencyRequests.Add(updateRequest);
 
         if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null) {
@@ -157,6 +157,8 @@ public class FailureDetection
                 DeadEdges = new List<Tuple<uint?, uint?>> { new Tuple<uint?, uint?>(myNode.Id, failedNode) },
                 FailedNeighbours = failedNeighbours
             };
+
+            myNode.Router.NetworkMap.Entries.RemoveAll(entry => entry.ID == failedNode);
 
             await myNode.CommsModule.SendAsync(nextHop, request, 1000, 3);
         }

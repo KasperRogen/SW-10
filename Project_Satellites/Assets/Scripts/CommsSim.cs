@@ -197,6 +197,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         // Trigger recovery if no response after several attempts and already failure handling and attempted node is not the one to be checked via failure handling
         else if (request.GetType() == typeof(DetectFailureRequest) && tcs.Task.Result.ResponseCode == Response.ResponseCodes.TIMEOUT && (request as DetectFailureRequest).NodeToCheck != nextHop)
         {
+            comms.Node.Router.NetworkMap.Entries.RemoveAll(entry => entry.ID == nextHop);
             FailureDetection.Recovery(comms.Node, nextHop);
         }
 
