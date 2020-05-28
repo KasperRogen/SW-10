@@ -19,8 +19,7 @@ public class Router : IRouter
     private Dictionary<uint?, uint> nodeToNodeIDMapping = new Dictionary<uint?, uint>();
     private float satRange = 5f;
 
-    private NetworkMap _networkMap;
-    public override NetworkMap NetworkMap { get => _networkMap;  set => _networkMap = value; }
+    public override NetworkMap NetworkMap { get; set; }
 
     public Router(INode _node, ConstellationPlan _plan)
     {
@@ -37,7 +36,7 @@ public class Router : IRouter
         }
 
         UpdateNetworkMap(_plan);
-        AddNodeToGraph(node.ID);
+        AddNodeToGraph(node.Id);
     }
 
 
@@ -55,11 +54,11 @@ public class Router : IRouter
         //List<ConstellationPlanEntry> neighbourEntries = plan.Entries.Where(x => NetworkMap[source].Contains(x.NodeID)).ToList();
 
         List<NetworkMapEntry> neighbourEntries = source.Router.NetworkMap.Entries.Where(entry =>
-        source.Router.NetworkMap.GetEntryByID(source.ID).Neighbours.Contains(entry.ID)).ToList();
+        source.Router.NetworkMap.GetEntryByID(source.Id).Neighbours.Contains(entry.ID)).ToList();
         //
         //The "up" vector for the constellation plan is calculated.      //(B - A) cross (C - B)
         
-        List<uint?> NeighbourIDs = NetworkMap.GetEntryByID(source.ID).Neighbours;
+        List<uint?> NeighbourIDs = NetworkMap.GetEntryByID(source.Id).Neighbours;
        
         Vector3 SatClockwiseVector = Vector3.Cross(EarthPosition - source.Position, source.PlaneNormalDir);
 
@@ -93,10 +92,10 @@ public class Router : IRouter
         List<uint?> nodesToCheck = new List<uint?>();
         List<uint?> reachableNodes = new List<uint?>();
 
-        checkedNodes.Add(requestingNode.ID);
-        reachableNodes.Add(requestingNode.ID);
-        reachableNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.ID).Neighbours);
-        nodesToCheck.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.ID).Neighbours);
+        checkedNodes.Add(requestingNode.Id);
+        reachableNodes.Add(requestingNode.Id);
+        reachableNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.Id).Neighbours);
+        nodesToCheck.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.Id).Neighbours);
 
 
         while (nodesToCheck.Count > 0)
@@ -122,7 +121,7 @@ public class Router : IRouter
         {
             uint nodeID = graph.AddNode(neighbour);          
             nodeToNodeIDMapping[neighbour] = nodeID;
-            graph.Connect(nodeToNodeIDMapping[node.ID], nodeToNodeIDMapping[neighbour], 1, "");
+            graph.Connect(nodeToNodeIDMapping[node.Id], nodeToNodeIDMapping[neighbour], 1, "");
             
         }
         
@@ -132,7 +131,7 @@ public class Router : IRouter
     {
         var angleInRadians = Math.Acos(Vector3.Dot(v, u) / (v.Length() * u.Length()));
 
-        return angleInRadians *= 360.0 / (2 * Math.PI);
+        return angleInRadians * 360.0 / (2 * Math.PI);
     }
 
 
@@ -141,7 +140,6 @@ public class Router : IRouter
         ShortestPathResult result = graph.Dijkstra(nodeToNodeIDMapping[source], nodeToNodeIDMapping[destination]);
 
         IEnumerable<uint> path = result.GetPath();
-        int a = path.Count();
         uint? nextHop = nodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
 
         return nextHop;
@@ -238,7 +236,7 @@ public class Router : IRouter
     {
         graph = new Graph<uint?, string>();
         nodeToNodeIDMapping.Clear();
-        nodeToNodeIDMapping.Add(node.ID, 0);
+        nodeToNodeIDMapping.Add(node.Id, 0);
         UpdateGraph();
     }
 }

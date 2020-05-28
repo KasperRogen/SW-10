@@ -5,7 +5,7 @@ using UnityEngine;
 
 public interface ICommunicate
 {
-    List<Request> requestList { get; set; }
+    List<Request> RequestList { get; set; }
 
     void Send(uint? nextHop, Request request);
     void Receive(Request request);

@@ -13,10 +13,10 @@ public class Ping
     /// </summary>
     public static void RespondToPing(Node myNode, Request request)
     {
-        if (request.DestinationID != myNode.ID)
+        if (request.DestinationID != myNode.Id)
             return;
 
-        uint? nextHop = myNode.Router.NextHop(myNode.ID, request.SourceID);
-        myNode.CommsModule.Send(nextHop, new Response(myNode.ID, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer));
+        uint? nextHop = myNode.Router.NextHop(myNode.Id, request.SourceID);
+        myNode.CommsModule.Send(nextHop, new Response(myNode.Id, request.SourceID, Response.ResponseCodes.OK, request.MessageIdentifer));
     }
 }

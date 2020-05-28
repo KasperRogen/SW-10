@@ -11,15 +11,13 @@ public class GenerateConstellation
     {
         Random rng = new Random();
         List<Vector3> TargetPositions = new List<Vector3>();
-        ConstellationPlan plan = null;
-        float constellationRadius = constellationAltitude / 2;
 
-        float angle = 0;
 
+        //Generate the target positions
         for (int i = 0; i < satCount; i++)
         {
             //Create random angle for position of Targetposition
-            angle = (360 / satCount) * i;
+            float angle = (360 / satCount) * i;
             
             angle = (float)(Math.PI / 180) * angle;
 
@@ -34,15 +32,16 @@ public class GenerateConstellation
 
         List<ConstellationPlanEntry> entries = new List<ConstellationPlanEntry>();
 
+        //Create a plan containing the taraget positions
         foreach (Vector3 pos in TargetPositions)
         {
             Vector3 position = new Vector3(pos.X, pos.Y, pos.Z);
-            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
+            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => x.CompareTo(y)) };
             ConstellationPlanEntry entry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
             entries.Add(entry);
         }
 
-        plan = new ConstellationPlan(entries);
+        ConstellationPlan plan = new ConstellationPlan(entries);
         //Send the targetconstellation to random sat
         return plan;
 
@@ -61,10 +60,12 @@ public class GenerateConstellation
     }
 
     public static List<Vector3> CalculatePositions(Vector3 midpoint, int nodeCount) {
+
         List<Vector3> targetPositions = new List<Vector3> { midpoint };
         int middleCount = nodeCount / 2;
         float radius = Vector3.Distance(Vector3.Zero, midpoint);
-        float angle = 5 / radius; // TODO: 5 is sat comms range, should be changed to some constant
+        float angle = Constants.ScaleToSize(Constants.SatCommsRange) / radius;
+
         Vector3 tempVector = midpoint;
 
         for (int i = middleCount - 1; i >= 0; i--) {
@@ -86,7 +87,7 @@ public class GenerateConstellation
         List<ConstellationPlanEntry> entries = new List<ConstellationPlanEntry>();
 
         foreach (Vector3 targetPosition in targetPositions) {
-            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
+            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => x.CompareTo(y)) };
             ConstellationPlanEntry entry = new ConstellationPlanEntry(targetPosition, fields, (x, y) => 1);
             entries.Add(entry);
         }

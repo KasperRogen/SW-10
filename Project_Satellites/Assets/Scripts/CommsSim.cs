@@ -9,10 +9,9 @@ using System.Threading;
 public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
-    public List<Request> requestList { get; set; } = new List<Request>();
+    public List<Request> RequestList { get; set; } = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
-    ConstellationVisualiser visualiser;
-   
+
     public static List<string> logs = new List<string>();
 
     SatManager satMan;
@@ -20,7 +19,6 @@ public class CommsSim : MonoBehaviour, ICommunicate
     {
         comms = GetComponent<SatelliteComms>();
         satMan = GameObject.FindGameObjectWithTag("SatelliteManager").GetComponent<SatManager>();
-        visualiser = GetComponent<ConstellationVisualiser>();
     }
 
     private void Update()
@@ -33,7 +31,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         if (Constants.EnableDebug)
         {
-            logs.ForEach(log => Debug.LogWarning(log));
+            logs.ForEach(Debug.LogWarning);
             logs.Clear();
         }
     }
@@ -50,11 +48,11 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
             Thread.Sleep(250 / Constants.TimeScale);
             
-            comms.Node.Router.AddNodeToGraph(comms.Node.ID);
+            comms.Node.Router.AddNodeToGraph(comms.Node.Id);
             if(request.SenderID != null)
-            comms.Node.Router.AddNodeToGraph(request.SenderID);
+                comms.Node.Router.AddNodeToGraph(request.SenderID);
 
-            requestList.Add(request);
+            RequestList.Add(request);
 
 
             if (request.AckExpected)
@@ -62,13 +60,13 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
                 Response response = new Response()
                 {
-                    SourceID = comms.Node.ID,
+                    SourceID = comms.Node.Id,
                     DestinationID = request.SenderID,
                     ResponseCode = Response.ResponseCodes.ACK,
                     MessageIdentifer = request.MessageIdentifer
                 };
 
-                uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
+                uint? nextHop = comms.Node.Router.NextHop(comms.Node.Id, response.DestinationID);
                 Send(nextHop, response);
             }
 
@@ -83,8 +81,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public void Send(uint? nextHop, Request request)
     {
-        request.SenderID = comms.Node.ID;
-        SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
+        request.SenderID = comms.Node.Id;
+        SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.Id == nextHop);
 
         satMan.SentMessages.Add(new Tuple<Vector3, Vector3, Color>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), Color.yellow));
 
@@ -96,7 +94,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
                 request.MessageIdentifer = DateTime.Now.ToString() + " milli " + DateTime.Now.Millisecond;
 
             if(Constants.EnableDebug)
-                Debug.Log(request.Dir + ": " + comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
+                Debug.Log(request.Dir + ": " + comms.Node.Id + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
 
             hop.Node.CommsModule.Receive(request);
             ActiveCommSat = null;
@@ -104,7 +102,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         else
         {
             if (Constants.EnableDebug)
-                Debug.Log(request.Dir + ": " + comms.Node.ID + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
+                Debug.Log(request.Dir + ": " + comms.Node.Id + " -> " + nextHop + "\t : " + request.Command.ToString() + "\t dst: " + request.DestinationID + "\t msgID: " + request.MessageIdentifer);
         }
     }
 
@@ -118,9 +116,9 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
             if (e.Response.MessageIdentifer == request.MessageIdentifer)
             {
-                if(request.SourceID != comms.Node.ID)
+                if(request.SourceID != comms.Node.Id)
                 {
-                    if(request.AckExpected == true && e.Response.ResponseCode == Response.ResponseCodes.ACK)
+                    if(request.AckExpected && e.Response.ResponseCode == Response.ResponseCodes.ACK)
                     {
                         OnResponseReceived -= GetResponse;
                         tcs.SetResult(e.Response);
@@ -212,7 +210,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
 
         foreach (SatelliteComms sat in satMan.satellites
-            .Where(sat => sat.Node.ID != comms.Node.ID && sat.Node.Active)
+            .Where(sat => sat.Node.Id != comms.Node.Id && sat.Node.Active)
             .OrderBy(sat => System.Numerics.Vector3.Distance(sat.Node.Position, comms.Node.Position))
             .ToList())
         {
@@ -225,7 +223,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         List<uint?> newCommsList = new List<uint?>();
 
 
-        return commsList.Select(col => col.Node.ID).ToList();
+        return commsList.Select(col => col.Node.Id).ToList();
     }
 
 
@@ -233,9 +231,9 @@ public class CommsSim : MonoBehaviour, ICommunicate
     public void Send(uint? nextHop, Response response)
     {
         if (Constants.EnableDebug)
-            Debug.Log(comms.Node.ID + " -> " + nextHop + "\t : " + response.GetType() + ": " + response.ResponseCode + "." + "\t dst: " + response.DestinationID);
+            Debug.Log(comms.Node.Id + " -> " + nextHop + "\t : " + response.GetType() + ": " + response.ResponseCode + "." + "\t dst: " + response.DestinationID);
 
-        SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.ID == nextHop);
+        SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.Id == nextHop);
 
         satMan.SentMessages.Add(new Tuple<Vector3, Vector3, Color>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), Color.blue));
 
@@ -270,13 +268,13 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
             Thread.Sleep(450 / Constants.TimeScale);
 
-            if (response.DestinationID == comms.Node.ID)
+            if (response.DestinationID == comms.Node.Id)
             {
                 OnResponseReceived?.Invoke(this, new ResponseEventArgs(response));
             }
             else
             {
-                uint? nextHop = comms.Node.Router.NextHop(comms.Node.ID, response.DestinationID);
+                uint? nextHop = comms.Node.Router.NextHop(comms.Node.Id, response.DestinationID);
                 Send(nextHop, response);
 
             }
@@ -285,10 +283,10 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public Request FetchNextRequest()
     {
-        if (requestList.Count > 0)
+        if (RequestList.Count > 0)
         {
-            Request request = requestList[0];
-            requestList.RemoveAt(0);
+            Request request = RequestList[0];
+            RequestList.RemoveAt(0);
             return request;
         }
 

@@ -35,15 +35,9 @@ public static class Utility
         }
         else
         {
-            for (int i = 0; i < n; i++) {
-                if (i % 2 == 0)
-                {
-                    Swap(list, i, n - 1);
-                }
-                else
-                {
-                    Swap(list, 0, n - 1);
-                }
+            for (int i = 0; i < n; i++)
+            {
+                Swap(list, i % 2 == 0 ? i : 0, n - 1);
 
                 Permutations(list, n - 1, result);
             }

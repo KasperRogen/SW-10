@@ -10,18 +10,18 @@ public class Heartbeat
     /// <summary>Performs aliveness check on immidiate neighbours
     /// <para>  </para>
     /// </summary>
-    public async static void CheckHeartbeat(INode myNode)
+    public static async void CheckHeartbeat(INode myNode)
     {
         Node.NodeState previousState = myNode.State;
         myNode.State = Node.NodeState.HEARTBEAT;
 
-        List<uint?> Neighbours = myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.ToList();
+        List<uint?> Neighbours = myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours.ToList();
         //Loop through all immidate neightbours
         foreach (uint? node in Neighbours)
         {
             Request request = new Request()
             {
-                SourceID = myNode.ID,
+                SourceID = myNode.Id,
                 DestinationID = node,
                 Command = Request.Commands.HEARTBEAT,
                 AckExpected = true,
@@ -45,13 +45,13 @@ public class Heartbeat
     {
         new Thread(() =>
         {
-            if (request.DestinationID != myNode.ID)
+            if (request.DestinationID != myNode.Id)
                 return;
 
             Thread.Sleep(500 / Constants.TimeScale);
             Response response = new Response()
             { 
-                SourceID = myNode.ID,
+                SourceID = myNode.Id,
                 DestinationID = request.SenderID,
                 ResponseCode = Response.ResponseCodes.OK,
                 MessageIdentifer = request.MessageIdentifer

@@ -12,16 +12,16 @@ public class PlanGenerator
     public static void GeneratePlan(INode myNode, PlanRequest request)
     {
         //If the request isn't meant for this node, just return. Node.cs will relay the message   61674131 
-        if (request.DestinationID != myNode.ID)
+        if (request.DestinationID != myNode.Id)
         {
             return;
         }
         else
         {
             // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
-            myNode.CommsModule.requestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
+            myNode.CommsModule.RequestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
 
-            myNode.executingPlan = false;
+            myNode.ExecutingPlan = false;
             myNode.State = Node.NodeState.PLANNING;
             myNode.GeneratingPlan = request.Plan;
 
@@ -30,6 +30,7 @@ public class PlanGenerator
 
             List<NodeLocationMatch> matches = CalculatePositions(myNode, newRequest);
             ConstellationPlan newPlan = ProcessPlan(matches, newRequest, myNode);
+            newRequest.Plan = newPlan;
             Transmit(newRequest, myNode);
 
 
@@ -44,7 +45,7 @@ public class PlanGenerator
         if (request.Plan.Entries.All(x => x.NodeID != null))
         {
             request.Command = Request.Commands.EXECUTE;
-            request.SourceID = myNode.ID;
+            request.SourceID = myNode.Id;
 
             PlanExecuter.ExecutePlan(myNode, request);
         }
@@ -61,13 +62,13 @@ public class PlanGenerator
 
             request.DestinationID = nextSeq;
 
-            if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq))
+            if (myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours.Contains(nextSeq))
             {
                 myNode.CommsModule.Send(nextSeq, request);
             }
             else
             {
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+                uint? nextHop = myNode.Router.NextHop(myNode.Id, nextSeq);
                 myNode.CommsModule.Send(nextHop, request);
             }
         }
@@ -88,7 +89,7 @@ public class PlanGenerator
         bestEntry = request.Plan.Entries.Find(entry => entry.Position == bestEntry.Position);
 
         //Take the location in the plan
-        bestEntry.NodeID = myNode.ID;
+        bestEntry.NodeID = myNode.Id;
         bestEntry.Fields["DeltaV"].Value = Vector3.Distance(bestEntry.Position, myNode.Position);
 
         myNode.GeneratingPlan = request.Plan;
@@ -101,9 +102,12 @@ public class PlanGenerator
     {
         List<NodeLocationMatch> matches = new List<NodeLocationMatch>();
 
-        foreach (NetworkMapEntry node in myNode.Router.NetworkMap.Entries.OrderBy(entry => entry.ID))
+        List<NetworkMapEntry> ReachableSats = myNode.Router.NetworkMap.Entries
+            .Where(entry => myNode.Router.ReachableSats(myNode).Contains(entry.ID)).ToList();
+
+        foreach (NetworkMapEntry node in ReachableSats)
         {
-            if (node.ID == myNode.ID || Request.Plan.Entries.Any(entry => entry.NodeID == node.ID))
+            if (node.ID == myNode.Id || Request.Plan.Entries.Any(entry => entry.NodeID == node.ID))
                 continue;
             
 

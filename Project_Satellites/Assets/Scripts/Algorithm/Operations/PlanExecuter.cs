@@ -17,7 +17,7 @@ public class PlanExecuter
     {
 
 
-        if (request.DestinationID != myNode.ID)
+        if (request.DestinationID != myNode.Id)
         {
 
             return;
@@ -29,14 +29,14 @@ public class PlanExecuter
             myNode.State = Node.NodeState.EXECUTING;
 
             
-            if (myNode.executingPlan)
+            if (myNode.ExecutingPlan)
             {
                 myNode.State = Node.NodeState.PASSIVE;
                 return; // Ignore Execute command if already executing which stops the execute communication loop
             }
             else
             {
-                myNode.executingPlan = true;
+                myNode.ExecutingPlan = true;
             }
 
 
@@ -53,14 +53,14 @@ public class PlanExecuter
 
             if(nextSeq != null)
             {
-                newRequest.SourceID = myNode.ID;
+                newRequest.SourceID = myNode.Id;
                 newRequest.DestinationID = nextSeq;
-                uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+                uint? nextHop = myNode.Router.NextHop(myNode.Id, nextSeq);
                 myNode.CommsModule.Send(nextHop, newRequest);
             }
 
             //Set my targetposition to the position i was assigned in the plan
-            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
+            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.Id).Position;
 
             // Entries in active plan that are also in the new plan
             List<ConstellationPlanEntry> activeEntries = new List<ConstellationPlanEntry>();
@@ -87,7 +87,7 @@ public class PlanExecuter
             uint? maxTravelID = travelDistanceByID.Single(x => x.Item2 == maxTravelDistance).Item1;
 
             // If the found ID is this node's, then discovery should be started when the node is at its new location.
-            if (maxTravelID == myNode.ID)
+            if (maxTravelID == myNode.Id)
             {
                 DiscoveryIfNewNeighboursAfterExecuting(myNode);
             }
@@ -112,7 +112,7 @@ public class PlanExecuter
         }
 
         // If ReachableNodes contains any that are not in networkmap neighbours -> Any new neighbours
-        if (myNode.CommsModule.Discover().Except(myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours).Count() > 0)
+        if (myNode.CommsModule.Discover().Except(myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours).Count() > 0)
         {
             Discovery.StartDiscovery(myNode, true);
         }

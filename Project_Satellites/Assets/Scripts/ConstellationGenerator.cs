@@ -49,8 +49,7 @@ public class ConstellationGenerator : MonoBehaviour
         {
             float yAngle = Mathf.PI / PlaneNum * i;
 
-            List<Tuple<int, Vector3>> NodeProperties = new List<Tuple<int, Vector3>>();
-
+            
             for(uint? j = 0; j < SatellitesPerPlane; j++)
             {
                 float angle = (int)j * Mathf.PI * 2f / SatellitesPerPlane;
@@ -67,7 +66,6 @@ public class ConstellationGenerator : MonoBehaviour
                 GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
                 CommsSim sim = satellite.AddComponent<CommsSim>();
 
-                NodeProperties.Add(new Tuple<int, Vector3>((int)j, satellite.transform.position));
                 INode node = new Node(j, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
                 node.TargetPosition = node.Position;
                 node.CommsModule = sim;
@@ -76,9 +74,9 @@ public class ConstellationGenerator : MonoBehaviour
                 satellite.name = "P(" + i + "), S(" + j + ")";
                 satellite.GetComponent<SatelliteComms>().Node = node;
 
-                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => { return x.CompareTo(y); }) };
+                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => x.CompareTo(y)) };
                 ConstellationPlanEntry entry = new ConstellationPlanEntry(node.Position, fields, (x, y) => 1);
-                entry.NodeID = node.ID;
+                entry.NodeID = node.Id;
                 entries.Add(entry);
                 nodes.Add(node);
             }
