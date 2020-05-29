@@ -9,6 +9,7 @@ using System.Threading;
 public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
+    public Vector3 pos;
     public List<Request> RequestList { get; set; } = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
 
@@ -24,8 +25,6 @@ public class CommsSim : MonoBehaviour, ICommunicate
     private void Update()
     {
         comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
-
-
 
 
 
@@ -197,7 +196,6 @@ public class CommsSim : MonoBehaviour, ICommunicate
         // Trigger recovery if no response after several attempts and already failure handling and attempted node is not the one to be checked via failure handling
         else if (request.GetType() == typeof(DetectFailureRequest) && tcs.Task.Result.ResponseCode == Response.ResponseCodes.TIMEOUT && (request as DetectFailureRequest).NodeToCheck != nextHop)
         {
-            comms.Node.Router.NetworkMap.Entries.RemoveAll(entry => entry.ID == nextHop);
             FailureDetection.Recovery(comms.Node, nextHop);
         }
 
@@ -220,8 +218,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
             if (dist < range)
                 commsList.Add(sat);
         }
-
-        List<uint?> newCommsList = new List<uint?>();
+        
 
 
         return commsList.Select(col => col.Node.Id).ToList();

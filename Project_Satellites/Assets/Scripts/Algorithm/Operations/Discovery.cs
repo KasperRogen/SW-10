@@ -16,6 +16,7 @@ public class Discovery
             Command = Request.Commands.DISCOVER,
             DestinationID = myNode.Id,
             SourceID = myNode.Id,
+            SenderID = myNode.Id,
             requireFullSync = requireFullSync,
             Alterations = new List<NetworkMapAlteration>()
         };
@@ -29,6 +30,12 @@ public class Discovery
     /// </summary>
     public static async System.Threading.Tasks.Task DiscoverAsync(INode myNode, DiscoveryRequest request)
     {
+
+        if (myNode.Id == 6)
+        {
+            int a = 2;
+        }
+
         //Break References to request
         DiscoveryRequest requestClone = request;
 
@@ -56,8 +63,35 @@ public class Discovery
 
     private static async void CheckPropagation(bool propagationAllowed, DiscoveryRequest request, INode myNode)
     {
-        if (propagationAllowed || (request.requireFullSync) && myNode.Id == request.SourceID)
+        if (propagationAllowed || request.requireFullSync)
         {
+
+            if (request.requireFullSync && request.SourceID == myNode.Id && request.SenderID != myNode.Id && request.firstPassDone == false)
+            {
+                if (request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
+                {
+                    ConstellationPlan recoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
+
+
+                    PlanRequest recoveryRequest = new PlanRequest
+                    {
+                        SourceID = myNode.Id,
+                        DestinationID = myNode.Id,
+                        Command = Request.Commands.GENERATE,
+                        Plan = recoveryPlan
+                    };
+
+                    if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
+                    {
+                        recoveryRequest.Dir = Router.CommDir.CCW;
+                    }
+
+                    myNode.CommsModule.Send(myNode.Id, recoveryRequest);
+                }
+
+                return;
+            }
+
             List<ConstellationPlanEntry> newPlanEntries = new List<ConstellationPlanEntry>();
 
             //update my constellationplan based on the new knowledge
@@ -79,7 +113,7 @@ public class Discovery
 
             if (newRequest.DestinationID == null)
             {
-                if (request.firstPassDone)
+                if (request.firstPassDone || request.requireFullSync == false)
                 {
                     if (request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
                     {

@@ -203,6 +203,7 @@ public class FailureDetection
 
         recoveryRequest.DependencyRequests.Add(updateRequest);
 
+        myNode.Router.NetworkMap.Entries.RemoveAll(entry => entry.ID == secondFailedNode);
 
         myNode.CommsModule.Send(myNode.Id, recoveryRequest);
     }

@@ -29,25 +29,6 @@ public static class PlanExecuter
 
             ForwardRequest(myNode, request);
 
-            PlanRequest newRequest = request.DeepCopy();
-
-            uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
-
-            if(nextSeq == null)
-            {
-                Router.CommDir newDir = request.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
-                newRequest.Dir = newDir;
-                nextSeq = myNode.Router.NextSequential(myNode, newDir);
-            }
-
-            if(nextSeq != null)
-            {
-                newRequest.SourceID = myNode.Id;
-                newRequest.DestinationID = nextSeq;
-                uint? nextHop = myNode.Router.NextHop(myNode.Id, nextSeq);
-                myNode.CommsModule.Send(nextHop, newRequest);
-            }
-
             //Set my targetposition to the position i was assigned in the plan
             myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.Id).Position;
 
@@ -104,9 +85,13 @@ public static class PlanExecuter
         {
             await Task.Delay(100 / Constants.TIME_SCALE);
         }
+        
 
         // If ReachableNodes contains any that are not in networkmap neighbours -> Any new neighbours
-        if (myNode.CommsModule.Discover().Except(myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours).Count() > 0)
+
+        List<uint?> currentNeighbours = myNode.CommsModule.Discover();
+
+        if (currentNeighbours.Except(myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours).Any())
         {
             Discovery.StartDiscovery(myNode, true);
         }
