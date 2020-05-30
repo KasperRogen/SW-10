@@ -6,13 +6,8 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Numerics;
 
-public class FailureDetection
+public static class FailureDetection
 {
-
-
-    /// <summary>Handles failure detection requests, updating own router, and relaying or performing aliveness check
-    /// <para>  </para>
-    /// </summary>
     public async static void DetectFailure(INode myNode, DetectFailureRequest request)
     {
         //Update router, ensure we don't try to route through the bad connection
@@ -57,7 +52,7 @@ public class FailureDetection
                 ResponseExpected = true
             };
 
-            Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
+            Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
 
             if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR) {
                 failedNodeDead = true;
@@ -102,14 +97,8 @@ public class FailureDetection
             FailedNeighbours = failedNeighbours
         };
 
-        await myNode.CommsModule.SendAsync(nextHop, DFrequest, 1000, 3);
+        await myNode.CommsModule.SendAsync(nextHop, DFrequest, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
     }
-
-    /// <summary>Should be used on the node when it detects a failure
-
-    /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
-
-    /// </summary>
 
     public async static void FailureDetected(INode myNode, uint? failedNode)
     {
@@ -151,34 +140,27 @@ public class FailureDetection
                 FailedNeighbours = failedNeighbours
             };
 
-            await myNode.CommsModule.SendAsync(nextHop, request, 1000, 3);
+            await myNode.CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
         }
     }
 
-    
+    public static void Recovery(INode myNode) {
+        ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
 
-    public static void Recovery(INode myNode)
-    {
-            ConstellationPlan RecoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
+        PlanRequest recoveryRequest = new PlanRequest {
+            SourceID = myNode.ID,
+            DestinationID = myNode.ID,
+            Command = Request.Commands.GENERATE,
+            Plan = RecoveryPlan,
+            Dir = Router.CommDir.CW
+        };
 
+        if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null) {
+            recoveryRequest.Dir = Router.CommDir.CCW;
+        }
 
-            PlanRequest recoveryRequest = new PlanRequest
-            {
-                SourceID = myNode.ID,
-                DestinationID = myNode.ID,
-                Command = Request.Commands.GENERATE,
-                Plan = RecoveryPlan,
-                Dir = Router.CommDir.CW
-            };
-
-            if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
-            {
-                recoveryRequest.Dir = Router.CommDir.CCW;
-            }
-
-            myNode.CommsModule.Send(myNode.ID, recoveryRequest);
+        myNode.CommsModule.Send(myNode.ID, recoveryRequest);
     }
-
 
     public static void Recovery(INode myNode, uint? secondFailedNode)
     {

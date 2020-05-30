@@ -6,17 +6,15 @@ public static class PlanGenerator
 {
     public static void GeneratePlan(INode myNode, PlanRequest request)
     {
+        // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
+        myNode.CommsModule.requestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
+
         if (request.DestinationID != myNode.ID)
         {
             return;
         }
         else
         {
-            // <--- TODO: Maybe move this out of conditional branch to also clear failure requests on nodes while routing? --->
-            // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
-            myNode.CommsModule.requestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
-
-            // <--- TODO: Maybe set passive and executingplan = false when target position is reached instead of right away? --->
             myNode.executingPlan = false;
             myNode.State = Node.NodeState.PLANNING;
             myNode.GeneratingPlan = request.Plan;
@@ -52,7 +50,6 @@ public static class PlanGenerator
         return matches;
     }
 
-    // <--- TODO: Move this to a public class? Seems like better practice. --->
     private class NodeLocationMatch {
         public uint? NodeID;
         public Vector3 Position;
@@ -105,7 +102,6 @@ public static class PlanGenerator
     }
 
     private static void ForwardRequest(INode myNode, PlanRequest request) {
-        // <--- TODO: Similar to the forwarding logic in plan execute. Maybe streamline this? --->
         uint? nextSeq = myNode.Router.NextSequential(myNode, request.Dir);
 
         if (nextSeq == null) {
@@ -116,10 +112,10 @@ public static class PlanGenerator
         request.DestinationID = nextSeq;
 
         if (myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.Contains(nextSeq)) {
-            myNode.CommsModule.Send(nextSeq, request);
+            myNode.CommsModule.SendAsync(nextSeq, request, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
         } else {
             uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
-            myNode.CommsModule.Send(nextHop, request);
+            myNode.CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
         }
     }
 }
