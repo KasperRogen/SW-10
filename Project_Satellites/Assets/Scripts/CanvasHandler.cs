@@ -28,20 +28,12 @@ public class CanvasHandler : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        RaycastHit hit;
-
         if (Input.GetMouseButtonDown(1) &&
-          Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, SatelliteLayer, QueryTriggerInteraction.Ignore))
+            Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, float.MaxValue, SatelliteLayer, QueryTriggerInteraction.Ignore))
         {
             SatelliteToggles.SetActive(true);
             CallingNode = hit.transform.gameObject;
-            if(CallingNode.GetComponent<SatelliteComms>().Node.State != Node.NodeState.DEAD)
-            {
-                SatelliteButtons.SetActive(true);
-            } else
-            {
-                SatelliteButtons.SetActive(false);
-            }
+            SatelliteButtons.SetActive(CallingNode.GetComponent<SatelliteComms>().Node.State != Node.NodeState.DEAD);
         }
         else if (Input.GetMouseButtonDown(1) && Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out hit, float.MaxValue, BackGroundLayer, QueryTriggerInteraction.Ignore))
         {

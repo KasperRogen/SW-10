@@ -8,13 +8,13 @@ public static class Heartbeat {
         Node.NodeState previousState = myNode.State;
         myNode.State = Node.NodeState.HEARTBEAT;
 
-        List<uint?> Neighbours = myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours.ToList();
+        List<uint?> Neighbours = myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours.ToList();
         //Loop through all immidate neightbours
         foreach (uint? node in Neighbours)
         {
             Request request = new Request()
             {
-                SourceID = myNode.ID,
+                SourceID = myNode.Id,
                 DestinationID = node,
                 Command = Request.Commands.HEARTBEAT,
                 AckExpected = false,
@@ -33,13 +33,13 @@ public static class Heartbeat {
 
     public static void RespondToHeartbeat(Node myNode, Request request)
     {
-        if (request.DestinationID != myNode.ID) {
+        if (request.DestinationID != myNode.Id) {
             return;
         }
 
         Thread.Sleep(500 / Constants.TIME_SCALE);
         Response response = new Response() {
-            SourceID = myNode.ID,
+            SourceID = myNode.Id,
             DestinationID = request.SenderID,
             ResponseCode = Response.ResponseCodes.OK,
             MessageIdentifer = request.MessageIdentifer

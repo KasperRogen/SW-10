@@ -84,21 +84,20 @@ public class ConstellationVisualiser : MonoBehaviour
 
 
         
-        KnownNeighbours = comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.ID)?.Neighbours;
+        KnownNeighbours = comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.Id)?.Neighbours;
         
         reachableSats.Clear();
 
-        //var nonintersect = array1.Except(array2).Union( array2.Except(array1));
-
-        foreach (SatelliteComms node in reachableSats.Where(sat => KnownNeighbours.Contains(sat.Node.ID) == false)){
+        
+        foreach (SatelliteComms node in reachableSats.Where(sat => KnownNeighbours.Contains(sat.Node.Id) == false)){
             reachableSats.Remove(node);
         }
 
         foreach (uint? node in KnownNeighbours)
         {
-            if(reachableSats.Select(sat => sat.Node.ID).Contains(node) == false)
+            if(reachableSats.Select(sat => sat.Node.Id).Contains(node) == false)
             {
-                Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.Node.ID == node).transform;
+                Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.Node.Id == node).transform;
                 reachableSats.Add(nodeTransform.GetComponent<SatelliteComms>());
             }
         }
@@ -107,7 +106,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
         for (int i = 0; i < reachableSats?.Count; i++)
         {
-            uint? id = reachableSats[i].Node.ID;
+            uint? id = reachableSats[i].Node.Id;
             reachableSatsID.Add(id);
 
             if (commLineRenderes.ContainsKey(id) == false)
@@ -224,9 +223,9 @@ public class ConstellationVisualiser : MonoBehaviour
 
 
         // Turn active communication link on and off 
-        if (commsSim.ActiveCommSat != null && commLineRenderes.ContainsKey(commsSim.ActiveCommSat.Node.ID))
+        if (commsSim.ActiveCommSat != null && commLineRenderes.ContainsKey(commsSim.ActiveCommSat.Node.Id))
         {
-            uint? id = commsSim.ActiveCommSat.Node.ID;
+            uint? id = commsSim.ActiveCommSat.Node.Id;
             commLineRenderes[id].material.SetColor("_BaseColor", CommsActiveMat);
             lastActiveComm = id;
         }
@@ -246,7 +245,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
             foreach (ConstellationPlanEntry e in comms.Node.GeneratingPlan.Entries)
             {
-                if (e.NodeID != null && e.NodeID == comms.Node.ID)
+                if (e.NodeID != null && e.NodeID == comms.Node.Id)
                 {
                     plannedposition = BackendHelpers.UnityVectorFromNumerics(e.Position);
                 }
@@ -254,11 +253,6 @@ public class ConstellationVisualiser : MonoBehaviour
 
             targetPositionLineRenderer.positionCount = 2;
             targetPositionLineRenderer.SetPositions(new Vector3[] { transform.position, plannedposition });
-
-            float DeltaVSum = comms.Node.GeneratingPlan.Entries.Sum(entry => entry.Fields["DeltaV"].Value);
-
-            if (DeltaVSum != TargetConstellationGenerator.CurrentDeltaVSum && DeltaVSum != 1100f)
-                TargetConstellationGenerator.CurrentDeltaVSum = DeltaVSum;
         }
     }
 

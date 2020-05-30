@@ -18,5 +18,7 @@ public static class Constants
         return input / 1000000;
     }
 
+    public static float SatCommsRange = 5000000;
+
 
 }

@@ -9,7 +9,7 @@ public static class PlanExecuter
 {
     public static void ExecutePlan(INode myNode, PlanRequest request)
     {
-        if (request.DestinationID != myNode.ID)
+        if (request.DestinationID != myNode.Id)
         {
             return;
         }
@@ -17,25 +17,25 @@ public static class PlanExecuter
         {
             myNode.State = Node.NodeState.EXECUTING;
             
-            if (myNode.executingPlan)
+            if (myNode.ExecutingPlan)
             {
                 myNode.State = Node.NodeState.PASSIVE;
                 return; // Ignore Execute command if already executing which stops the execute communication loop
             }
             else
             {
-                myNode.executingPlan = true;
+                myNode.ExecutingPlan = true;
             }
 
             ForwardRequest(myNode, request);
 
-            //Set my targetposition to the position I was assigned in the plan
-            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.ID).Position;
+            //Set my targetposition to the position i was assigned in the plan
+            myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.Id).Position;
 
             uint? maxTravelID = FindMaxTravelID(myNode, request);
 
             // If the found ID is this node's, then discovery should be started when the node is at its new location.
-            if (maxTravelID == myNode.ID)
+            if (maxTravelID == myNode.Id)
             {
                 DiscoveryIfNewNeighboursAfterExecuting(myNode);
             }
@@ -56,9 +56,13 @@ public static class PlanExecuter
         {
             await Task.Delay(100 / Constants.TIME_SCALE);
         }
+        
 
         // If ReachableNodes contains any that are not in networkmap neighbours -> Any new neighbours
-        if (myNode.CommsModule.Discover().Except(myNode.Router.NetworkMap.GetEntryByID(myNode.ID).Neighbours).Count() > 0)
+
+        List<uint?> currentNeighbours = myNode.CommsModule.Discover();
+
+        if (currentNeighbours.Except(myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours).Any())
         {
             Discovery.StartDiscovery(myNode, true);
         }
@@ -74,9 +78,9 @@ public static class PlanExecuter
         }
 
         if (nextSeq != null) {
-            newRequest.SourceID = myNode.ID;
+            newRequest.SourceID = myNode.Id;
             newRequest.DestinationID = nextSeq;
-            uint? nextHop = myNode.Router.NextHop(myNode.ID, nextSeq);
+            uint? nextHop = myNode.Router.NextHop(myNode.Id, nextSeq);
             myNode.CommsModule.SendAsync(nextHop, newRequest, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
         }
     }

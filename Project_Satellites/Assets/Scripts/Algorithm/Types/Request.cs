@@ -8,7 +8,7 @@ public class Request
 {
     public enum Commands
     {
-        GENERATE, EXECUTE, DETECTFAILURE, HEARTBEAT, PING, DISCOVER, POSITION, ADDITION
+        GENERATE, EXECUTE, DETECTFAILURE, HEARTBEAT, PING, DISCOVER, POSITION, ADDITION, UPDATENETWORKMAP
     }
 
     public uint? SourceID { get; set; }
@@ -17,6 +17,8 @@ public class Request
     public Commands Command { get; set; }
 
     public string MessageIdentifer { get; set; }
+
+    public List<Request> DependencyRequests = new  List<Request>();
 
 
     public bool AckExpected { get; set; }
@@ -49,6 +51,8 @@ public class Request
         AckExpected = other.AckExpected;
 
         Dir = other.Dir;
+
+        DependencyRequests = other.DependencyRequests;
 
     }
 
@@ -174,11 +178,8 @@ public class DetectFailureRequest : Request
 
 
     public new DetectFailureRequest DeepCopy()
-
     {
-
         return new DetectFailureRequest(this);
-
     }
 
 
@@ -188,6 +189,29 @@ public class DetectFailureRequest : Request
 
 
 }
+
+
+public class NetworkUpdateRequest : Request
+{
+    public List<uint?> DeadNodes;
+
+    public new NetworkUpdateRequest DeepCopy()
+    {
+        return new NetworkUpdateRequest(this);
+    }
+
+    public NetworkUpdateRequest(List<uint?> deadNodes)
+    {
+        DeadNodes = deadNodes;
+        Command = Commands.UPDATENETWORKMAP;
+    }
+
+    public NetworkUpdateRequest(NetworkUpdateRequest other) : base(other)
+    {
+        DeadNodes = other.DeadNodes;
+    }
+}
+
 
 public class AdditionRequest : Request
 {

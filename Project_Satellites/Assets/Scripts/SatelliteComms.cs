@@ -26,11 +26,10 @@ public class SatelliteComms : MonoBehaviour
 
     private void Update()
     {
-        if (Node.TargetPosition != null)
-            movement.TargetPosition = BackendHelpers.UnityVectorFromNumerics(Node.TargetPosition);
+        movement.TargetPosition = BackendHelpers.UnityVectorFromNumerics(Node.TargetPosition);
 
         Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
-        text.text = Node.ID.ToString() + "\n" + Node.State.ToString();
+        text.text = Node.Id.ToString() + "\n" + Node.State.ToString();
     }
 
     private void OnEnable()
