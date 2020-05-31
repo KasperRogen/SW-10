@@ -86,7 +86,7 @@ public class Node : INode
 
     private void OnDiscoveryEvent(Object source, ElapsedEventArgs e) {
         UnityEngine.Debug.Log("Discovery");
-        Discovery.StartDiscovery(this, true);
+        Discovery.StartDiscovery(this, false);
     }
 
     public override void GenerateRouter()
