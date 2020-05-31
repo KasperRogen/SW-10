@@ -73,9 +73,10 @@ public class ConstellationVisualiser : MonoBehaviour
     {
 
         state = comms.Node.State;
-        foreach (Tuple<Vector3, Vector3, Color> tuple in SatManager._instance.SentMessages)
+
+        foreach (SatManager.MessageProps props in SatManager._instance.SentMessages)
         {
-            StartCoroutine(DisplayMessageSent(tuple.Item1 + Vector3.up, tuple.Item2 + Vector3.up, 0.5f, 0f, tuple.Item3));
+            StartCoroutine(DisplayMessageSent(props.StartVect + Vector3.up, props.EndVect + Vector3.up, props.Duration, 0f, props.Color));
         }
 
         SatManager._instance.SentMessages.Clear();
@@ -281,7 +282,7 @@ public class ConstellationVisualiser : MonoBehaviour
         float Dist = Vector3.Distance(Origin, Destination);
         while (Vector3.Distance(Message.transform.position, Destination) > 0.1f)
         {
-            Message.transform.position = Vector3.MoveTowards(Message.transform.position, Destination, (Dist / duration) * Time.deltaTime);
+            Message.transform.position = Vector3.MoveTowards(Message.transform.position, Destination, (Dist / (duration / 1000)) * Time.deltaTime);
             yield return new WaitForEndOfFrame();
         }
         Destroy(Message);

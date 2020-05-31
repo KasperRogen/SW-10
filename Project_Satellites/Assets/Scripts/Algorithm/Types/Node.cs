@@ -135,13 +135,13 @@ public class Node : INode
             {
                 if (Router.NetworkMap.GetEntryByID(Id).Neighbours.Contains(request.DestinationID))
                 {
-                    await CommsModule.SendAsync(request.DestinationID, request, 1000, 3);
+                    await CommsModule.SendAsync(request.DestinationID, request, Constants.COMMS_TIMEOUT, 3);
                 }
                 else
                 {
                     uint? nextHop = Router.NextHop(Id, request.DestinationID);
 
-                    await CommsModule.SendAsync(nextHop, request, 1000, 3);
+                    await CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, 3);
                 }
             }
         }).Start();

@@ -47,7 +47,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
 
 
-            Thread.Sleep(250 / Constants.TIME_SCALE);
+            Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TIME_SCALE);
             
             comms.Node.Router.AddNodeToGraph(comms.Node.Id);
             if(request.SenderID != null)
@@ -90,7 +90,13 @@ public class CommsSim : MonoBehaviour, ICommunicate
             int a = 2;
         }
 
-        satMan.SentMessages.Add(new Tuple<Vector3, Vector3, Color>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), Color.yellow));
+        SatManager.MessageProps message = new SatManager.MessageProps(
+            BackendHelpers.UnityVectorFromNumerics(comms.Node.Position),
+            BackendHelpers.UnityVectorFromNumerics(hop.Node.Position),
+            Color.yellow, 
+            Constants.SEND_DURATION_TIME / Constants.TIME_SCALE);
+
+        satMan.SentMessages.Add(message);
 
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
@@ -240,7 +246,12 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.Id == nextHop);
 
-        satMan.SentMessages.Add(new Tuple<Vector3, Vector3, Color>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), Color.blue));
+        SatManager.MessageProps message = new SatManager.MessageProps(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), 
+            BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), 
+            Color.cyan,
+            Constants.SEND_DURATION_TIME / Constants.TIME_SCALE);
+
+        satMan.SentMessages.Add(message);
 
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))
         {
@@ -271,7 +282,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         new Thread(() =>
         {
-            Thread.Sleep(450 / Constants.TIME_SCALE);
+            Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TIME_SCALE);
 
             if (response.DestinationID == comms.Node.Id)
             {

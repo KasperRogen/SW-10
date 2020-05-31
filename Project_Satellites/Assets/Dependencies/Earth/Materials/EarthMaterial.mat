@@ -76,7 +76,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NightTex:
-        m_Texture: {fileID: 2800000, guid: 8d73a1f30b7717d4f8f40e2a2128ae7e, type: 3}
+        m_Texture: {fileID: 2800000, guid: 7dfcb90673cf9a44281e7da0b32902b2, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMapTex:
@@ -104,12 +104,12 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
-    - _AtmosFalloff: 14
+    - _AtmosFalloff: 64
     - _BumpScale: 1
-    - _CloudIntensityMin: 0.01
+    - _CloudIntensityMin: 1
     - _Cutoff: 0.5
-    - _DetailIntensity: 0
-    - _DetailIntensityMin: 0.01
+    - _DetailIntensity: 0.87
+    - _DetailIntensityMin: 0
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _Glossiness: 0.5
@@ -117,17 +117,17 @@ Material:
     - _LightScale: 1
     - _Metallic: 0
     - _Mode: 0
-    - _NightIntensity: 0.6
-    - _NightTransitionVariable: 4
-    - _NormalMapIntensity: 0.5
+    - _NightIntensity: 0.726
+    - _NightTransitionVariable: 1
+    - _NormalMapIntensity: 1
     - _OcclusionStrength: 1
     - _Parallax: 0.02
-    - _RimIntensity: 10
-    - _RimPower: 12
+    - _RimIntensity: 1.7
+    - _RimPower: 0.5
     - _Shininess: 0.03
-    - _Smoothness: 0.4
-    - _SpecularIntensity: 2
-    - _SpecularPower: 64
+    - _Smoothness: 0
+    - _SpecularIntensity: 5.95
+    - _SpecularPower: 1024
     - _SrcBlend: 1
     - _UVSec: 0
     - _ZWrite: 1

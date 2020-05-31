@@ -128,6 +128,18 @@ public class TargetConstellationGenerator : MonoBehaviour
     private void Update()
     {
 
+        if (SatManager._instance.satellites.TrueForAll(sat => sat.Node.State != Node.NodeState.PLANNING))
+        {
+            GameObject.FindGameObjectsWithTag("LocationPlaceholder")?.ToList().ForEach(Destroy);
+        }
+
+        if(GameObject.FindGameObjectsWithTag("LocationPlaceholder").Length == 0 && SatManager._instance.satellites.Any(sat => sat.Node.State == Node.NodeState.PLANNING))
+        {
+            SatelliteComms planningNode =
+                SatManager._instance.satellites.Find(sat => sat.Node.State == Node.NodeState.PLANNING);
+
+            planningNode.Node.GeneratingPlan.Entries.ForEach(entry => Instantiate(SatLocationPlaceholderPrefab, BackendHelpers.UnityVectorFromNumerics(entry.Position), Quaternion.identity));
+        }
 
         if (nodes.Count == 0)
             Sats.ForEach(sat => nodes.Add(sat.GetComponent<SatelliteComms>().Node));

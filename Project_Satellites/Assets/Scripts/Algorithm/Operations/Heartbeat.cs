@@ -21,7 +21,7 @@ public static class Heartbeat {
                 ResponseExpected = true
             };
 
-            Response response = await myNode.CommsModule.SendAsync(node, request, 3000, 3);
+            Response response = await myNode.CommsModule.SendAsync(node, request, Constants.COMMS_TIMEOUT, 3);
 
             if (response.ResponseCode == Response.ResponseCodes.TIMEOUT) {
                 break;
