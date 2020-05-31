@@ -128,6 +128,7 @@ public class DiscoveryRequest : Request
     public List<NetworkMapAlteration> Alterations { get; set; }
     public bool firstPassDone { get; set; }
     public bool requireFullSync { get; set; }
+    public bool EdgeDetected { get; set; }
 
 
 
@@ -137,6 +138,7 @@ public class DiscoveryRequest : Request
         Alterations = other.Alterations;
         firstPassDone = other.firstPassDone;
         requireFullSync = other.requireFullSync;
+        EdgeDetected = other.EdgeDetected;
     }
 
 

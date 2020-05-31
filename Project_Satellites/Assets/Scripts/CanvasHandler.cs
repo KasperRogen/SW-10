@@ -100,5 +100,35 @@ public class CanvasHandler : MonoBehaviour
         }
     }
 
+    public void RemoveNode()
+    {
+        if (CallingNode != null)
+        {
+            uint? CallingNodeID = CallingNode.GetComponent<SatelliteComms>().Node.Id;
+            foreach (SatelliteComms satellite in SatManager._instance.satellites)
+            {
+                satellite.Node.Router.NetworkMap.Entries.RemoveAll(entry =>
+                    entry.ID == CallingNodeID);
+
+                foreach (NetworkMapEntry entry in satellite.Node.Router.NetworkMap.Entries)
+                {
+                    entry.Neighbours.RemoveAll(neighbour =>
+                        neighbour == CallingNodeID);
+                }
+
+                satellite.Node.ActivePlan.Entries.RemoveAll(entry => entry.NodeID == CallingNodeID);
+
+                satellite.Node.Router.NodeToNodeIDMapping.Clear();
+                satellite.Node.Router.UpdateGraph();
+            }
+
+            SatManager._instance.satellites.RemoveAll(sat => sat.Node.Id == CallingNodeID);
+            Destroy(CallingNode);
+            SatelliteButtons.SetActive(false);
+            SatelliteToggles.SetActive(false);
+            CallingNode = null;
+        }
+    }
+
 
 }

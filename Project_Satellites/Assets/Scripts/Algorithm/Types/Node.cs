@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design.Serialization;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
@@ -103,6 +105,11 @@ public class Node : INode
         if (active == false)
             return;
 
+        if (Id == 3)
+        {
+            int a = 2;
+        }
+
         new Thread(async () =>
         {
             if (request.DependencyRequests != null && request.DependencyRequests.Any())
@@ -114,9 +121,13 @@ public class Node : INode
             }
 
 
+
+            if (Router.NetworkMap.Entries.Count > 11)
+            {
+                int a = 2;
+            }
+
             ExecuteRequest(request, false);
-
-
 
             if (request.DestinationID != Id)
             {
@@ -160,6 +171,11 @@ public class Node : INode
                 break;
 
             case Request.Commands.DISCOVER:
+
+                if (Router.NetworkMap.Entries.Count > 11)
+                {
+                    int a = 2;
+                }
                 await Discovery.DiscoverAsync(this, request as DiscoveryRequest);
                 break;
 

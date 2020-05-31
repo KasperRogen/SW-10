@@ -19,15 +19,16 @@ public class ConstellationGenerator : MonoBehaviour
         GameObject satellite = Instantiate(_satellitePrefab, instantiationPoisition, Quaternion.identity);
         CommsSim sim = satellite.AddComponent<CommsSim>();
 
-        int satIndex = SatManager._instance.satellites.Count;
+        int satIndex = SatManager._instance.SatIndex;
 
         INode node = new Node((uint?)satIndex, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
         node.TargetPosition = node.Position;
         node.CommsModule = sim;
         node.PlaneNormalDir = BackendHelpers.NumericsVectorFromUnity(Vector3.up);
 
-        satellite.name = "P(" + 0 + "), S(" + (satIndex-1) + ")";
+        satellite.name = "P(" + 0 + "), S(" + (satIndex) + ")";
         satellite.GetComponent<SatelliteComms>().Node = node;
+        SatManager._instance.SatIndex++;
         node.GenerateRouter();
     }
 
@@ -79,6 +80,8 @@ public class ConstellationGenerator : MonoBehaviour
                 entry.NodeID = node.Id;
                 entries.Add(entry);
                 nodes.Add(node);
+
+                SatManager._instance.SatIndex++;
             }
 
         }

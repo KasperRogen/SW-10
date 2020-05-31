@@ -32,7 +32,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
     Node.NodeState lastState = Node.NodeState.PASSIVE;
 
-    public List<SatelliteComms> reachableSats = new List<SatelliteComms>();
+    private List<SatelliteComms> reachableSats = new List<SatelliteComms>();
     public List<uint?> KnownNeighbours = new List<uint?>();
 
 
@@ -93,13 +93,28 @@ public class ConstellationVisualiser : MonoBehaviour
             reachableSats.Remove(node);
         }
 
+        uint? toRemove = null;
+
         foreach (uint? node in KnownNeighbours)
         {
             if(reachableSats.Select(sat => sat.Node.Id).Contains(node) == false)
             {
-                Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.Node.Id == node).transform;
-                reachableSats.Add(nodeTransform.GetComponent<SatelliteComms>());
+                if(SatManager._instance.satellites.Any(sat => sat.Node.Id == node) == false)
+                {
+                    toRemove = node;
+                }
+                else
+                {
+                    Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.Node.Id == node).transform;
+                    reachableSats.Add(nodeTransform.GetComponent<SatelliteComms>());
+                }
+
             }
+        }
+
+        if (toRemove != null)
+        {
+            KnownNeighbours.Remove(toRemove);
         }
 
         List<uint?> reachableSatsID = new List<uint?>();
