@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
+using System.Xml;
 using Dijkstra.NET.Graph;
 using Dijkstra.NET.ShortestPath;
 
@@ -16,7 +17,7 @@ public class Router : IRouter
 
     INode node;
     private Graph<uint?, string> graph = new Graph<uint?, string>();
-    private Dictionary<uint?, uint> nodeToNodeIDMapping = new Dictionary<uint?, uint>();
+    public Dictionary<uint?, uint> NodeToNodeIDMapping = new Dictionary<uint?, uint>();
     private float satRange = 5f;
 
     public override NetworkMap NetworkMap { get; set; }
@@ -31,7 +32,7 @@ public class Router : IRouter
             foreach (ConstellationPlanEntry entry in _plan.Entries)
             {
                 NetworkMap.Entries.Add(new NetworkMapEntry(entry.NodeID, entry.Position));
-                nodeToNodeIDMapping.Add(entry.NodeID, 0);
+                NodeToNodeIDMapping.Add(entry.NodeID, 0);
             }
         }
 
@@ -47,7 +48,11 @@ public class Router : IRouter
     {
         
         Vector3 EarthPosition = Vector3.Zero;
-        
+
+        if (source.Id == 3)
+        {
+            int a = 2;
+        }
 
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
 
@@ -105,7 +110,8 @@ public class Router : IRouter
             nodesToCheck.RemoveAt(0);
 
             List<uint?> newNodes = new List<uint?>(); 
-            newNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(node).Neighbours);
+            if(requestingNode.Router.NetworkMap.Entries.Any(entry => entry.ID == node))
+                newNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(node).Neighbours);
             newNodes = newNodes.Except(checkedNodes).ToList();
             nodesToCheck.AddRange(newNodes);
             reachableNodes.AddRange(newNodes);
@@ -117,11 +123,11 @@ public class Router : IRouter
 
     public void AddNodeToGraph(uint? neighbour)
     {
-        if(nodeToNodeIDMapping.ContainsKey(neighbour) == false)
+        if(NodeToNodeIDMapping.ContainsKey(neighbour) == false)
         {
             uint nodeID = graph.AddNode(neighbour);          
-            nodeToNodeIDMapping[neighbour] = nodeID;
-            graph.Connect(nodeToNodeIDMapping[node.Id], nodeToNodeIDMapping[neighbour], 1, "");
+            NodeToNodeIDMapping[neighbour] = nodeID;
+            graph.Connect(NodeToNodeIDMapping[node.Id], NodeToNodeIDMapping[neighbour], 1, "");
             
         }
         
@@ -137,10 +143,10 @@ public class Router : IRouter
 
     public override uint? NextHop(uint? source, uint? destination)
     {
-        ShortestPathResult result = graph.Dijkstra(nodeToNodeIDMapping[source], nodeToNodeIDMapping[destination]);
+        ShortestPathResult result = graph.Dijkstra(NodeToNodeIDMapping[source], NodeToNodeIDMapping[destination]);
 
         IEnumerable<uint> path = result.GetPath();
-        uint? nextHop = nodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
+        uint? nextHop = NodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
 
         return nextHop;
     }
@@ -188,12 +194,18 @@ public class Router : IRouter
 
         }
         NetworkMap = newMap;
-        nodeToNodeIDMapping.Clear();
+        NodeToNodeIDMapping.Clear();
         UpdateGraph();
     }
 
     public void DeleteEdge(uint? n1, uint? n2)
     {
+        if (n1 == 5 || n2 == 5)
+        {
+            int a = 2;
+        }
+
+
         if (NetworkMap.GetEntryByID(n1).Neighbours.Contains(n2))
             NetworkMap.GetEntryByID(n1).Neighbours.Remove(n2);
 
@@ -207,10 +219,12 @@ public class Router : IRouter
     {
         Graph<uint?, string> updatedGraph = new Graph<uint?, string>();
 
+
+
         foreach (NetworkMapEntry entry in NetworkMap.Entries)
         {
             uint nodeID = updatedGraph.AddNode(entry.ID);
-            nodeToNodeIDMapping[entry.ID] = nodeID;
+            NodeToNodeIDMapping[entry.ID] = nodeID;
         }
 
 
@@ -219,13 +233,13 @@ public class Router : IRouter
         {
             foreach (uint? neighbor in entry.Neighbours)
             {
-                if (nodeToNodeIDMapping.ContainsKey(neighbor) == false)
+                if (NodeToNodeIDMapping.ContainsKey(neighbor) == false)
                 {
                     uint nodeID = updatedGraph.AddNode(neighbor);
-                    nodeToNodeIDMapping[neighbor] = nodeID;
+                    NodeToNodeIDMapping[neighbor] = nodeID;
                 }
 
-                updatedGraph.Connect(nodeToNodeIDMapping[entry.ID], nodeToNodeIDMapping[neighbor], 1, "");
+                updatedGraph.Connect(NodeToNodeIDMapping[entry.ID], NodeToNodeIDMapping[neighbor], 1, "");
             }
         }
 
@@ -235,8 +249,8 @@ public class Router : IRouter
     public override void ClearNetworkMap()
     {
         graph = new Graph<uint?, string>();
-        nodeToNodeIDMapping.Clear();
-        nodeToNodeIDMapping.Add(node.Id, 0);
+        NodeToNodeIDMapping.Clear();
+        NodeToNodeIDMapping.Add(node.Id, 0);
         UpdateGraph();
     }
 }

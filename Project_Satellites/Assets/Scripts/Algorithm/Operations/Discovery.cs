@@ -31,10 +31,7 @@ public class Discovery
     public static async System.Threading.Tasks.Task DiscoverAsync(INode myNode, DiscoveryRequest request)
     {
 
-        if (myNode.Id == 6)
-        {
-            int a = 2;
-        }
+
 
         //Break References to request
         DiscoveryRequest requestClone = request;
@@ -43,7 +40,7 @@ public class Discovery
         CheckNeighbours(myNode);
 
         //If the node hasn't been introducued yet, propagation is allowed
-        bool propagationAllowed = (myNode.LastDiscoveryId == "" || myNode.LastDiscoveryId == null);
+        bool propagationAllowed = string.IsNullOrEmpty(myNode.LastDiscoveryId);
 
         myNode.State = Node.NodeState.DISCOVERY;
         myNode.LastDiscoveryId = requestClone.MessageIdentifer;
@@ -56,124 +53,139 @@ public class Discovery
 
         //If propagation is allowed, propagate.
         CheckPropagation(propagationAllowed, requestClone, myNode);
-       
+
+
+
 
         myNode.State = Node.NodeState.PASSIVE;
     }
 
     private static async void CheckPropagation(bool propagationAllowed, DiscoveryRequest request, INode myNode)
     {
-        if (propagationAllowed || request.requireFullSync)
+        //TEMP PLACEMENT: MOVE IT TO WHERE IT BELONGS
+
+        request.requireFullSync = true;
+
+
+
+        //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        DiscoveryRequest newRequest = request.DeepCopy();
+
+
+        //If the request is going in circles, finish when it has completed an entire cycle
+        if (newRequest.SourceID == myNode.Id && request.SenderID != myNode.Id)
         {
-
-            if (request.requireFullSync && request.SourceID == myNode.Id && request.SenderID != myNode.Id && request.firstPassDone == false)
+            if (newRequest.Alterations.Any() && newRequest.EdgeDetected == false)
             {
-                if (request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
-                {
-                    ConstellationPlan recoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
-
-
-                    PlanRequest recoveryRequest = new PlanRequest
-                    {
-                        SourceID = myNode.Id,
-                        DestinationID = myNode.Id,
-                        Command = Request.Commands.GENERATE,
-                        Plan = recoveryPlan
-                    };
-
-                    if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
-                    {
-                        recoveryRequest.Dir = Router.CommDir.CCW;
-                    }
-
-                    myNode.CommsModule.Send(myNode.Id, recoveryRequest);
-                }
-
+                Recover(myNode);
                 return;
             }
 
-            List<ConstellationPlanEntry> newPlanEntries = new List<ConstellationPlanEntry>();
+            return;
+        }
 
-            //update my constellationplan based on the new knowledge
-            foreach (NetworkMapEntry entry in myNode.Router.NetworkMap.Entries)
+
+        UpdateConstellationPlan(myNode);
+
+        uint? nextSequentialNode = myNode.Router.NextSequential(myNode, newRequest.Dir);
+        Router.CommDir oppositeCommDir = newRequest.Dir == Router.CommDir.CW ? Router.CommDir.CCW : Router.CommDir.CW;
+        uint? nextSequentialNodeOpposite = myNode.Router.NextSequential(myNode, oppositeCommDir);
+
+
+        if (propagationAllowed || newRequest.requireFullSync)
+        {
+            if (nextSequentialNode == null || nextSequentialNodeOpposite == null)
             {
-                Vector3 position = entry.Position;
-                List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => x.CompareTo(y)) };
-                ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
-                planEntry.NodeID = entry.ID;
-                newPlanEntries.Add(planEntry);
-            }
-
-            myNode.ActivePlan = new ConstellationPlan(newPlanEntries);
-
-
-            DiscoveryRequest newRequest = request.DeepCopy();
-
-            newRequest.DestinationID = myNode.Router.NextSequential(myNode, request.Dir);
-
-            if (newRequest.DestinationID == null)
-            {
-                if (request.firstPassDone || request.requireFullSync == false)
+                newRequest.SourceID = myNode.Id;
+                if (newRequest.firstPassDone)
                 {
-                    if (request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
+                    if (newRequest.Alterations.Any())
                     {
-                        ConstellationPlan recoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
-
-
-                        PlanRequest recoveryRequest = new PlanRequest
-                        {
-                            SourceID = myNode.Id,
-                            DestinationID = myNode.Id,
-                            Command = Request.Commands.GENERATE,
-                            Plan = recoveryPlan
-                        };
-
-                        if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
-                        {
-                            recoveryRequest.Dir = Router.CommDir.CCW;
-                        }
-
-                        myNode.CommsModule.Send(myNode.Id, recoveryRequest);
-                        return;
+                        Recover(myNode);
                     }
+
+                    return;
+                }
+
+                if (newRequest.EdgeDetected == false)
+                {
+                    newRequest.EdgeDetected = true;
                 }
                 else
                 {
                     newRequest.firstPassDone = true;
-                    newRequest.DestinationID = myNode.Router.NextSequential(myNode, Router.CommDir.CCW);
-                    newRequest.Dir = Router.CommDir.CCW;
-                }
-            }
 
-            newRequest.SenderID = myNode.Id;
-            newRequest.AckExpected = true;
-            uint? nextHop = myNode.Router.NextHop(myNode.Id, newRequest.DestinationID);
-            await myNode.CommsModule.SendAsync(nextHop, newRequest, 1000, 3);
+                    if (newRequest.Alterations.Any())
+                    {
+                        Recover(myNode);
+                        return;
+                    }
+                }
+                
+            }
+            //If there is no node in the current comms direction, reverse the direction.
+            newRequest.DestinationID = nextSequentialNode ?? nextSequentialNodeOpposite;
+            newRequest.Dir = nextSequentialNode != null ? newRequest.Dir : oppositeCommDir;
+
+
+            await RelayMessage(newRequest, myNode);
         }
         else
         {
-            if (request.Alterations.Any(alteration => alteration.GetType() == typeof(NetworkMapAddition)))
+            if (newRequest.Alterations.Any())
             {
-                ConstellationPlan recoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
-
-
-                PlanRequest recoveryRequest = new PlanRequest
-                {
-                    SourceID = myNode.Id,
-                    DestinationID = myNode.Id,
-                    Command = Request.Commands.GENERATE,
-                    Plan = recoveryPlan
-                };
-
-                if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
-                {
-                    recoveryRequest.Dir = Router.CommDir.CCW;
-                }
-
-                myNode.CommsModule.Send(myNode.Id, recoveryRequest);
+                Recover(myNode);
+                return;
             }
         }
 
+    }
+
+    private static async Task RelayMessage(DiscoveryRequest request, INode myNode)
+    {
+        request.SenderID = myNode.Id;
+        request.AckExpected = true;
+        uint? nextHop = myNode.Router.NextHop(myNode.Id, request.DestinationID);
+        await myNode.CommsModule.SendAsync(nextHop, request, 1000, 3);
+    }
+
+    private static void UpdateConstellationPlan(INode myNode)
+    {
+        List<ConstellationPlanEntry> newPlanEntries = new List<ConstellationPlanEntry>();
+
+        //update my constellationplan based on the new knowledge
+        foreach (NetworkMapEntry entry in myNode.Router.NetworkMap.Entries)
+        {
+            Vector3 position = entry.Position;
+            List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => x.CompareTo(y)) };
+            ConstellationPlanEntry planEntry = new ConstellationPlanEntry(position, fields, (x, y) => 1);
+            planEntry.NodeID = entry.ID;
+            newPlanEntries.Add(planEntry);
+        }
+
+        myNode.ActivePlan = new ConstellationPlan(newPlanEntries);
+    }
+
+    private static void Recover(INode myNode)
+    {
+        ConstellationPlan recoveryPlan = GenerateConstellation.GenerateTargetConstellation(myNode.Router.ReachableSats(myNode).Count, 7.152f);
+        
+
+        PlanRequest recoveryRequest = new PlanRequest
+        {
+            SourceID = myNode.Id,
+            DestinationID = myNode.Id,
+            Command = Request.Commands.GENERATE,
+            Plan = recoveryPlan
+        };
+
+        if (myNode.Router.NextSequential(myNode, Router.CommDir.CW) == null)
+        {
+            recoveryRequest.Dir = Router.CommDir.CCW;
+        }
+
+        myNode.CommsModule.Send(myNode.Id, recoveryRequest);
     }
 
     private static async Task<bool> CreateAdditions(INode myNode, DiscoveryRequest request)
@@ -208,7 +220,7 @@ public class Discovery
                 myNode.Router.NetworkMap.Entries.Add(ent);
 
                 request.Alterations.Add(new NetworkMapAddition(ent));
-
+                request.SourceID = myNode.Id;
 
                 propagationAllowed = true;
 

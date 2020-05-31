@@ -13,6 +13,8 @@ public class CommsSim : MonoBehaviour, ICommunicate
     public List<Request> RequestList { get; set; } = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
 
+    public List<uint> ReachableNodes = new List<uint>();
+
     public static List<string> logs = new List<string>();
 
     SatManager satMan;
@@ -26,7 +28,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
     {
         comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
 
-
+        ReachableNodes = comms.Node.Router.NetworkMap.Entries.Select(entry => (uint) entry.ID).ToList();
 
         if (Constants.EnableDebug)
         {
@@ -82,6 +84,11 @@ public class CommsSim : MonoBehaviour, ICommunicate
     {
         request.SenderID = comms.Node.Id;
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.Id == nextHop);
+
+        if (comms.Node.Id == 2)
+        {
+            int a = 2;
+        }
 
         satMan.SentMessages.Add(new Tuple<Vector3, Vector3, Color>(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), Color.yellow));
 

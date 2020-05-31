@@ -19,6 +19,12 @@ public class PlanGenerator
         else
         {
             // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
+
+            if (myNode.Id == 11)
+            {
+                int a = 2;
+            }
+
             myNode.CommsModule.RequestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
 
             myNode.ExecutingPlan = false;
