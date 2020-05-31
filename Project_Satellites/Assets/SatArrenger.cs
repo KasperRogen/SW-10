@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class SatArrenger : MonoBehaviour
 {
-
+    private Camera cam;
     TextMeshPro text;
     public float XOffsetScale, YOffsetScale = 0.1f;
 
@@ -13,6 +13,7 @@ public class SatArrenger : MonoBehaviour
     void Start()
     {
         text = GetComponentInChildren<TextMeshPro>();
+        cam = Camera.main;
     }
 
     // Update is called once per frame
@@ -22,6 +23,9 @@ public class SatArrenger : MonoBehaviour
         Vector3 verticalOffset = new Vector3(0, 0, transform.position.z * text.GetRenderedValues(true).y) * YOffsetScale;
         Vector3 horizontalOffset = new Vector3(transform.position.x * text.GetRenderedValues(true).x, 0, 0) * XOffsetScale;
         text.transform.position = baseOffset + verticalOffset + horizontalOffset;
+        Vector3 currentRot = text.transform.rotation.eulerAngles;
+        currentRot.y = cam.transform.parent.rotation.eulerAngles.y;
+        text.transform.rotation = Quaternion.Euler(currentRot);
 
         if (Constants.EnableDebug)
         {

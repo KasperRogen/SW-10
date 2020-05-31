@@ -2,11 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class EarthRotate : MonoBehaviour
+public class Rotate : MonoBehaviour
 {
-    [Range(-2f, 2f)]
-    public float RotAmount;
-
     // Start is called before the first frame update
     void Start()
     {
@@ -16,6 +13,6 @@ public class EarthRotate : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        transform.Rotate(Vector3.up, RotAmount * Time.deltaTime * Constants.TIME_SCALE);
+        transform.Rotate(-Vector3.up, 0.2f * Time.deltaTime * Constants.TIME_SCALE);
     }
 }

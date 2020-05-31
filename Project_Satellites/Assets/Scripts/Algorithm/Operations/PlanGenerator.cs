@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,6 +12,7 @@ public class PlanGenerator
     public static void GeneratePlan(INode myNode, PlanRequest request)
     {
         // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
+        myNode.CommsModule.RequestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
 
         if (request.DestinationID != myNode.Id)
         {
@@ -19,7 +20,6 @@ public class PlanGenerator
         }
         else
         {
-            myNode.CommsModule.RequestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
             myNode.ExecutingPlan = false;
             myNode.State = Node.NodeState.PLANNING;
             myNode.GeneratingPlan = request.Plan;
@@ -63,12 +63,12 @@ public class PlanGenerator
 
             if (myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours.Contains(nextSeq))
             {
-                myNode.CommsModule.Send(nextSeq, request);
+                myNode.CommsModule.SendAsync(nextSeq, request, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
             }
             else
             {
                 uint? nextHop = myNode.Router.NextHop(myNode.Id, nextSeq);
-                myNode.CommsModule.Send(nextHop, request);
+                myNode.CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
             }
         }
     }
