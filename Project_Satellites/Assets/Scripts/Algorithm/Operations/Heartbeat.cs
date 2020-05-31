@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using UnityEngine;
 
 public static class Heartbeat {
     public async static void CheckHeartbeat(INode myNode)
@@ -20,7 +17,7 @@ public static class Heartbeat {
                 SourceID = myNode.Id,
                 DestinationID = node,
                 Command = Request.Commands.HEARTBEAT,
-                AckExpected = true, // TODO: Neccesary to both expect ack and response? Maybe just expect response?
+                AckExpected = false,
                 ResponseExpected = true
             };
 
@@ -48,11 +45,5 @@ public static class Heartbeat {
             MessageIdentifer = request.MessageIdentifer
         };
         myNode.CommsModule.Send(response.DestinationID, response);
-
-        new Thread(() =>
-        {
-            
-            
-        }).Start();
     }
 }

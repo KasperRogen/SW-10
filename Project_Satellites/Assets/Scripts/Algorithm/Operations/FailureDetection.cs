@@ -6,14 +6,9 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Numerics;
 
-public class FailureDetection
+public static class FailureDetection
 {
-
-
-    /// <summary>Handles failure detection requests, updating own router, and relaying or performing aliveness check
-    /// <para>  </para>
-    /// </summary>
-    public static async void DetectFailure(INode myNode, DetectFailureRequest request)
+    public async static void DetectFailure(INode myNode, DetectFailureRequest request)
     {
         //Update router, ensure we don't try to route through the bad connection
         if (myNode.Id == 3)
@@ -60,7 +55,7 @@ public class FailureDetection
                 ResponseExpected = true
             };
 
-            Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, 1000, 3);
+            Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
 
             if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR) {
                 failedNodeDead = true;
@@ -108,16 +103,10 @@ public class FailureDetection
             FailedNeighbours = failedNeighbours
         };
 
-        await myNode.CommsModule.SendAsync(nextHop, DFrequest, 1000, 3);
+        await myNode.CommsModule.SendAsync(nextHop, DFrequest, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
     }
 
-    /// <summary>Should be used on the node when it detects a failure
-
-    /// <para>Will initiate a failure detection operation, asking neighbours of failed node about aliveness</para>
-
-    /// </summary>
-
-    public static async void FailureDetected(INode myNode, uint? failedNode)
+    public async static void FailureDetected(INode myNode, uint? failedNode)
     {
         //Remove edge from router, ensuring it won't try to route through the failed node
         myNode.Router.DeleteEdge(myNode.Id, failedNode);
@@ -164,11 +153,9 @@ public class FailureDetection
 
             myNode.Router.NetworkMap.Entries.RemoveAll(entry => entry.ID == failedNode);
 
-            await myNode.CommsModule.SendAsync(nextHop, request, 1000, 3);
+            await myNode.CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
         }
     }
-
-    
 
     public static void Recovery(INode myNode, uint? secondFailedNode)
     {

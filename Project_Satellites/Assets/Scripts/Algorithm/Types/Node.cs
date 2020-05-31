@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 public class Node : INode
 {
@@ -48,6 +49,9 @@ public class Node : INode
     {
         new Thread(() =>
         {
+            Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TIME_SCALE).ContinueWith(t => SetupHeartbeat());
+            Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TIME_SCALE).ContinueWith(t => SetupDiscovery());
+
             bool run = true;
             while (run)
             {
@@ -60,8 +64,31 @@ public class Node : INode
             }
         }).Start();
     }
-   
-   
+
+    private void SetupHeartbeat() {
+        System.Timers.Timer timer = new System.Timers.Timer();
+        timer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TIME_SCALE;
+        timer.Elapsed += OnHeartbeatEvent;
+        timer.Enabled = true;
+    }
+
+    private void OnHeartbeatEvent(Object source, ElapsedEventArgs e) {
+        UnityEngine.Debug.Log("Heartbeat");
+        Heartbeat.CheckHeartbeat(this);
+    }
+
+    private void SetupDiscovery() {
+        System.Timers.Timer timer = new System.Timers.Timer();
+        timer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TIME_SCALE;
+        timer.Elapsed += OnDiscoveryEvent;
+        timer.Enabled = true;
+    }
+
+    private void OnDiscoveryEvent(Object source, ElapsedEventArgs e) {
+        UnityEngine.Debug.Log("Discovery");
+        Discovery.StartDiscovery(this, true);
+    }
+
     public override void GenerateRouter()
     {
         Router = new Router(this, ActivePlan);

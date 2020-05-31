@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -11,22 +11,15 @@ public class PlanGenerator
     /// </summary>
     public static void GeneratePlan(INode myNode, PlanRequest request)
     {
-        //If the request isn't meant for this node, just return. Node.cs will relay the message   61674131 
+        // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
+
         if (request.DestinationID != myNode.Id)
         {
             return;
         }
         else
         {
-            // Remove failure detection requests in queue as we are planning to make changes to network structure anyway, which might solve the failure
-
-            if (myNode.Id == 11)
-            {
-                int a = 2;
-            }
-
             myNode.CommsModule.RequestList.RemoveAll(x => x.Command == Request.Commands.DETECTFAILURE);
-
             myNode.ExecutingPlan = false;
             myNode.State = Node.NodeState.PLANNING;
             myNode.GeneratingPlan = request.Plan;
