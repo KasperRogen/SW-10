@@ -73,8 +73,9 @@ public class Node : INode
     }
 
     private void OnHeartbeatEvent(Object source, ElapsedEventArgs e) {
-        UnityEngine.Debug.Log("Heartbeat");
-        Heartbeat.CheckHeartbeat(this);
+        if (State == NodeState.PASSIVE) {
+            Heartbeat.CheckHeartbeat(this);
+        }
     }
 
     private void SetupDiscovery() {
@@ -85,8 +86,9 @@ public class Node : INode
     }
 
     private void OnDiscoveryEvent(Object source, ElapsedEventArgs e) {
-        UnityEngine.Debug.Log("Discovery");
-        Discovery.StartDiscovery(this, false);
+        if (State == NodeState.PASSIVE) {
+            Discovery.StartDiscovery(this, false);
+        }
     }
 
     public override void GenerateRouter()
