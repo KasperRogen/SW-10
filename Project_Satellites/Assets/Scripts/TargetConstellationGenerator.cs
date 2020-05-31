@@ -133,7 +133,7 @@ public class TargetConstellationGenerator : MonoBehaviour
             GameObject.FindGameObjectsWithTag("LocationPlaceholder")?.ToList().ForEach(Destroy);
         }
 
-        if(GameObject.FindGameObjectsWithTag("LocationPlaceholder") == null && SatManager._instance.satellites.Any(sat => sat.Node.State == Node.NodeState.PLANNING))
+        if(GameObject.FindGameObjectsWithTag("LocationPlaceholder").Length == 0 && SatManager._instance.satellites.Any(sat => sat.Node.State == Node.NodeState.PLANNING))
         {
             SatelliteComms planningNode =
                 SatManager._instance.satellites.Find(sat => sat.Node.State == Node.NodeState.PLANNING);
