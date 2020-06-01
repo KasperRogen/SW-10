@@ -344,7 +344,6 @@ MonoBehaviour:
   state: 0
   MessageGO: {fileID: 8824269860879398575, guid: c6081b0f742550140a4c7862df7c8a8b,
     type: 3}
-  reachableSats: []
 --- !u!114 &5937837512551135386
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -359,6 +358,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   XOffsetScale: 0.033
   YOffsetScale: 0.04
+  ImageTransform: {fileID: 4432360793917884976}
+  ImageRotationOffset: -45
 --- !u!1 &7647052041419691168
 GameObject:
   m_ObjectHideFlags: 0

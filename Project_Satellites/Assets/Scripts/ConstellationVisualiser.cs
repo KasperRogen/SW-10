@@ -278,6 +278,7 @@ public class ConstellationVisualiser : MonoBehaviour
     {
         yield return new WaitForSeconds(delay / Constants.TIME_SCALE);
         GameObject Message = Instantiate(MessageGO, Origin, Quaternion.identity);
+        Message.transform.rotation = Camera.main.transform.parent.rotation;
         Message.transform.GetChild(0).GetComponent<Renderer>().material.SetColor("_BaseColor", color);
         float Dist = Vector3.Distance(Origin, Destination);
         while (Vector3.Distance(Message.transform.position, Destination) > 0.1f)

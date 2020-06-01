@@ -221,6 +221,7 @@ public class Discovery
 
                 request.Alterations.Add(new NetworkMapAddition(ent));
                 request.SourceID = myNode.Id;
+                request.SenderID = myNode.Id;
 
                 propagationAllowed = true;
 

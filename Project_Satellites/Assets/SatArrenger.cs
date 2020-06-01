@@ -8,6 +8,8 @@ public class SatArrenger : MonoBehaviour
     private Camera cam;
     TextMeshPro text;
     public float XOffsetScale, YOffsetScale = 0.1f;
+    public Transform ImageTransform;
+    public float ImageRotationOffset;
 
     // Start is called before the first frame update
     void Start()
@@ -33,5 +35,15 @@ public class SatArrenger : MonoBehaviour
             Debug.DrawLine(baseOffset, baseOffset + verticalOffset);
             Debug.DrawLine(baseOffset + verticalOffset, horizontalOffset);
         }
+        
+        Quaternion imageRotation = Quaternion.LookRotation(Vector3.zero - transform.position, Vector3.up);
+        Vector3 imageRotationVector = imageRotation.eulerAngles;
+
+        imageRotationVector.x = 90;
+        imageRotationVector.z = 0;
+        imageRotationVector.y += ImageRotationOffset;
+
+        ImageTransform.rotation = Quaternion.Euler(imageRotationVector);
     }
+    
 }

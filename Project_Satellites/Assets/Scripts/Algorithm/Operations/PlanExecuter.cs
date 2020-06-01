@@ -29,6 +29,8 @@ public static class PlanExecuter
 
             ForwardRequest(myNode, request);
 
+            Thread.Sleep(Constants.COMMS_TIMEOUT/Constants.TIME_SCALE);
+
             //Set my targetposition to the position i was assigned in the plan
             myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.Id).Position;
 
