@@ -30,6 +30,7 @@ public class Node : INode
     }
 
     public override bool AutoChecksAllowed { get; set; }
+    public override int SleepCount { get; set; }
     public override ConstellationPlan ActivePlan { get; set; }
     public override ConstellationPlan GeneratingPlan { get; set; }
     public override NodeState State { get; set; }
@@ -51,8 +52,10 @@ public class Node : INode
     {
         new Thread(() =>
         {
+
             Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(t => SetupHeartbeat());
             Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TimeScale).ContinueWith(t => SetupDiscovery());
+
 
             bool run = true;
             while (run)

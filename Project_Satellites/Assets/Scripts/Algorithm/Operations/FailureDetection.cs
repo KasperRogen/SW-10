@@ -55,7 +55,9 @@ public static class FailureDetection
                 ResponseExpected = true
             };
 
+
             Response pingResponse = await myNode.CommsModule.SendAsync(ping.DestinationID, ping, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
+
 
             if (pingResponse.ResponseCode == Response.ResponseCodes.TIMEOUT || pingResponse.ResponseCode == Response.ResponseCodes.ERROR) {
                 failedNodeDead = true;
@@ -104,6 +106,7 @@ public static class FailureDetection
         };
 
         await myNode.CommsModule.SendAsync(nextHop, DFrequest, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
+
     }
 
     public async static void FailureDetected(INode myNode, uint? failedNode)
@@ -154,6 +157,7 @@ public static class FailureDetection
             myNode.Router.NetworkMap.Entries.RemoveAll(entry => entry.ID == failedNode);
 
             await myNode.CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
+
         }
     }
 

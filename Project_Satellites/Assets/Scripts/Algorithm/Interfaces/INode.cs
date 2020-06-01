@@ -13,6 +13,7 @@ public abstract class INode
     public abstract Router Router { get; set; }
     public abstract bool Active { get; set; }
     public abstract bool AutoChecksAllowed { get; set; }
+    public abstract int SleepCount { get; set; }
     public ICommunicate CommsModule { get; set; }
     public bool ExecutingPlan;
     public string LastDiscoveryId;

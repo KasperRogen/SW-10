@@ -147,7 +147,9 @@ public class Discovery
         request.SenderID = myNode.Id;
         request.AckExpected = true;
         uint? nextHop = myNode.Router.NextHop(myNode.Id, request.DestinationID);
+
         await myNode.CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, 3);
+
     }
 
     private static void UpdateConstellationPlan(INode myNode)
@@ -209,7 +211,9 @@ public class Discovery
                     ResponseExpected = true,
                     plan = myNode.ActivePlan
                 };
+
                 NodeAdditionResponse response = await myNode.CommsModule.SendAsync(additionRequest.DestinationID, additionRequest, Constants.COMMS_TIMEOUT, 3) as NodeAdditionResponse;
+
                 Vector3 position = response.Position;
                 List<uint?> nodeNeighbours = response.Neighbours;
 

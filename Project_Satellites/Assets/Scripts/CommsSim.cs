@@ -12,7 +12,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
     public Vector3 pos;
     public List<Request> RequestList { get; set; } = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
-
+    public int sleepCount;
     public List<uint> ReachableNodes = new List<uint>();
 
     public static List<string> logs = new List<string>();
@@ -26,6 +26,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     private void Update()
     {
+        sleepCount = comms.Node.SleepCount;
         comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
 
         ReachableNodes = comms.Node.Router.NetworkMap.Entries.Select(entry => (uint) entry.ID).ToList();
@@ -48,7 +49,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
 
             Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TimeScale);
-            
+
             comms.Node.Router.AddNodeToGraph(comms.Node.Id);
             if(request.SenderID != null)
                 comms.Node.Router.AddNodeToGraph(request.SenderID);
@@ -120,6 +121,11 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
     public async Task<Response> SendAsync(uint? nextHop, Request request, int timeout, int attempts)
     {
+
+
+        comms.Node.SleepCount++;
+
+
         int retryDelay = 1000;
         TaskCompletionSource<Response> tcs = new TaskCompletionSource<Response>();
         bool AckReceived = false;
@@ -172,12 +178,15 @@ public class CommsSim : MonoBehaviour, ICommunicate
                 if (AckReceived == false)
                 {
                     Send(nextHop, request);
+
                     Thread.Sleep(timeout / Constants.TimeScale);
 
                     // Delay and retry with increasing delay
                     if (tcs.Task.IsCompleted == false)
                     {
+
                         Thread.Sleep(retryDelay / Constants.TimeScale);
+
                         retryDelay *= 2;
                     }
                     else
@@ -211,6 +220,10 @@ public class CommsSim : MonoBehaviour, ICommunicate
         {
             FailureDetection.Recovery(comms.Node, nextHop);
         }
+
+
+        comms.Node.SleepCount--;
+
 
         return tcs.Task.Result;
     }
@@ -282,6 +295,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         new Thread(() =>
         {
+
             Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TimeScale);
 
             if (response.DestinationID == comms.Node.Id)
