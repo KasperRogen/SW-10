@@ -13,7 +13,7 @@ public static class Constants
     public const int ONE_MINUTE_IN_MILLISECONDS = 60000;
     public const int SEND_DURATION_TIME = 5000;
 
-    public static bool EnableDebug = true;
+    public static bool EnableDebug = false;
 
     public static float ScaleToSize(float input)
     {

@@ -97,6 +97,35 @@ public class CommsSim : MonoBehaviour, ICommunicate
             Color.yellow, 
             Constants.SEND_DURATION_TIME / Constants.TimeScale);
 
+        switch (request.Command)
+        {
+            case Request.Commands.DETECTFAILURE:
+                message.Color = Color.red;
+                break;
+            case Request.Commands.HEARTBEAT:
+                message.Color = Color.red;
+                break;
+            case Request.Commands.PING:
+                message.Color = Color.red;
+                break;
+            case Request.Commands.DISCOVER:
+                message.Color = Color.green;
+                break;
+            case Request.Commands.POSITION:
+                message.Color = Color.green;
+                break;
+            case Request.Commands.ADDITION:
+                message.Color = Color.green;
+                break;
+            case Request.Commands.GENERATE:
+                message.Color = Color.yellow;
+                break;
+            case Request.Commands.EXECUTE:
+                message.Color = Color.yellow;
+                break;
+
+        }
+
         satMan.SentMessages.Add(message);
 
         if (System.Numerics.Vector3.Distance(comms.Node.Position, hop.Node.Position) < Constants.ScaleToSize(comms.CommRadius))

@@ -62,14 +62,6 @@ public class Discovery
 
     private static async void CheckPropagation(bool propagationAllowed, DiscoveryRequest request, INode myNode)
     {
-        //TEMP PLACEMENT: MOVE IT TO WHERE IT BELONGS
-
-        request.requireFullSync = true;
-
-
-
-        //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
         DiscoveryRequest newRequest = request.DeepCopy();
 
 

@@ -70,7 +70,7 @@ public class CanvasHandler : MonoBehaviour
     {
         if (CallingNode != null)
         {
-            Discovery.StartDiscovery(CallingNode.GetComponent<SatelliteComms>().Node, false);
+            Discovery.StartDiscovery(CallingNode.GetComponent<SatelliteComms>().Node, true);
             SatelliteButtons.SetActive(false);
             SatelliteToggles.SetActive(false);
             CallingNode = null;
