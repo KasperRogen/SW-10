@@ -20,34 +20,8 @@ UID start; // The satellite that initiates
 
 typedef struct { int x; int y; int z; } pos;
 
-
 int[0, 2*N] comms;
 
-// ---- Positions -----
-/*
-const pos sp1 = {8,0,8};
-const pos sp2 = {8,0,-8};
-const pos sp3 = {-8,0,8};
-const pos sp4 = {-8,0,-8};
-
-const pos tp1 = {2,0,8};
-const pos tp2 = {2,0,-8};
-const pos tp3 = {-2,0,8};
-const pos tp4 = {-2,0,-8};
-
-const pos startPositions[N] = {sp1, sp2, sp3, sp4};
-const pos targetPositions[N] = {tp1, tp2, tp3, tp4};
-
-int chosenPos[N] = {-1,-1,-1,-1};
-*/
-
-/*
-meta double PI = 3.14159265358979312;
-meta double radius = 100.0;
-
-meta double radianIncrease;
-meta double radian = 0.0;
-*/
 
 const int radius = 10000;
 int startPositions[N];
@@ -333,6 +307,7 @@ void FriendlyNeighbourProcessPlan()
 		</location>
 		<location id="id9" x="748" y="-102">
 			<name x="722" y="-153">Complete</name>
+			<committed/>
 		</location>
 		<location id="id10" x="748" y="102">
 			<name x="714" y="119">SendExecute</name>
@@ -370,11 +345,12 @@ void FriendlyNeighbourProcessPlan()
 		<transition>
 			<source ref="id9"/>
 			<target ref="id11"/>
+			<label kind="synchronisation" x="757" y="-59">complete!</label>
 		</transition>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id9"/>
-			<label kind="synchronisation" x="663" y="-127">execute[ID]?</label>
+			<label kind="synchronisation" x="655" y="-127">execute[ID]?</label>
 		</transition>
 		<transition>
 			<source ref="id5"/>
@@ -391,7 +367,7 @@ void FriendlyNeighbourProcessPlan()
 		<transition>
 			<source ref="id3"/>
 			<target ref="id4"/>
-			<label kind="assignment" x="323" y="-25">ProcessPlan(), t = 0</label>
+			<label kind="assignment" x="273" y="-40">GreedyProcessPlan(), t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
@@ -418,41 +394,7 @@ void FriendlyNeighbourProcessPlan()
 	</template>
 	<template>
 		<name>PlanGeneration</name>
-		<declaration>/*
-void InitConstellationAndPlan()
-{
-  int i; 
-  double PI = 3.14159265358979312;
-  double radius = 100.0;
-
-  double radianIncrease = (2 * PI) / N;
-  double radian = 0.0;
-
-  //radianIncrease = (2 * PI) / N;
-
-  
-  for(i = 0; i &lt; N; i++)
-  {    
-    int startX = fint(radius * cos(radian));
-    int startZ = fint(radius * cos(radian));
-   
-    int targetX = fint(radius * cos(radian * 1.5));
-    int targetZ = fint(radius * cos(radian * 1.5));
-
-    pos newStartPos = {startX, 0, startZ};
-    pos newTargetPos = {targetX, 0, targetZ};
-
-    startPositions[i] = newStartPos;
-    targetPositions[i] = newTargetPos;
-
-    chosenPos[i] = -1;
-
-    radian = radian + radianIncrease;
-  }
-}
-*/
-
-int setup;
+		<declaration>int setup;
 const int distanceBetweenNodes = radius / N;
 typedef int[1, 3] OffsetPosition;
 
@@ -779,7 +721,7 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<label kind="synchronisation" x="-170" y="-25">complete?</label>
 		</transition>
 	</template>
-	<system>system RingNodeSync, PlanGenerationHole;</system>
+	<system>system RingNodeSync, PlanGeneration;</system>
 	<queries>
 		<query>
 			<formula>***** SMC *****</formula>
@@ -790,19 +732,11 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>Pr[ &lt;= N+1](&lt;&gt; (PlanGeneration.Correct &amp;&amp; (sum(i: UID) RingNodeSync(i).cost) &lt; 5000))</formula>
+			<formula>Pr[ &lt;= N*2](&lt;&gt; (PlanGeneration.Correct &amp;&amp; (sum(i: UID) RingNodeSync(i).cost) &lt; 5000))</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>Pr[ &lt;= N+1](&lt;&gt; (PlanGenerationHole.Correct &amp;&amp; (sum(i: UID) RingNodeSync(i).cost) &lt; 5000))</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>E[ &lt;= N+1; 10000](max: sum(i: UID) RingNodeSync(i).cost)</formula>
+			<formula>Pr[ &lt;= N*2](&lt;&gt; (PlanGenerationHole.Correct &amp;&amp; (sum(i: UID) RingNodeSync(i).cost) &lt; 5000))</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -810,7 +744,7 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>Pr[ &lt;= N+1](&lt;&gt; (exists (i : UID) RingNodeSync(i).Terminate and RingNodeSync(i).cost &gt; radius/N))</formula>
+			<formula>E[ &lt;= N*2; 10000](max: sum(i: UID) RingNodeSync(i).cost)</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -818,7 +752,11 @@ nextTargetPosition += distanceBetweenTargets</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>simulate [&lt;=N+1; 100] {sum (i : UID) RingNodeSync(i).cost}</formula>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>simulate [&lt;=N*2; 100] {sum (i : UID) RingNodeSync(i).cost}</formula>
 			<comment></comment>
 		</query>
 		<query>
