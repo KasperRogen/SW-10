@@ -47,7 +47,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
 
 
-            Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TIME_SCALE);
+            Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TimeScale);
             
             comms.Node.Router.AddNodeToGraph(comms.Node.Id);
             if(request.SenderID != null)
@@ -94,7 +94,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
             BackendHelpers.UnityVectorFromNumerics(comms.Node.Position),
             BackendHelpers.UnityVectorFromNumerics(hop.Node.Position),
             Color.yellow, 
-            Constants.SEND_DURATION_TIME / Constants.TIME_SCALE);
+            Constants.SEND_DURATION_TIME / Constants.TimeScale);
 
         satMan.SentMessages.Add(message);
 
@@ -172,12 +172,12 @@ public class CommsSim : MonoBehaviour, ICommunicate
                 if (AckReceived == false)
                 {
                     Send(nextHop, request);
-                    Thread.Sleep(timeout / Constants.TIME_SCALE);
+                    Thread.Sleep(timeout / Constants.TimeScale);
 
                     // Delay and retry with increasing delay
                     if (tcs.Task.IsCompleted == false)
                     {
-                        Thread.Sleep(retryDelay / Constants.TIME_SCALE);
+                        Thread.Sleep(retryDelay / Constants.TimeScale);
                         retryDelay *= 2;
                     }
                     else
@@ -249,7 +249,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         SatManager.MessageProps message = new SatManager.MessageProps(BackendHelpers.UnityVectorFromNumerics(comms.Node.Position), 
             BackendHelpers.UnityVectorFromNumerics(hop.Node.Position), 
             Color.cyan,
-            Constants.SEND_DURATION_TIME / Constants.TIME_SCALE);
+            Constants.SEND_DURATION_TIME / Constants.TimeScale);
 
         satMan.SentMessages.Add(message);
 
@@ -282,7 +282,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         new Thread(() =>
         {
-            Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TIME_SCALE);
+            Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TimeScale);
 
             if (response.DestinationID == comms.Node.Id)
             {

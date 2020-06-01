@@ -29,7 +29,7 @@ public static class PlanExecuter
 
             ForwardRequest(myNode, request);
 
-            Thread.Sleep(Constants.COMMS_TIMEOUT/Constants.TIME_SCALE);
+            Thread.Sleep(Constants.COMMS_TIMEOUT/Constants.TimeScale);
 
             //Set my targetposition to the position i was assigned in the plan
             myNode.TargetPosition = request.Plan.Entries.Find(entry => entry.NodeID == myNode.Id).Position;
@@ -47,7 +47,7 @@ public static class PlanExecuter
             myNode.Router.ClearNetworkMap();
             myNode.Router.UpdateNetworkMap(request.Plan);
 
-            Thread.Sleep(Constants.ONE_SECOND_IN_MILLISECONDS / Constants.TIME_SCALE);
+            Thread.Sleep(Constants.ONE_SECOND_IN_MILLISECONDS / Constants.TimeScale);
             myNode.State = Node.NodeState.PASSIVE;
         }
     }
@@ -56,7 +56,7 @@ public static class PlanExecuter
     {
         while (Vector3.Distance(myNode.Position, myNode.TargetPosition) > 0.01f)
         {
-            await Task.Delay(100 / Constants.TIME_SCALE);
+            await Task.Delay(100 / Constants.TimeScale);
         }
         
 

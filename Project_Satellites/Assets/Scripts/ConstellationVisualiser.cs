@@ -276,7 +276,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
     public IEnumerator DisplayMessageSent(Vector3 Origin, Vector3 Destination, float duration, float delay, Color color)
     {
-        yield return new WaitForSeconds(delay / Constants.TIME_SCALE);
+        yield return new WaitForSeconds(delay / Constants.TimeScale);
         GameObject Message = Instantiate(MessageGO, Origin, Quaternion.identity);
         Message.transform.rotation = Camera.main.transform.parent.rotation;
         Message.transform.GetChild(0).GetComponent<Renderer>().material.SetColor("_BaseColor", color);

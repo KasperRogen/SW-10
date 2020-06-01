@@ -6,7 +6,7 @@ public static class Constants
 {
     public static int NODES_PER_CYCLE = 11;
     public static float EarthRadius;
-    public const int TIME_SCALE = 5;
+    public static int TimeScale = 5;
     public const int ONE_SECOND_IN_MILLISECONDS = 1000;
     public const int COMMS_TIMEOUT = 11000;
     public const int COMMS_ATTEMPTS = 3;

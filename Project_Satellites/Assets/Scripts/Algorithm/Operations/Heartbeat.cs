@@ -37,7 +37,7 @@ public static class Heartbeat {
             return;
         }
 
-        Thread.Sleep(500 / Constants.TIME_SCALE);
+        Thread.Sleep(500 / Constants.TimeScale);
         Response response = new Response() {
             SourceID = myNode.Id,
             DestinationID = request.SenderID,

@@ -29,6 +29,7 @@ public class ConstellationGenerator : MonoBehaviour
         satellite.name = "P(" + 0 + "), S(" + (satIndex) + ")";
         satellite.GetComponent<SatelliteComms>().Node = node;
         SatManager._instance.SatIndex++;
+        node.AutoChecksAllowed = CanvasHandler.AutoChecksAllowed;
         node.GenerateRouter();
     }
 
@@ -74,6 +75,7 @@ public class ConstellationGenerator : MonoBehaviour
 
                 satellite.name = "P(" + i + "), S(" + j + ")";
                 satellite.GetComponent<SatelliteComms>().Node = node;
+                satellite.GetComponent<SatelliteComms>().Node.AutoChecksAllowed = CanvasHandler.AutoChecksAllowed;
 
                 List<ConstellationPlanField> fields = new List<ConstellationPlanField> { new ConstellationPlanField("DeltaV", 0, (x, y) => x.CompareTo(y)) };
                 ConstellationPlanEntry entry = new ConstellationPlanEntry(node.Position, fields, (x, y) => 1);

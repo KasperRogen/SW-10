@@ -28,6 +28,8 @@ public class Node : INode
             State = value ? NodeState.PASSIVE : NodeState.DEAD;
         }
     }
+
+    public override bool AutoChecksAllowed { get; set; }
     public override ConstellationPlan ActivePlan { get; set; }
     public override ConstellationPlan GeneratingPlan { get; set; }
     public override NodeState State { get; set; }
@@ -49,13 +51,13 @@ public class Node : INode
     {
         new Thread(() =>
         {
-            Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TIME_SCALE).ContinueWith(t => SetupHeartbeat());
-            Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TIME_SCALE).ContinueWith(t => SetupDiscovery());
+            Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(t => SetupHeartbeat());
+            Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TimeScale).ContinueWith(t => SetupDiscovery());
 
             bool run = true;
             while (run)
             {
-                Thread.Sleep(1000 / Constants.TIME_SCALE);
+                Thread.Sleep(1000 / Constants.TimeScale);
                 Request request = CommsModule.FetchNextRequest();
                 if(request != null)
                 {
@@ -67,26 +69,26 @@ public class Node : INode
 
     private void SetupHeartbeat() {
         System.Timers.Timer timer = new System.Timers.Timer();
-        timer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TIME_SCALE;
+        timer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
         timer.Elapsed += OnHeartbeatEvent;
         timer.Enabled = true;
     }
 
     private void OnHeartbeatEvent(Object source, ElapsedEventArgs e) {
-        if (State == NodeState.PASSIVE) {
+        if (State == NodeState.PASSIVE && AutoChecksAllowed) {
             Heartbeat.CheckHeartbeat(this);
         }
     }
 
     private void SetupDiscovery() {
         System.Timers.Timer timer = new System.Timers.Timer();
-        timer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TIME_SCALE;
+        timer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
         timer.Elapsed += OnDiscoveryEvent;
         timer.Enabled = true;
     }
 
     private void OnDiscoveryEvent(Object source, ElapsedEventArgs e) {
-        if (State == NodeState.PASSIVE) {
+        if (State == NodeState.PASSIVE && AutoChecksAllowed) {
             Discovery.StartDiscovery(this, false);
         }
     }
