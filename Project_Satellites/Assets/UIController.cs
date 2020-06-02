@@ -27,12 +27,14 @@ public class UIController : MonoBehaviour
     {
         timeScaleSynchronizerRunning = true;
 
-        while (SatManager._instance.satellites.Any(sat => sat.Node.SleepCount > 0))
+        while (SatManager._instance.satellites.Any(sat => sat.Node.SleepCount > 0) || Input.GetMouseButton(0))
         {
             yield return new WaitForEndOfFrame();
         }
 
         Constants.TimeScale = desiredTimeScale;
+
+        SatManager._instance.satellites.ForEach(sat => sat.Node.ResetTimers());
 
         timeScaleSynchronizerRunning = false;
     }

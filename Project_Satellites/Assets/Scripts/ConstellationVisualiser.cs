@@ -74,10 +74,14 @@ public class ConstellationVisualiser : MonoBehaviour
 
         state = comms.Node.State;
 
-        foreach (SatManager.MessageProps props in SatManager._instance.SentMessages)
+        if (SatManager._instance.SentMessages.Any())
         {
-            StartCoroutine(DisplayMessageSent(props.StartVect + Vector3.up, props.EndVect + Vector3.up, props.Duration, 0f, props.Color));
+            foreach (SatManager.MessageProps props in SatManager._instance.SentMessages)
+            {
+                StartCoroutine(DisplayMessageSent(props.StartVect + Vector3.up, props.EndVect + Vector3.up, props.Duration, 0f, props.Color));
+            }
         }
+
 
         SatManager._instance.SentMessages.Clear();
 

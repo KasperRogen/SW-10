@@ -7,6 +7,8 @@ using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
+using Timer = System.Threading.Timer;
+
 public class Node : INode
 {
     public enum NodeState { PASSIVE, PLANNING, OVERRIDE, EXECUTING, DEAD, HEARTBEAT, DISCOVERY };
@@ -17,7 +19,7 @@ public class Node : INode
 
     public override bool Active
     {
-        get 
+        get
         {
             return active;
         }
@@ -38,6 +40,8 @@ public class Node : INode
 
     private bool active;
 
+    private System.Timers.Timer heartbeatTimer, discoveryTimer;
+
     public Node(uint? ID, Vector3 position)
     {
         this.Id = ID;
@@ -46,13 +50,15 @@ public class Node : INode
         Active = true;
         GenerateRouter();
         MainThread();
+
+        heartbeatTimer = new System.Timers.Timer();
+        discoveryTimer = new System.Timers.Timer();
     }
 
     private void MainThread()
     {
         new Thread(() =>
         {
-
             Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(t => SetupHeartbeat());
             Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TimeScale).ContinueWith(t => SetupDiscovery());
 
@@ -62,7 +68,7 @@ public class Node : INode
             {
                 Thread.Sleep(1000 / Constants.TimeScale);
                 Request request = CommsModule.FetchNextRequest();
-                if(request != null)
+                if (request != null)
                 {
                     Communicate(request);
                 }
@@ -70,28 +76,32 @@ public class Node : INode
         }).Start();
     }
 
-    private void SetupHeartbeat() {
-        System.Timers.Timer timer = new System.Timers.Timer();
-        timer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
-        timer.Elapsed += OnHeartbeatEvent;
-        timer.Enabled = true;
+    private void SetupHeartbeat()
+    {
+        heartbeatTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
+        heartbeatTimer.Elapsed += OnHeartbeatEvent;
+        heartbeatTimer.Enabled = true;
     }
 
-    private void OnHeartbeatEvent(Object source, ElapsedEventArgs e) {
-        if (State == NodeState.PASSIVE && AutoChecksAllowed) {
+    private void OnHeartbeatEvent(Object source, ElapsedEventArgs e)
+    {
+        if (State == NodeState.PASSIVE && AutoChecksAllowed)
+        {
             Heartbeat.CheckHeartbeat(this);
         }
     }
 
-    private void SetupDiscovery() {
-        System.Timers.Timer timer = new System.Timers.Timer();
-        timer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
-        timer.Elapsed += OnDiscoveryEvent;
-        timer.Enabled = true;
+    private void SetupDiscovery()
+    {
+        discoveryTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
+        discoveryTimer.Elapsed += OnDiscoveryEvent;
+        discoveryTimer.Enabled = true;
     }
 
-    private void OnDiscoveryEvent(Object source, ElapsedEventArgs e) {
-        if (State == NodeState.PASSIVE && AutoChecksAllowed) {
+    private void OnDiscoveryEvent(Object source, ElapsedEventArgs e)
+    {
+        if (State == NodeState.PASSIVE && AutoChecksAllowed)
+        {
             Discovery.StartDiscovery(this, false);
         }
     }
@@ -99,7 +109,7 @@ public class Node : INode
     public override void GenerateRouter()
     {
         Router = new Router(this, ActivePlan);
-        if(Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(Id) == false)
+        if (Router.NetworkMap.Entries.Select(entry => entry.ID).Contains(Id) == false)
         {
             Router.NetworkMap.Entries.Add(new NetworkMapEntry(Id, new List<uint?>(), Position));
         }
@@ -150,7 +160,24 @@ public class Node : INode
                 }
             }
         }).Start();
-            
+
+    }
+
+    public override void ResetTimers()
+    {
+        discoveryTimer.Stop();
+        heartbeatTimer.Stop();
+
+        Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale);
+        Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale);
+
+
+        discoveryTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
+        discoveryTimer.Start();
+
+
+        heartbeatTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
+        heartbeatTimer.Start();
     }
 
     private async void ExecuteRequest(Request request, bool isDependency)
@@ -210,7 +237,7 @@ public class Node : INode
 
                 //Remove any dead nodes from the networkmap
                 Router.NetworkMap.Entries.RemoveAll(entry => updateRequest.DeadNodes.Contains(entry.ID));
-                
+
                 //Remove any dead nodes from neighbour lists
                 foreach (NetworkMapEntry entry in Router.NetworkMap.Entries)
                 {
