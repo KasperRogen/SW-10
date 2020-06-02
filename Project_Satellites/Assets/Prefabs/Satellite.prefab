@@ -356,10 +356,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e937749e13fab141ab1d87497fd91b9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  XOffsetScale: 0.03
-  YOffsetScale: 0.03
   ImageTransform: {fileID: 4432360793917884976}
   ImageRotationOffset: -45
+  TextDisplacementScale: 0.15
 --- !u!1 &7647052041419691168
 GameObject:
   m_ObjectHideFlags: 0

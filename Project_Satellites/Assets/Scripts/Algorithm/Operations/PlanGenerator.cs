@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -27,9 +27,15 @@ public class PlanGenerator
             PlanRequest newRequest = request.DeepCopy();
             newRequest.AckExpected = true;
 
-            List<NodeLocationMatch> matches = CalculatePositions(myNode, newRequest);
-            ConstellationPlan newPlan = ProcessPlan(matches, newRequest, myNode);
-            newRequest.Plan = newPlan;
+
+            if(newRequest.Plan.Entries.Any(entry => entry.NodeID == myNode.Id == false))
+            {
+                List<NodeLocationMatch> matches = CalculatePositions(myNode, newRequest);
+                ConstellationPlan newPlan = ProcessPlan(matches, newRequest, myNode);
+                newRequest.Plan = newPlan;
+            }
+
+
             Transmit(newRequest, myNode);
 
 
