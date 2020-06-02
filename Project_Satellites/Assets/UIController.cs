@@ -2,6 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -56,7 +58,8 @@ public class UIController : MonoBehaviour
 
     public void ResetScene()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        System.Diagnostics.Process.Start(Application.dataPath.Replace("_Data", ".exe")); //new program
+        Application.Quit(); //kill current process
     }
 
     public void OnTimescaleChanged(Single value)
