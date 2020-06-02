@@ -17,7 +17,7 @@ public class ConstellationVisualiser : MonoBehaviour
     public Color DeadMat;
     public Color HeartbeatMat;
 
-    
+
     public Node.NodeState state;
     public GameObject MessageGO;
 
@@ -90,13 +90,14 @@ public class ConstellationVisualiser : MonoBehaviour
         reachableSats.Clear();
 
 
-        
+
         KnownNeighbours = comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.Id)?.Neighbours;
-        
+
         reachableSats.Clear();
 
-        
-        foreach (SatelliteComms node in reachableSats.Where(sat => KnownNeighbours.Contains(sat.Node.Id) == false)){
+
+        foreach (SatelliteComms node in reachableSats.Where(sat => KnownNeighbours.Contains(sat.Node.Id) == false))
+        {
             reachableSats.Remove(node);
         }
 
@@ -104,9 +105,9 @@ public class ConstellationVisualiser : MonoBehaviour
 
         foreach (uint? node in KnownNeighbours)
         {
-            if(reachableSats.Select(sat => sat.Node.Id).Contains(node) == false)
+            if (reachableSats.Select(sat => sat.Node.Id).Contains(node) == false)
             {
-                if(SatManager._instance.satellites.Any(sat => sat.Node.Id == node) == false)
+                if (SatManager._instance.satellites.Any(sat => sat.Node.Id == node) == false)
                 {
                     toRemove = node;
                 }
@@ -161,7 +162,7 @@ public class ConstellationVisualiser : MonoBehaviour
                     y = _transform.position.y - comms.Node.Position.Y,
                     z = _transform.position.z - comms.Node.Position.Z,
                 };
-                
+
                 LineRenderer lineRenderer = commLineRenderes[id];
                 lineRenderer.SetPosition(1, _transform.position);
                 lineRenderer.startWidth = 0.025f;
@@ -192,17 +193,13 @@ public class ConstellationVisualiser : MonoBehaviour
             }
         }
 
+        uint? nextSeq = comms.Node.Router.NextSequential(comms.Node, Router.CommDir.CW);
 
-        if (KnownNeighbours.Count >= 2)
+        if (nextSeq != null && commLineRenderes.ContainsKey(nextSeq))
         {
-            uint? nextSeq = comms.Node.Router.NextSequential(comms.Node, Router.CommDir.CW); 
-
-            if (nextSeq != null && commLineRenderes.ContainsKey(nextSeq))
-            {
-                LineRenderer nextSeqCommLine = commLineRenderes[nextSeq];
-                nextSeqCommLine.startWidth = 0.1f;
-                nextSeqCommLine.endWidth = 0.1f;
-            }
+            LineRenderer nextSeqCommLine = commLineRenderes[nextSeq];
+            nextSeqCommLine.startWidth = 0.1f;
+            nextSeqCommLine.endWidth = 0.1f;
         }
 
 
