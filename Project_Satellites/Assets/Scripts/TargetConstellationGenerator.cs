@@ -48,13 +48,7 @@ public class TargetConstellationGenerator : MonoBehaviour
 
         List<uint?> reachableNodes = RequesterNode.Router.ReachableSats(RequesterNode).ToList();
 
-        for(int i = Sats.Count -1; i > 0; i--)
-        {
-            if(reachableNodes.Contains(Sats[i].GetComponent<SatelliteComms>().Node.Id) == false)
-            {
-                Sats.RemoveAt(i);
-            }
-        }
+        Sats.RemoveAll(sat => reachableNodes.Contains(sat.GetComponent<SatelliteComms>().Node.Id) == false);
 
 
         //Remove old location Placeholders
