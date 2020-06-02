@@ -29,7 +29,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         sleepCount = comms.Node.SleepCount;
         comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
 
-        ReachableNodes = comms.Node.Router.NetworkMap.Entries.Select(entry => (uint) entry.ID).ToList();
+        ReachableNodes = comms.Node.Router.ReachableSats(comms.Node).Select(node => (uint)node).ToList();
 
         if (Constants.EnableDebug)
         {
