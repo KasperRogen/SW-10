@@ -117,7 +117,7 @@ public class CanvasHandler : MonoBehaviour
                         neighbour == CallingNodeID);
                 }
 
-                satellite.Node.ActivePlan.Entries.RemoveAll(entry => entry.NodeID == CallingNodeID);
+                satellite.Node.ActivePlan?.Entries?.RemoveAll(entry => entry.NodeID == CallingNodeID);
 
                 satellite.Node.Router.NodeToNodeIDMapping.Clear();
                 satellite.Node.Router.UpdateGraph();
