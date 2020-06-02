@@ -122,10 +122,6 @@ public class Node : INode
         if (active == false)
             return;
 
-        if (Id == 3)
-        {
-            int a = 2;
-        }
 
         new Thread(async () =>
         {
@@ -138,11 +134,6 @@ public class Node : INode
             }
 
 
-
-            if (Router.NetworkMap.Entries.Count > 11)
-            {
-                int a = 2;
-            }
 
             ExecuteRequest(request, false);
 
