@@ -4,12 +4,18 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Numerics;
 using System.Linq;
+using System.Runtime.Serialization;
 
 public static class PlanExecuter
 {
     public static void ExecutePlan(INode myNode, PlanRequest request)
     {
-        if (request.DestinationID != myNode.Id || request.SourceID == myNode.Router.NextSequential(myNode, request.Dir))
+        if (myNode.Id == 5)
+        {
+            int a = 2;
+        }
+
+        if (request.DestinationID != myNode.Id)
         {
             return;
         }
@@ -27,7 +33,8 @@ public static class PlanExecuter
                 myNode.ExecutingPlan = true;
             }
 
-            ForwardRequest(myNode, request);
+            if(request.SourceID != myNode.Router.NextSequential(myNode, request.Dir))
+                ForwardRequest(myNode, request);
 
 
             Thread.Sleep(Constants.COMMS_TIMEOUT/Constants.TimeScale);
@@ -85,7 +92,7 @@ public static class PlanExecuter
         }
 
         if (nextSeq != null) {
-            newRequest.SourceID = myNode.Id;
+            newRequest.SenderID = myNode.Id;
             newRequest.DestinationID = nextSeq;
             uint? nextHop = myNode.Router.NextHop(myNode.Id, nextSeq);
             myNode.CommsModule.SendAsync(nextHop, newRequest, Constants.COMMS_TIMEOUT, Constants.COMMS_ATTEMPTS);
