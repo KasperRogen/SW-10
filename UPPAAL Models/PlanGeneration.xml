@@ -832,7 +832,7 @@ bool Verify() {
 
 </declaration>
 		<location id="id32" x="-476" y="0">
-			<name x="-521" y="5">Setup</name>
+			<name x="-561" y="8">StartPosition</name>
 			<committed/>
 		</location>
 		<location id="id33" x="-340" y="0">
@@ -844,7 +844,7 @@ bool Verify() {
 			<committed/>
 		</location>
 		<location id="id35" x="-476" y="102">
-			<name x="-456" y="96">TargetPosition</name>
+			<name x="-459" y="93">TargetPosition</name>
 			<committed/>
 		</location>
 		<location id="id36" x="-204" y="0">
