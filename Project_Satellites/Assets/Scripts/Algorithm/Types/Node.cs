@@ -116,15 +116,12 @@ public class Node : INode
     }
 
 
-    public override void Communicate(Request request)
+    public override async void Communicate(Request request)
     {
 
         if (active == false)
             return;
 
-
-        new Thread(async () =>
-        {
             if (request.DependencyRequests != null && request.DependencyRequests.Any())
             {
                 foreach (Request dependencyRequest in request.DependencyRequests)
@@ -150,7 +147,6 @@ public class Node : INode
                     await CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, 3);
                 }
             }
-        }).Start();
 
     }
 

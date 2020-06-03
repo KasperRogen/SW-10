@@ -9,7 +9,7 @@ public static class PlanExecuter
 {
     public static void ExecutePlan(INode myNode, PlanRequest request)
     {
-        if (request.DestinationID != myNode.Id)
+        if (request.DestinationID != myNode.Id || request.SourceID == myNode.Router.NextSequential(myNode, request.Dir))
         {
             return;
         }
