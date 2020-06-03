@@ -11,10 +11,6 @@ public static class FailureDetection
     public async static void DetectFailure(INode myNode, DetectFailureRequest request)
     {
         //Update router, ensure we don't try to route through the bad connection
-        if (myNode.Id == 3)
-        {
-            int a = 2;
-        }
         request.DeadEdges.ForEach(edge => myNode.Router.DeleteEdge(edge.Item1, edge.Item2));
 
         if (myNode.Id == request.DestinationID)

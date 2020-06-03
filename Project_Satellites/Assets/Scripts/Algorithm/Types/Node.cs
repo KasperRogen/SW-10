@@ -193,10 +193,6 @@ public class Node : INode
 
             case Request.Commands.DISCOVER:
 
-                if (Router.NetworkMap.Entries.Count > 11)
-                {
-                    int a = 2;
-                }
                 await Discovery.DiscoverAsync(this, request as DiscoveryRequest);
                 break;
 

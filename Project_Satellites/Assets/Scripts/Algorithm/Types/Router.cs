@@ -49,10 +49,6 @@ public class Router : IRouter
         
         Vector3 EarthPosition = Vector3.Zero;
 
-        if (source.Id == 3)
-        {
-            int a = 2;
-        }
 
         // Assumption: Always 2 neighbours, if not the case it is handled by fault mechanisms.
 
@@ -200,10 +196,6 @@ public class Router : IRouter
 
     public void DeleteEdge(uint? n1, uint? n2)
     {
-        if (n1 == 5 || n2 == 5)
-        {
-            int a = 2;
-        }
 
 
         if (NetworkMap.GetEntryByID(n1).Neighbours.Contains(n2))

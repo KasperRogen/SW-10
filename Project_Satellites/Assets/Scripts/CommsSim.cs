@@ -86,11 +86,6 @@ public class CommsSim : MonoBehaviour, ICommunicate
         request.SenderID = comms.Node.Id;
         SatelliteComms hop = SatManager._instance.satellites.Find(sat => sat.Node.Id == nextHop);
 
-        if (comms.Node.Id == 2)
-        {
-            int a = 2;
-        }
-
         SatManager.MessageProps message = new SatManager.MessageProps(
             BackendHelpers.UnityVectorFromNumerics(comms.Node.Position),
             BackendHelpers.UnityVectorFromNumerics(hop.Node.Position),

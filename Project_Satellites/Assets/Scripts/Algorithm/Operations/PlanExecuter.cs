@@ -10,10 +10,6 @@ public static class PlanExecuter
 {
     public static void ExecutePlan(INode myNode, PlanRequest request)
     {
-        if (myNode.Id == 5)
-        {
-            int a = 2;
-        }
 
         if (request.DestinationID != myNode.Id)
         {
