@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
-	<declaration>const int existingNodes = 4; // 
-const int nrNewNodes = 3;
+	<declaration>const int existingNodes = 11; // 
+const int nrNewNodes = 1;
 const int nodes = existingNodes + nrNewNodes;
 
 clock time;
@@ -17,7 +17,7 @@ int holeLink[2] = {-1, -1};
 
 UID start; // The satellite that initiates
 
-int[0, (3*nodes)] comms;
+int[0, (4*nodes)] comms;
 
 chan transmit[nodes];
 broadcast chan ended;
@@ -37,7 +37,7 @@ meta edge edgeList[nodes * 2];
 
 </declaration>
 	<template>
-		<name>RingNodeSync</name>
+		<name>RingNodeSyncCompleteRing</name>
 		<parameter>const UID ID</parameter>
 		<declaration>int[0, nodes * 2] verifyLen = 0;
 
@@ -428,572 +428,7 @@ seqNeighbour = neighbour</label>
 		</transition>
 	</template>
 	<template>
-		<name>TestRingNodeHole</name>
-		<parameter>const UID ID</parameter>
-		<declaration>int[0, nodes * 2] verifyLen = 0;
-
-clock t;
-
-int[0, nodes*2] mapLen = 0;
-int[0, nodes] newLen = 0;
-edge networkMap[nodes*2];
-edge newEdges[nodes];
-
-edge expectedNetworkMap[nodes*2];
-bool verified = false;
-int expected = 0;
-
-int cwNeighbour;
-int ccwNeighbour;
-int newNeighbour;
-int oldccwNeighbour = -1;
-
-int senderID; // ensure start node sends to cwNeighbour
-
-bool notifiedNewNode = false;
-bool newKnowledge = false;
-
-bool firstPass = false;
-bool secondPass = false;
-
-// If this node only has one neighbour, update first- and secondPass
-void UpdatePass()
-{
-  if (cwNeighbour == -1 || ccwNeighbour == -1)
-  {
-    if (!firstPass &amp;&amp; !secondPass)
-    {
-      firstPass = true;
-    }
-    else if (firstPass)
-    {
-      firstPass = false;
-      secondPass = true;
-    }
-  }
-}
-
-
-int IntClampExisting(int n)
-{
-  if (n &lt; 0) { return existingNodes - 1; }
-  else { return n % existingNodes; }
-}
-
-
-int nextHop()
-{
-  if(senderID == ccwNeighbour || (senderID == oldccwNeighbour &amp;&amp; oldccwNeighbour != -1))
-  {
-    return cwNeighbour;
-  }
-  else //senderID == cwNeighbour
-  {
-    return ccwNeighbour;
-  }
-}
-
-
-bool ContinueTransmitting()
-{
-  if (nextHop() == -1 &amp;&amp; secondPass)
-  {
-    return false;
-  }
-  else return newKnowledge || firstPass || secondPass;
-}
-
-
-bool IsNewNode()
-{
-  int i;
-  for(i=0; i&lt;nrNewNodes; i++)
-  {
-    if (newNodes[i] == ID)
-    {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-bool IsLinkBroken(int node1, int node2)
-{
-  return (holeLink[0] == node1 &amp;&amp; holeLink[1] == node2) || (holeLink[0] == node2 &amp;&amp; holeLink[1] == node1);
-}
-
-
-void AddNeighbours()
-{
-  int cwNode = IntClampExisting(ID + 1);
-  int ccwNode = IntClampExisting(ID - 1);
-
-  if (!IsLinkBroken(ID, cwNode))
-  {
-    cwNeighbour = cwNode;
-  }
-  else
-  {
-    cwNeighbour = -1;
-  }
-
-  if (!IsLinkBroken(ID, ccwNode))
-  {
-    ccwNeighbour = ccwNode;
-  }
-  else
-  {
-    ccwNeighbour = -1;
-  }
-}
-
-void ExistingNetwork() 
-{
-  int i;
-
-  if (IsNewNode())
-  {
-    return; // new nodes has no knowledge of the network
-  }
-
-  for(i=0; i&lt;existingNodes; i++)
-  {
-    int node1 = i;
-    int node2 = IntClampExisting(i+1);
-
-    if (!IsLinkBroken(node1, node2))
-    {
-      edge newEdge = {node1, node2};
-      networkMap[mapLen++] = newEdge;
-    }
-  }
-}
-
-
-bool DiscoveredNewNode()
-{
-  int i;
-
-  if (notifiedNewNode == true)
-  {
-    return false;
-  }
-
-  for(i=0; i&lt;nrNewNodes; i++)
-  {
-    if (newNodesNeighbour[i] == ID)
-    {
-      return true;
-    }
-  }
-  return false;
-}
-
-
-// If this node has a clockwise neighbour, adds an edge between the new node and the clockwise neighbour
-void AddNewNodeNeighbour(int newNode)
-{
-  if (cwNeighbour != -1)
-  {
-    edge newEdge = {newNode, cwNeighbour};
-    newEdges[newLen++] = newEdge;
-    networkMap[mapLen++] = newEdge;
-  }
-}
-
-
-// Adds a new edge between this node and the new node.
-void UpdateNetworkMap()
-{
-  int i;
-  for(i=0; i&lt;nrNewNodes; i++)
-  {
-    if (newNodesNeighbour[i] == ID)
-    {
-       edge newEdge = {ID, newNodes[i]};
-       networkMap[mapLen++] = newEdge;
-
-       newEdges[newLen++] = newEdge;
-
-       newNeighbour = newNodes[i];
-
-       AddNewNodeNeighbour(newNodes[i]);
-    }
-  }
-}
-
-
-// Checks if a edge is equal to another edge - {1,2} and {2,1} are considered equal.
-bool EdgeEqual(edge e1, edge e2)
-{
-  return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
-}
-
-// Checks if a given edge already exists in the networkmap
-bool ExistsInNetwork(edge e)
-{
-  int i;
-  for (i=0; i&lt;mapLen; i++)
-  {
-    bool check = EdgeEqual(e, networkMap[i]);
-    if (check == true) 
-    {
-      return true;
-    } 
-  }
-  return false;
-}
-
-
-// Look at the transmitted edgeList, add all edges that this node didn't have knowledge about
-void ProcessNewEdges()
-{
-  int i;
-
-  if (!firstPass &amp;&amp; !secondPass)
-  {
-    newLen = 0;
-    for (i=0; i&lt;len; i++)
-    {
-      edge e = edgeList[i];
-      bool isNewEdge = !ExistsInNetwork(e);
-      if (isNewEdge)
-      {
-        networkMap[mapLen++] = e;
-        newEdges[newLen++] = e;
-        newKnowledge = true;
-        if (e.a == ccwNeighbour &amp;&amp; e.b != ID)
-        {
-          oldccwNeighbour = ccwNeighbour;
-          ccwNeighbour = e.b;
-        }
-      }
-    }
-  }
-  else if (firstPass || secondPass)
-  {
-    newLen = 0;
-    for (i=0; i&lt;len; i++)
-    {
-      edge e = edgeList[i];
-      bool isNewEdge = !ExistsInNetwork(e);
-      newEdges[newLen++] = e;
-
-      if (isNewEdge)
-      {
-        networkMap[mapLen++] = e;
-        newKnowledge = true;
-        if (e.a == ccwNeighbour &amp;&amp; e.b != ID)
-        {
-          oldccwNeighbour = ccwNeighbour;
-          ccwNeighbour = e.b;
-        }
-      }
-    }
-  }
-}
-
-
-// Reset the len variable and fills it with this nodes new edge knowledge
-void TransmitNewEdges()
-{
-  int i;
-  len = 0;
-  for (i=0; i&lt;newLen; i++)
-  {
-    edgeList[len++] = newEdges[i];
-  }
-}
-
-
-// Look at the transmitted edgeList, add all edges 
-void ProcessAllEdges()
-{
-  int i;
-  for (i=0; i&lt;len; i++)
-  {
-    networkMap[mapLen++] = edgeList[i];
-  }
-}
-
-
-// Reset the edgeList and len variable and fills it with this nodes networkMap
-void TransmitAllEdges()
-{
-  int i;
-  len = 0;
-  for (i=0; i&lt;mapLen; i++)
-  {
-    edgeList[len++] = networkMap[i];
-  }
-}
-
-
-// Verification - Build the expected complete network map and check if they all exist in the node's network map
-bool Verify()
-{
-  int i;
-
-  // Check all start links
-  for (i=0; i&lt;existingNodes; i++)
-  {
-    edge e = {i, IntClampExisting(i+1)};
-
-    // In the broken link scenario, don't check if the broken link is in the networkmap
-    if (!IsLinkBroken(e.a, e.b))
-    {
-      bool exist = ExistsInNetwork(e);
-      if (exist == false) { return false; }
-    } 
-  }
-
-  // Check all new links
-  for (i=0; i&lt;nrNewNodes; i++)
-  {
-    int newNode = newNodes[i];
-    int neighbour1 = newNodesNeighbour[i];
-    int neighbour2 = IntClampExisting(newNodesNeighbour[i] + 1);
-
-    edge e1 = {neighbour1, newNode};
-    edge e2 = {newNode, neighbour2};
-
-    bool exist1 = ExistsInNetwork(e1);
-
-    if (exist1 == false) { return false; }
-
-    // In the broken link scenario, new nodes may only have one neighbour.
-    if ((neighbour2 == holeLink[0] || neighbour2 == holeLink[1]) == false)
-    {
-      bool exist2 = ExistsInNetwork(e2);
-      if (exist2 == false) { return false; }
-    }
-  }
-  return true;
-}
-</declaration>
-		<location id="id15" x="-102" y="340">
-			<name x="-93" y="314">Receive</name>
-		</location>
-		<location id="id16" x="170" y="340">
-			<name x="187" y="331">Discover</name>
-			<urgent/>
-		</location>
-		<location id="id17" x="408" y="442">
-			<name x="357" y="450">Transmit</name>
-			<label kind="invariant" x="374" y="467">t &lt;= 1</label>
-		</location>
-		<location id="id18" x="-102" y="204">
-			<name x="-85" y="204">Start</name>
-			<committed/>
-		</location>
-		<location id="id19" x="-238" y="204">
-			<name x="-221" y="204">Initialize</name>
-			<urgent/>
-		</location>
-		<location id="id20" x="680" y="442">
-			<committed/>
-		</location>
-		<location id="id21" x="170" y="170">
-			<name x="110" y="119">UpdateNew</name>
-			<label kind="invariant" x="144" y="136">t &lt;= 1</label>
-		</location>
-		<location id="id22" x="408" y="170">
-			<name x="297" y="178">TransmitNeighbour</name>
-			<committed/>
-		</location>
-		<location id="id23" x="-340" y="204">
-			<name x="-425" y="187">NewNode</name>
-		</location>
-		<location id="id24" x="680" y="170">
-			<committed/>
-		</location>
-		<location id="id25" x="-204" y="442">
-			<committed/>
-		</location>
-		<location id="id26" x="-102" y="578">
-			<name x="-187" y="569">ClearData</name>
-			<committed/>
-		</location>
-		<location id="id27" x="-340" y="408">
-			<name x="-365" y="374">Verified</name>
-		</location>
-		<location id="id28" x="-340" y="476">
-			<name x="-365" y="493">Wrong</name>
-		</location>
-		<location id="id29" x="170" y="442">
-			<name x="178" y="450">CheckContinue</name>
-			<committed/>
-		</location>
-		<location id="id30" x="680" y="578">
-			<committed/>
-		</location>
-		<init ref="id19"/>
-		<transition>
-			<source ref="id30"/>
-			<target ref="id26"/>
-		</transition>
-		<transition>
-			<source ref="id20"/>
-			<target ref="id30"/>
-		</transition>
-		<transition>
-			<source ref="id24"/>
-			<target ref="id30"/>
-			<label kind="assignment" x="518" y="289">cwNeighbour = newNeighbour</label>
-			<nail x="714" y="170"/>
-			<nail x="714" y="578"/>
-		</transition>
-		<transition>
-			<source ref="id17"/>
-			<target ref="id20"/>
-			<label kind="guard" x="433" y="331">t &gt;= 1 &amp;&amp; nextHop() == -1</label>
-			<label kind="synchronisation" x="433" y="399">transmit[senderID]!</label>
-			<label kind="assignment" x="433" y="348">TransmitNewEdges(), UpdatePass(),
-first = firstPass, second = secondPass,
-sender = ID, comms++</label>
-			<nail x="442" y="425"/>
-			<nail x="646" y="425"/>
-		</transition>
-		<transition>
-			<source ref="id22"/>
-			<target ref="id24"/>
-			<label kind="guard" x="450" y="59">nextHop() == -1</label>
-			<label kind="synchronisation" x="442" y="127">transmit[senderID]!</label>
-			<label kind="assignment" x="442" y="76">TransmitNewEdges(),
-first = firstPass, second = secondPass,
-sender = ID, comms++</label>
-			<nail x="442" y="153"/>
-			<nail x="646" y="153"/>
-		</transition>
-		<transition>
-			<source ref="id29"/>
-			<target ref="id25"/>
-			<label kind="guard" x="17" y="467">!ContinueTransmitting()</label>
-			<label kind="synchronisation" x="119" y="484">ended!</label>
-			<nail x="170" y="612"/>
-			<nail x="-204" y="612"/>
-		</transition>
-		<transition>
-			<source ref="id16"/>
-			<target ref="id29"/>
-			<label kind="guard" x="178" y="374">!DiscoveredNewNode()</label>
-		</transition>
-		<transition>
-			<source ref="id29"/>
-			<target ref="id17"/>
-			<label kind="guard" x="187" y="416">ContinueTransmitting()</label>
-		</transition>
-		<transition>
-			<source ref="id15"/>
-			<target ref="id25"/>
-			<label kind="synchronisation" x="-187" y="416">ended?</label>
-			<nail x="-136" y="442"/>
-		</transition>
-		<transition>
-			<source ref="id25"/>
-			<target ref="id28"/>
-			<label kind="guard" x="-306" y="484">!Verify()</label>
-			<nail x="-255" y="476"/>
-		</transition>
-		<transition>
-			<source ref="id25"/>
-			<target ref="id27"/>
-			<label kind="guard" x="-306" y="382">Verify()</label>
-			<nail x="-255" y="408"/>
-		</transition>
-		<transition>
-			<source ref="id15"/>
-			<target ref="id16"/>
-			<label kind="synchronisation" x="8" y="238">transmit[ID]?</label>
-			<label kind="assignment" x="-17" y="255">t = 0, senderID = sender,
-firstPass = first,
-secondPass = second,
-ProcessNewEdges()</label>
-		</transition>
-		<transition>
-			<source ref="id26"/>
-			<target ref="id15"/>
-			<label kind="assignment" x="-93" y="382">newKnowledge = false,
-oldccwNeighbour = -1</label>
-		</transition>
-		<transition>
-			<source ref="id22"/>
-			<target ref="id24"/>
-			<label kind="guard" x="433" y="187">nextHop() != -1</label>
-			<label kind="synchronisation" x="433" y="255">transmit[nextHop()]!</label>
-			<label kind="assignment" x="433" y="204">TransmitNewEdges(),
-first = firstPass, second = secondPass,
-sender = ID, comms++</label>
-			<nail x="442" y="187"/>
-			<nail x="646" y="187"/>
-		</transition>
-		<transition>
-			<source ref="id21"/>
-			<target ref="id22"/>
-			<label kind="guard" x="187" y="34">t &gt;= 1</label>
-			<label kind="synchronisation" x="187" y="144">transmit[newNeighbour]!</label>
-			<label kind="assignment" x="187" y="51">TransmitAllEdges(), UpdatePass(),
-first = firstPass, second = secondPass,
-neighbour = cwNeighbour,
-sender = ID, comms++,
-notifiedNewNode = true</label>
-		</transition>
-		<transition>
-			<source ref="id23"/>
-			<target ref="id15"/>
-			<label kind="synchronisation" x="-331" y="229">transmit[ID]?</label>
-			<label kind="assignment" x="-331" y="246">ProcessAllEdges(),
-firstPass = first,
-secondPass = second,
-cwNeighbour = neighbour,
-ccwNeighbour = sender</label>
-			<nail x="-340" y="340"/>
-		</transition>
-		<transition>
-			<source ref="id19"/>
-			<target ref="id23"/>
-			<label kind="guard" x="-331" y="178">IsNewNode()</label>
-		</transition>
-		<transition>
-			<source ref="id16"/>
-			<target ref="id21"/>
-			<label kind="guard" x="178" y="229">DiscoveredNewNode()</label>
-			<label kind="assignment" x="178" y="246">UpdateNetworkMap()</label>
-		</transition>
-		<transition>
-			<source ref="id18"/>
-			<target ref="id16"/>
-			<label kind="guard" x="-85" y="161">start == ID</label>
-			<label kind="assignment" x="-85" y="178">senderID = ccwNeighbour</label>
-			<nail x="136" y="204"/>
-		</transition>
-		<transition>
-			<source ref="id17"/>
-			<target ref="id20"/>
-			<label kind="guard" x="433" y="459">t &gt;= 1 &amp;&amp; nextHop() != -1</label>
-			<label kind="synchronisation" x="433" y="527">transmit[nextHop()]!</label>
-			<label kind="assignment" x="433" y="476">TransmitNewEdges(), UpdatePass(),
-first = firstPass, second = secondPass,
-sender = ID, comms++</label>
-			<nail x="442" y="459"/>
-			<nail x="646" y="459"/>
-		</transition>
-		<transition>
-			<source ref="id19"/>
-			<target ref="id18"/>
-			<label kind="guard" x="-204" y="144">!IsNewNode()</label>
-			<label kind="assignment" x="-221" y="161">ExistingNetwork(),
-AddNeighbours()</label>
-		</transition>
-		<transition>
-			<source ref="id18"/>
-			<target ref="id15"/>
-			<label kind="guard" x="-93" y="289">start != ID</label>
-		</transition>
-	</template>
-	<template>
-		<name>RingNodeAsync</name>
+		<name>RingNodeAsyncCompleteRing</name>
 		<parameter>const UID ID</parameter>
 		<declaration>int[0, nodes * 2] verifyLen = 0;
 
@@ -1211,128 +646,128 @@ bool Verify()
   return true;
 }
 </declaration>
-		<location id="id31" x="612" y="340">
+		<location id="id15" x="612" y="340">
 			<name x="620" y="348">CheckNewKnowledge</name>
 			<committed/>
 		</location>
-		<location id="id32" x="238" y="340">
+		<location id="id16" x="238" y="340">
 			<committed/>
 		</location>
-		<location id="id33" x="612" y="238">
+		<location id="id17" x="612" y="238">
 			<name x="629" y="229">Discover</name>
 			<urgent/>
 		</location>
-		<location id="id34" x="850" y="238">
+		<location id="id18" x="850" y="238">
 			<name x="807" y="187">Transmit</name>
 			<label kind="invariant" x="824" y="204">t &lt;= 10</label>
 		</location>
-		<location id="id35" x="340" y="238">
+		<location id="id19" x="340" y="238">
 			<name x="349" y="212">Receive</name>
 		</location>
-		<location id="id36" x="1088" y="238">
+		<location id="id20" x="1088" y="238">
 			<committed/>
 		</location>
-		<location id="id37" x="340" y="442">
+		<location id="id21" x="340" y="442">
 			<name x="315" y="459">ClearData</name>
 			<committed/>
 		</location>
-		<location id="id38" x="102" y="374">
+		<location id="id22" x="102" y="374">
 			<name x="77" y="391">Wrong</name>
 		</location>
-		<location id="id39" x="102" y="306">
+		<location id="id23" x="102" y="306">
 			<name x="77" y="272">Verified</name>
 		</location>
-		<location id="id40" x="340" y="136">
+		<location id="id24" x="340" y="136">
 			<name x="357" y="136">Start</name>
 			<committed/>
 		</location>
-		<location id="id41" x="204" y="136">
+		<location id="id25" x="204" y="136">
 			<name x="221" y="136">Initialize</name>
 			<urgent/>
 		</location>
-		<location id="id42" x="612" y="68">
+		<location id="id26" x="612" y="68">
 			<name x="552" y="17">UpdateNew</name>
 			<label kind="invariant" x="586" y="34">t &lt;= 10</label>
 		</location>
-		<location id="id43" x="850" y="68">
+		<location id="id27" x="850" y="68">
 			<name x="799" y="85">UpdateNeighbour</name>
 			<committed/>
 		</location>
-		<location id="id44" x="102" y="136">
+		<location id="id28" x="102" y="136">
 			<name x="17" y="119">NewNode</name>
 		</location>
-		<location id="id45" x="1088" y="68">
+		<location id="id29" x="1088" y="68">
 			<committed/>
 		</location>
-		<init ref="id41"/>
+		<init ref="id25"/>
 		<transition>
-			<source ref="id31"/>
-			<target ref="id32"/>
+			<source ref="id15"/>
+			<target ref="id16"/>
 			<label kind="guard" x="501" y="357">!newKnowledge</label>
 			<label kind="synchronisation" x="552" y="374">ended!</label>
 			<nail x="612" y="510"/>
 			<nail x="238" y="510"/>
 		</transition>
 		<transition>
-			<source ref="id33"/>
-			<target ref="id31"/>
+			<source ref="id17"/>
+			<target ref="id15"/>
 			<label kind="guard" x="620" y="272">!DiscoveredNewNode()</label>
 		</transition>
 		<transition>
-			<source ref="id31"/>
-			<target ref="id34"/>
+			<source ref="id15"/>
+			<target ref="id18"/>
 			<label kind="guard" x="629" y="314">newKnowledge</label>
 			<nail x="850" y="340"/>
 		</transition>
 		<transition>
-			<source ref="id35"/>
-			<target ref="id32"/>
+			<source ref="id19"/>
+			<target ref="id16"/>
 			<label kind="synchronisation" x="255" y="314">ended?</label>
 			<nail x="306" y="340"/>
 		</transition>
 		<transition>
-			<source ref="id36"/>
-			<target ref="id37"/>
+			<source ref="id20"/>
+			<target ref="id21"/>
 			<nail x="1088" y="442"/>
 		</transition>
 		<transition>
-			<source ref="id32"/>
-			<target ref="id38"/>
+			<source ref="id16"/>
+			<target ref="id22"/>
 			<label kind="guard" x="136" y="382">!Verify()</label>
 			<nail x="187" y="374"/>
 		</transition>
 		<transition>
-			<source ref="id32"/>
-			<target ref="id39"/>
+			<source ref="id16"/>
+			<target ref="id23"/>
 			<label kind="guard" x="136" y="280">Verify()</label>
 			<nail x="187" y="306"/>
 		</transition>
 		<transition>
-			<source ref="id35"/>
-			<target ref="id33"/>
+			<source ref="id19"/>
+			<target ref="id17"/>
 			<label kind="synchronisation" x="442" y="195">transmit[ID]?</label>
 			<label kind="assignment" x="417" y="212">t = 0, ProcessNewEdges()</label>
 		</transition>
 		<transition>
-			<source ref="id37"/>
-			<target ref="id35"/>
+			<source ref="id21"/>
+			<target ref="id19"/>
 			<label kind="assignment" x="349" y="306">newKnowledge = false,
 newLen = 0</label>
 		</transition>
 		<transition>
-			<source ref="id45"/>
-			<target ref="id36"/>
+			<source ref="id29"/>
+			<target ref="id20"/>
 			<label kind="assignment" x="892" y="127">seqNeighbour = newNeighbour</label>
 		</transition>
 		<transition>
-			<source ref="id43"/>
-			<target ref="id45"/>
+			<source ref="id27"/>
+			<target ref="id29"/>
 			<label kind="synchronisation" x="884" y="34">transmit[seqNeighbour]!</label>
 			<label kind="assignment" x="867" y="9">TransmitNewEdges(), comms++</label>
 		</transition>
 		<transition>
-			<source ref="id42"/>
-			<target ref="id43"/>
+			<source ref="id26"/>
+			<target ref="id27"/>
 			<label kind="guard" x="697" y="-25">t &gt;= 1</label>
 			<label kind="synchronisation" x="646" y="42">transmit[newNeighbour]!</label>
 			<label kind="assignment" x="646" y="-9">TransmitAllEdges(), comms++,
@@ -1340,47 +775,1217 @@ neighbour = seqNeighbour,
 notifiedNewNode = true</label>
 		</transition>
 		<transition>
-			<source ref="id44"/>
-			<target ref="id35"/>
+			<source ref="id28"/>
+			<target ref="id19"/>
 			<label kind="synchronisation" x="111" y="161">transmit[ID]?</label>
 			<label kind="assignment" x="111" y="178">ProcessAllEdges(),
 seqNeighbour = neighbour</label>
 			<nail x="102" y="238"/>
 		</transition>
 		<transition>
-			<source ref="id41"/>
-			<target ref="id44"/>
+			<source ref="id25"/>
+			<target ref="id28"/>
 			<label kind="guard" x="111" y="110">IsNewNode()</label>
 		</transition>
 		<transition>
-			<source ref="id33"/>
-			<target ref="id42"/>
+			<source ref="id17"/>
+			<target ref="id26"/>
 			<label kind="guard" x="620" y="127">DiscoveredNewNode()</label>
 			<label kind="assignment" x="620" y="144">UpdateNetworkMap()</label>
 		</transition>
 		<transition>
-			<source ref="id40"/>
-			<target ref="id33"/>
+			<source ref="id24"/>
+			<target ref="id17"/>
 			<label kind="guard" x="357" y="110">start == ID</label>
 			<nail x="578" y="136"/>
 		</transition>
 		<transition>
-			<source ref="id34"/>
-			<target ref="id36"/>
+			<source ref="id18"/>
+			<target ref="id20"/>
 			<label kind="guard" x="892" y="178">t &gt;= 1</label>
 			<label kind="synchronisation" x="884" y="212">transmit[seqNeighbour]!</label>
 			<label kind="assignment" x="867" y="195">TransmitNewEdges(), comms++</label>
 		</transition>
 		<transition>
-			<source ref="id41"/>
-			<target ref="id40"/>
+			<source ref="id25"/>
+			<target ref="id24"/>
 			<label kind="guard" x="230" y="93">!IsNewNode()</label>
 			<label kind="assignment" x="213" y="110">ExistingNetwork()</label>
 		</transition>
 		<transition>
-			<source ref="id40"/>
-			<target ref="id35"/>
+			<source ref="id24"/>
+			<target ref="id19"/>
 			<label kind="guard" x="349" y="187">start != ID</label>
+		</transition>
+	</template>
+	<template>
+		<name>RingNodeSync</name>
+		<parameter>const UID ID</parameter>
+		<declaration>clock t;
+
+int[0, nodes*2] mapLen = 0;
+int[0, nodes*2] newLen = 0;
+edge networkMap[nodes*2];
+edge newEdges[nodes*2];
+
+edge expectedNetworkMap[nodes*2];
+bool verified = false;
+int expected = 0;
+
+int cwNeighbour;
+int ccwNeighbour;
+int newNeighbour = -1;
+
+int nextHop;
+
+int senderID; // ensure start node sends to cwNeighbour
+
+bool notifiedNewNode = false;
+bool newKnowledge = false;
+
+bool firstPass = false;
+bool secondPass = false;
+
+// If this node only has one neighbour, update first- and secondPass
+void UpdatePass()
+{
+  if (cwNeighbour == -1 || ccwNeighbour == -1)
+  {
+    if (!firstPass &amp;&amp; !secondPass)
+    {
+      firstPass = true;
+    }
+    else if (firstPass)
+    {
+      firstPass = false;
+      secondPass = true;
+    }
+  }
+}
+
+
+int IntClampExisting(int n)
+{
+  if (n &lt; 0) { return existingNodes - 1; }
+  else { return n % existingNodes; }
+}
+
+
+void NextHop()
+{
+  if(senderID == ccwNeighbour)
+  {
+    nextHop = cwNeighbour;
+  }
+  else //senderID == cwNeighbour
+  {
+    nextHop = ccwNeighbour;
+  }
+}
+
+
+int NextOppHop()
+{
+  if (cwNeighbour == -1) { return ccwNeighbour; }
+  else { return cwNeighbour; }
+}
+
+void CheckNewNode()
+{
+  if (senderID != ccwNeighbour &amp;&amp; senderID != cwNeighbour)
+  {
+    ccwNeighbour = senderID;
+  }
+}
+
+int SendNewNode()
+{
+  if (nextHop == cwNeighbour)
+  {
+    return newNeighbour;
+  }
+  else return -1;
+}
+
+void CheckNeighbour()
+{
+  if (neighbour != -1)
+  {
+    ccwNeighbour = neighbour;
+  }
+}
+
+bool ContinueTransmitting()
+{
+  if (nextHop == -1 &amp;&amp; secondPass)
+  {
+    return false;
+  }
+  else return newKnowledge || firstPass || secondPass;
+}
+
+
+bool IsNewNode()
+{
+  int i;
+  for(i=0; i&lt;nrNewNodes; i++)
+  {
+    if (newNodes[i] == ID)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+bool IsLinkBroken(int node1, int node2)
+{
+  return (holeLink[0] == node1 &amp;&amp; holeLink[1] == node2) || (holeLink[0] == node2 &amp;&amp; holeLink[1] == node1);
+}
+
+
+void AddNeighbours()
+{
+  int cwNode = IntClampExisting(ID + 1);
+  int ccwNode = IntClampExisting(ID - 1);
+
+  if (!IsLinkBroken(ID, cwNode))
+  {
+    cwNeighbour = cwNode;
+  }
+  else
+  {
+    cwNeighbour = -1;
+  }
+
+  if (!IsLinkBroken(ID, ccwNode))
+  {
+    ccwNeighbour = ccwNode;
+  }
+  else
+  {
+    ccwNeighbour = -1;
+  }
+}
+
+void ExistingNetwork() 
+{
+  int i;
+
+  if (IsNewNode())
+  {
+    return; // new nodes has no knowledge of the network
+  }
+
+  for(i=0; i&lt;existingNodes; i++)
+  {
+    int node1 = i;
+    int node2 = IntClampExisting(i+1);
+
+    if (!IsLinkBroken(node1, node2))
+    {
+      edge newEdge = {node1, node2};
+      networkMap[mapLen++] = newEdge;
+    }
+  }
+}
+
+
+bool DiscoveredNewNode()
+{
+  int i;
+
+  if (notifiedNewNode == true)
+  {
+    return false;
+  }
+
+  for(i=0; i&lt;nrNewNodes; i++)
+  {
+    if (newNodesNeighbour[i] == ID)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+// If this node has a clockwise neighbour, adds an edge between the new node and the clockwise neighbour
+void AddNewNodeNeighbour(int newNode)
+{
+  if (cwNeighbour != -1)
+  {
+    edge newEdge = {newNode, cwNeighbour};
+    newEdges[newLen++] = newEdge;
+    networkMap[mapLen++] = newEdge;
+  }
+}
+
+
+// Adds a new edge between this node and the new node.
+void UpdateNetworkMap()
+{
+  int i;
+  for(i=0; i&lt;nrNewNodes; i++)
+  {
+    if (newNodesNeighbour[i] == ID)
+    {
+       edge newEdge = {ID, newNodes[i]};
+       networkMap[mapLen++] = newEdge;
+
+       newEdges[newLen++] = newEdge;
+
+       newNeighbour = newNodes[i];
+
+       AddNewNodeNeighbour(newNodes[i]);
+    }
+  }
+}
+
+
+// Checks if a edge is equal to another edge - {1,2} and {2,1} are considered equal.
+bool EdgeEqual(edge e1, edge e2)
+{
+  return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
+}
+
+// Checks if a given edge already exists in the networkmap
+bool ExistsInNetwork(edge e)
+{
+  int i;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    bool check = EdgeEqual(e, networkMap[i]);
+    if (check == true) 
+    {
+      return true;
+    } 
+  }
+  return false;
+}
+
+
+// Look at the transmitted edgeList, add all edges that this node didn't have knowledge about
+void ProcessNewEdges()
+{
+  int i;
+
+  if (!firstPass &amp;&amp; !secondPass)
+  {
+    newLen = 0;
+    for (i=0; i&lt;len; i++)
+    {
+      edge e = edgeList[i];
+      bool isNewEdge = !ExistsInNetwork(e);
+      if (isNewEdge)
+      {
+        networkMap[mapLen++] = e;
+        newEdges[newLen++] = e;
+        newKnowledge = true;
+      }
+    }
+  }
+  else if (firstPass || secondPass)
+  {
+    newLen = 0;
+    for (i=0; i&lt;len; i++)
+    {
+      edge e = edgeList[i];
+      bool isNewEdge = !ExistsInNetwork(e);
+      newEdges[newLen++] = e;
+
+      if (isNewEdge)
+      {
+        networkMap[mapLen++] = e;
+        newKnowledge = true;
+      }
+    }
+  }
+}
+
+
+// Reset the len variable and fills it with this nodes new edge knowledge
+void TransmitNewEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;newLen; i++)
+  {
+    edgeList[len++] = newEdges[i];
+  }
+}
+
+
+// Look at the transmitted edgeList, add all edges 
+void ProcessAllEdges()
+{
+  int i;
+  for (i=0; i&lt;len; i++)
+  {
+    networkMap[mapLen++] = edgeList[i];
+  }
+}
+
+
+// Reset the edgeList and len variable and fills it with this nodes networkMap
+void TransmitAllEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    edgeList[len++] = networkMap[i];
+  }
+}
+
+
+// Verification - Build the expected complete network map and check if they all exist in the node's network map
+bool Verify()
+{
+  int i;
+
+  // Check all start links
+  for (i=0; i&lt;existingNodes; i++)
+  {
+    edge e = {i, IntClampExisting(i+1)};
+
+    // In the broken link scenario, don't check if the broken link is in the networkmap
+    if (!IsLinkBroken(e.a, e.b))
+    {
+      bool exist = ExistsInNetwork(e);
+      if (exist == false) { return false; }
+    } 
+  }
+
+  // Check all new links
+  for (i=0; i&lt;nrNewNodes; i++)
+  {
+    int newNode = newNodes[i];
+    int neighbour1 = newNodesNeighbour[i];
+    int neighbour2 = IntClampExisting(newNodesNeighbour[i] + 1);
+
+    edge e1 = {neighbour1, newNode};
+    edge e2 = {newNode, neighbour2};
+
+    bool exist1 = ExistsInNetwork(e1);
+
+    if (exist1 == false) { return false; }
+
+    // In the broken link scenario, new nodes may only have one neighbour.
+    if ((neighbour2 == holeLink[0] || neighbour2 == holeLink[1]) == false)
+    {
+      bool exist2 = ExistsInNetwork(e2);
+      if (exist2 == false) { return false; }
+    }
+  }
+  return true;
+}
+</declaration>
+		<location id="id30" x="-136" y="340">
+			<name x="-127" y="314">Receive</name>
+		</location>
+		<location id="id31" x="170" y="340">
+			<name x="187" y="331">Discover</name>
+			<urgent/>
+		</location>
+		<location id="id32" x="408" y="442">
+			<name x="357" y="450">Transmit</name>
+			<label kind="invariant" x="374" y="467">t &lt;= 1</label>
+		</location>
+		<location id="id33" x="-136" y="204">
+			<name x="-119" y="204">Start</name>
+			<committed/>
+		</location>
+		<location id="id34" x="-272" y="204">
+			<name x="-255" y="204">Initialize</name>
+			<urgent/>
+		</location>
+		<location id="id35" x="680" y="442">
+			<committed/>
+		</location>
+		<location id="id36" x="170" y="170">
+			<name x="110" y="119">UpdateNew</name>
+			<label kind="invariant" x="144" y="136">t &lt;= 1</label>
+		</location>
+		<location id="id37" x="408" y="170">
+			<name x="297" y="178">TransmitNeighbour</name>
+			<committed/>
+		</location>
+		<location id="id38" x="-374" y="204">
+			<name x="-459" y="187">NewNode</name>
+		</location>
+		<location id="id39" x="680" y="170">
+			<committed/>
+		</location>
+		<location id="id40" x="-238" y="442">
+			<committed/>
+		</location>
+		<location id="id41" x="-136" y="578">
+			<name x="-221" y="569">ClearData</name>
+			<committed/>
+		</location>
+		<location id="id42" x="-374" y="408">
+			<name x="-399" y="374">Verified</name>
+		</location>
+		<location id="id43" x="-374" y="476">
+			<name x="-399" y="493">Wrong</name>
+		</location>
+		<location id="id44" x="170" y="442">
+			<name x="178" y="450">CheckContinue</name>
+			<committed/>
+		</location>
+		<location id="id45" x="680" y="578">
+			<committed/>
+		</location>
+		<init ref="id34"/>
+		<transition>
+			<source ref="id45"/>
+			<target ref="id41"/>
+		</transition>
+		<transition>
+			<source ref="id35"/>
+			<target ref="id45"/>
+		</transition>
+		<transition>
+			<source ref="id39"/>
+			<target ref="id45"/>
+			<label kind="assignment" x="518" y="306">cwNeighbour = newNeighbour</label>
+			<nail x="714" y="170"/>
+			<nail x="714" y="578"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id35"/>
+			<label kind="guard" x="433" y="331">t &gt;= 1 &amp;&amp; nextHop == -1</label>
+			<label kind="synchronisation" x="433" y="399">transmit[NextOppHop()]!</label>
+			<label kind="assignment" x="433" y="348">TransmitNewEdges(), UpdatePass(),
+first = firstPass, second = secondPass,
+neighbour = -1, sender = ID, comms++</label>
+			<nail x="442" y="425"/>
+			<nail x="646" y="425"/>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id39"/>
+			<label kind="guard" x="450" y="59">nextHop == -1</label>
+			<label kind="synchronisation" x="442" y="127">transmit[NextOppHop()]!</label>
+			<label kind="assignment" x="442" y="76">TransmitNewEdges(),
+first = firstPass, second = secondPass,
+neighbour = -1, sender = ID, comms++</label>
+			<nail x="442" y="153"/>
+			<nail x="646" y="153"/>
+		</transition>
+		<transition>
+			<source ref="id44"/>
+			<target ref="id40"/>
+			<label kind="guard" x="17" y="467">!ContinueTransmitting()</label>
+			<label kind="synchronisation" x="119" y="484">ended!</label>
+			<nail x="170" y="612"/>
+			<nail x="-238" y="612"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id44"/>
+			<label kind="guard" x="178" y="374">!DiscoveredNewNode()</label>
+		</transition>
+		<transition>
+			<source ref="id44"/>
+			<target ref="id32"/>
+			<label kind="guard" x="187" y="416">ContinueTransmitting()</label>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id40"/>
+			<label kind="synchronisation" x="-221" y="416">ended?</label>
+			<nail x="-170" y="442"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id43"/>
+			<label kind="guard" x="-340" y="484">!Verify()</label>
+			<nail x="-289" y="476"/>
+		</transition>
+		<transition>
+			<source ref="id40"/>
+			<target ref="id42"/>
+			<label kind="guard" x="-340" y="382">Verify()</label>
+			<nail x="-289" y="408"/>
+		</transition>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id31"/>
+			<label kind="synchronisation" x="-51" y="204">transmit[ID]?</label>
+			<label kind="assignment" x="-51" y="221">t = 0, senderID = sender,
+firstPass = first,
+secondPass = second,
+CheckNewNode(), NextHop(),
+ProcessNewEdges(),
+CheckNeighbour()</label>
+		</transition>
+		<transition>
+			<source ref="id41"/>
+			<target ref="id30"/>
+			<label kind="assignment" x="-127" y="374">newKnowledge = false,
+newNeighbour = -1</label>
+		</transition>
+		<transition>
+			<source ref="id37"/>
+			<target ref="id39"/>
+			<label kind="guard" x="442" y="187">nextHop != -1</label>
+			<label kind="synchronisation" x="442" y="272">transmit[nextHop]!</label>
+			<label kind="assignment" x="442" y="204">TransmitNewEdges(),
+neighbour = SendNewNode(),
+first = firstPass, second = secondPass,
+sender = ID, comms++</label>
+			<nail x="442" y="187"/>
+			<nail x="646" y="187"/>
+		</transition>
+		<transition>
+			<source ref="id36"/>
+			<target ref="id37"/>
+			<label kind="guard" x="187" y="34">t &gt;= 1</label>
+			<label kind="synchronisation" x="187" y="144">transmit[newNeighbour]!</label>
+			<label kind="assignment" x="187" y="51">TransmitAllEdges(), UpdatePass(),
+first = firstPass, second = secondPass,
+neighbour = cwNeighbour,
+sender = ID, comms++,
+notifiedNewNode = true</label>
+		</transition>
+		<transition>
+			<source ref="id38"/>
+			<target ref="id30"/>
+			<label kind="synchronisation" x="-365" y="229">transmit[ID]?</label>
+			<label kind="assignment" x="-365" y="246">ProcessAllEdges(),
+firstPass = first,
+secondPass = second,
+cwNeighbour = neighbour,
+ccwNeighbour = sender</label>
+			<nail x="-374" y="340"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id38"/>
+			<label kind="guard" x="-365" y="178">IsNewNode()</label>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id36"/>
+			<label kind="guard" x="178" y="229">DiscoveredNewNode()</label>
+			<label kind="assignment" x="178" y="246">UpdateNetworkMap()</label>
+		</transition>
+		<transition>
+			<source ref="id33"/>
+			<target ref="id31"/>
+			<label kind="guard" x="-85" y="144">start == ID</label>
+			<label kind="assignment" x="-85" y="161">senderID = ccwNeighbour,
+NextHop()</label>
+			<nail x="136" y="204"/>
+		</transition>
+		<transition>
+			<source ref="id32"/>
+			<target ref="id35"/>
+			<label kind="guard" x="433" y="459">t &gt;= 1 &amp;&amp; nextHop != -1</label>
+			<label kind="synchronisation" x="433" y="527">transmit[nextHop]!</label>
+			<label kind="assignment" x="433" y="476">TransmitNewEdges(), UpdatePass(),
+first = firstPass, second = secondPass,
+neighbour = -1, sender = ID, comms++</label>
+			<nail x="442" y="459"/>
+			<nail x="646" y="459"/>
+		</transition>
+		<transition>
+			<source ref="id34"/>
+			<target ref="id33"/>
+			<label kind="guard" x="-238" y="144">!IsNewNode()</label>
+			<label kind="assignment" x="-255" y="161">ExistingNetwork(),
+AddNeighbours()</label>
+		</transition>
+		<transition>
+			<source ref="id33"/>
+			<target ref="id30"/>
+			<label kind="guard" x="-127" y="289">start != ID</label>
+		</transition>
+	</template>
+	<template>
+		<name>RingNodeAsync</name>
+		<parameter>const UID ID</parameter>
+		<declaration>int[0, nodes * 2] verifyLen = 0;
+
+clock t;
+
+int[0, nodes*2] mapLen = 0;
+int[0, nodes*2] newLen = 0;
+edge networkMap[nodes*2];
+edge newEdges[nodes*2];
+
+edge expectedNetworkMap[nodes*2];
+bool verified = false;
+int expected = 0;
+
+int cwNeighbour;
+int ccwNeighbour;
+int newNeighbour = -1;
+
+int nextHop;
+
+int senderID; // ensure start node sends to cwNeighbour
+
+bool notifiedNewNode = false;
+bool newKnowledge = false;
+
+bool firstPass = false;
+bool secondPass = false;
+
+// If this node only has one neighbour, update first- and secondPass
+void UpdatePass()
+{
+  if (cwNeighbour == -1 || ccwNeighbour == -1)
+  {
+    if (!firstPass &amp;&amp; !secondPass)
+    {
+      firstPass = true;
+    }
+    else if (firstPass)
+    {
+      firstPass = false;
+      secondPass = true;
+    }
+  }
+}
+
+
+int IntClampExisting(int n)
+{
+  if (n &lt; 0) { return existingNodes - 1; }
+  else { return n % existingNodes; }
+}
+
+
+void NextHop()
+{
+  if(senderID == ccwNeighbour)
+  {
+    nextHop = cwNeighbour;
+  }
+  else //senderID == cwNeighbour
+  {
+    nextHop = ccwNeighbour;
+  }
+}
+
+
+int NextOppHop()
+{
+  if (cwNeighbour == -1) { return ccwNeighbour; }
+  else { return cwNeighbour; }
+}
+
+void CheckNewNode()
+{
+  if (senderID != ccwNeighbour &amp;&amp; senderID != cwNeighbour)
+  {
+    ccwNeighbour = senderID;
+  }
+}
+
+void CheckNeighbour()
+{
+  if (neighbour != -1)
+  {
+    ccwNeighbour = neighbour;
+  }
+}
+
+bool ContinueTransmitting()
+{
+  if (nextHop == -1 &amp;&amp; secondPass)
+  {
+    return false;
+  }
+  else return newKnowledge || firstPass || secondPass;
+}
+
+
+bool IsNewNode()
+{
+  int i;
+  for(i=0; i&lt;nrNewNodes; i++)
+  {
+    if (newNodes[i] == ID)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+bool IsLinkBroken(int node1, int node2)
+{
+  return (holeLink[0] == node1 &amp;&amp; holeLink[1] == node2) || (holeLink[0] == node2 &amp;&amp; holeLink[1] == node1);
+}
+
+
+void AddNeighbours()
+{
+  int cwNode = IntClampExisting(ID + 1);
+  int ccwNode = IntClampExisting(ID - 1);
+
+  if (!IsLinkBroken(ID, cwNode))
+  {
+    cwNeighbour = cwNode;
+  }
+  else
+  {
+    cwNeighbour = -1;
+  }
+
+  if (!IsLinkBroken(ID, ccwNode))
+  {
+    ccwNeighbour = ccwNode;
+  }
+  else
+  {
+    ccwNeighbour = -1;
+  }
+}
+
+void ExistingNetwork() 
+{
+  int i;
+
+  if (IsNewNode())
+  {
+    return; // new nodes has no knowledge of the network
+  }
+
+  for(i=0; i&lt;existingNodes; i++)
+  {
+    int node1 = i;
+    int node2 = IntClampExisting(i+1);
+
+    if (!IsLinkBroken(node1, node2))
+    {
+      edge newEdge = {node1, node2};
+      networkMap[mapLen++] = newEdge;
+    }
+  }
+}
+
+
+bool DiscoveredNewNode()
+{
+  int i;
+
+  if (notifiedNewNode == true)
+  {
+    return false;
+  }
+
+  for(i=0; i&lt;nrNewNodes; i++)
+  {
+    if (newNodesNeighbour[i] == ID)
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+// If this node has a clockwise neighbour, adds an edge between the new node and the clockwise neighbour
+void AddNewNodeNeighbour(int newNode)
+{
+  if (cwNeighbour != -1)
+  {
+    edge newEdge = {newNode, cwNeighbour};
+    newEdges[newLen++] = newEdge;
+    networkMap[mapLen++] = newEdge;
+  }
+}
+
+
+// Adds a new edge between this node and the new node.
+void UpdateNetworkMap()
+{
+  int i;
+  for(i=0; i&lt;nrNewNodes; i++)
+  {
+    if (newNodesNeighbour[i] == ID)
+    {
+       edge newEdge = {ID, newNodes[i]};
+       networkMap[mapLen++] = newEdge;
+
+       newEdges[newLen++] = newEdge;
+
+       newNeighbour = newNodes[i];
+
+       AddNewNodeNeighbour(newNodes[i]);
+    }
+  }
+}
+
+
+// Checks if a edge is equal to another edge - {1,2} and {2,1} are considered equal.
+bool EdgeEqual(edge e1, edge e2)
+{
+  return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
+}
+
+// Checks if a given edge already exists in the networkmap
+bool ExistsInNetwork(edge e)
+{
+  int i;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    bool check = EdgeEqual(e, networkMap[i]);
+    if (check == true) 
+    {
+      return true;
+    } 
+  }
+  return false;
+}
+
+
+// Look at the transmitted edgeList, add all edges that this node didn't have knowledge about
+void ProcessNewEdges()
+{
+  int i;
+
+  if (!firstPass &amp;&amp; !secondPass)
+  {
+    newLen = 0;
+    for (i=0; i&lt;len; i++)
+    {
+      edge e = edgeList[i];
+      bool isNewEdge = !ExistsInNetwork(e);
+      if (isNewEdge)
+      {
+        networkMap[mapLen++] = e;
+        newEdges[newLen++] = e;
+        newKnowledge = true;
+      }
+    }
+  }
+  else if (firstPass || secondPass)
+  {
+    newLen = 0;
+    for (i=0; i&lt;len; i++)
+    {
+      edge e = edgeList[i];
+      bool isNewEdge = !ExistsInNetwork(e);
+      newEdges[newLen++] = e;
+
+      if (isNewEdge)
+      {
+        networkMap[mapLen++] = e;
+        newKnowledge = true;
+      }
+    }
+  }
+}
+
+
+// Reset the len variable and fills it with this nodes new edge knowledge
+void TransmitNewEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;newLen; i++)
+  {
+    edgeList[len++] = newEdges[i];
+  }
+}
+
+
+// Look at the transmitted edgeList, add all edges 
+void ProcessAllEdges()
+{
+  int i;
+  for (i=0; i&lt;len; i++)
+  {
+    networkMap[mapLen++] = edgeList[i];
+  }
+}
+
+
+// Reset the edgeList and len variable and fills it with this nodes networkMap
+void TransmitAllEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    edgeList[len++] = networkMap[i];
+  }
+}
+
+
+// Verification - Build the expected complete network map and check if they all exist in the node's network map
+bool Verify()
+{
+  int i;
+
+  // Check all start links
+  for (i=0; i&lt;existingNodes; i++)
+  {
+    edge e = {i, IntClampExisting(i+1)};
+
+    // In the broken link scenario, don't check if the broken link is in the networkmap
+    if (!IsLinkBroken(e.a, e.b))
+    {
+      bool exist = ExistsInNetwork(e);
+      if (exist == false) { return false; }
+    } 
+  }
+
+  // Check all new links
+  for (i=0; i&lt;nrNewNodes; i++)
+  {
+    int newNode = newNodes[i];
+    int neighbour1 = newNodesNeighbour[i];
+    int neighbour2 = IntClampExisting(newNodesNeighbour[i] + 1);
+
+    edge e1 = {neighbour1, newNode};
+    edge e2 = {newNode, neighbour2};
+
+    bool exist1 = ExistsInNetwork(e1);
+
+    if (exist1 == false) { return false; }
+
+    // In the broken link scenario, new nodes may only have one neighbour.
+    if ((neighbour2 == holeLink[0] || neighbour2 == holeLink[1]) == false)
+    {
+      bool exist2 = ExistsInNetwork(e2);
+      if (exist2 == false) { return false; }
+    }
+  }
+  return true;
+}
+</declaration>
+		<location id="id46" x="-136" y="340">
+			<name x="-127" y="314">Receive</name>
+		</location>
+		<location id="id47" x="170" y="340">
+			<name x="187" y="331">Discover</name>
+			<urgent/>
+		</location>
+		<location id="id48" x="408" y="442">
+			<name x="357" y="450">Transmit</name>
+			<label kind="invariant" x="374" y="467">t &lt;= 10</label>
+		</location>
+		<location id="id49" x="-136" y="204">
+			<name x="-119" y="204">Start</name>
+			<committed/>
+		</location>
+		<location id="id50" x="-272" y="204">
+			<name x="-255" y="204">Initialize</name>
+			<urgent/>
+		</location>
+		<location id="id51" x="680" y="442">
+			<committed/>
+		</location>
+		<location id="id52" x="170" y="170">
+			<name x="110" y="119">UpdateNew</name>
+			<label kind="invariant" x="144" y="136">t &lt;= 10</label>
+		</location>
+		<location id="id53" x="408" y="170">
+			<name x="297" y="178">TransmitNeighbour</name>
+			<committed/>
+		</location>
+		<location id="id54" x="-374" y="204">
+			<name x="-459" y="187">NewNode</name>
+		</location>
+		<location id="id55" x="680" y="170">
+			<committed/>
+		</location>
+		<location id="id56" x="-238" y="442">
+			<committed/>
+		</location>
+		<location id="id57" x="-136" y="578">
+			<name x="-221" y="569">ClearData</name>
+			<committed/>
+		</location>
+		<location id="id58" x="-374" y="408">
+			<name x="-399" y="374">Verified</name>
+		</location>
+		<location id="id59" x="-374" y="476">
+			<name x="-399" y="493">Wrong</name>
+		</location>
+		<location id="id60" x="170" y="442">
+			<name x="178" y="450">CheckContinue</name>
+			<committed/>
+		</location>
+		<location id="id61" x="680" y="578">
+			<committed/>
+		</location>
+		<init ref="id50"/>
+		<transition>
+			<source ref="id61"/>
+			<target ref="id57"/>
+		</transition>
+		<transition>
+			<source ref="id51"/>
+			<target ref="id61"/>
+		</transition>
+		<transition>
+			<source ref="id55"/>
+			<target ref="id61"/>
+			<label kind="assignment" x="518" y="289">cwNeighbour = newNeighbour</label>
+			<nail x="714" y="170"/>
+			<nail x="714" y="578"/>
+		</transition>
+		<transition>
+			<source ref="id48"/>
+			<target ref="id51"/>
+			<label kind="guard" x="433" y="331">t &gt;= 1 &amp;&amp; nextHop == -1</label>
+			<label kind="synchronisation" x="433" y="399">transmit[NextOppHop()]!</label>
+			<label kind="assignment" x="433" y="348">TransmitNewEdges(), UpdatePass(),
+first = firstPass, second = secondPass,
+neighbour = -1, sender = ID, comms++</label>
+			<nail x="442" y="425"/>
+			<nail x="646" y="425"/>
+		</transition>
+		<transition>
+			<source ref="id53"/>
+			<target ref="id55"/>
+			<label kind="guard" x="450" y="59">nextHop == -1</label>
+			<label kind="synchronisation" x="442" y="127">transmit[NextOppHop()]!</label>
+			<label kind="assignment" x="442" y="76">TransmitNewEdges(),
+first = firstPass, second = secondPass,
+neighbour = -1, sender = ID, comms++</label>
+			<nail x="442" y="153"/>
+			<nail x="646" y="153"/>
+		</transition>
+		<transition>
+			<source ref="id60"/>
+			<target ref="id56"/>
+			<label kind="guard" x="17" y="467">!ContinueTransmitting()</label>
+			<label kind="synchronisation" x="119" y="484">ended!</label>
+			<nail x="170" y="612"/>
+			<nail x="-238" y="612"/>
+		</transition>
+		<transition>
+			<source ref="id47"/>
+			<target ref="id60"/>
+			<label kind="guard" x="178" y="374">!DiscoveredNewNode()</label>
+		</transition>
+		<transition>
+			<source ref="id60"/>
+			<target ref="id48"/>
+			<label kind="guard" x="187" y="416">ContinueTransmitting()</label>
+		</transition>
+		<transition>
+			<source ref="id46"/>
+			<target ref="id56"/>
+			<label kind="synchronisation" x="-221" y="416">ended?</label>
+			<nail x="-170" y="442"/>
+		</transition>
+		<transition>
+			<source ref="id56"/>
+			<target ref="id59"/>
+			<label kind="guard" x="-340" y="484">!Verify()</label>
+			<nail x="-289" y="476"/>
+		</transition>
+		<transition>
+			<source ref="id56"/>
+			<target ref="id58"/>
+			<label kind="guard" x="-340" y="382">Verify()</label>
+			<nail x="-289" y="408"/>
+		</transition>
+		<transition>
+			<source ref="id46"/>
+			<target ref="id47"/>
+			<label kind="synchronisation" x="-51" y="204">transmit[ID]?</label>
+			<label kind="assignment" x="-51" y="221">t = 0, senderID = sender,
+firstPass = first,
+secondPass = second,
+CheckNewNode(), NextHop(),
+ProcessNewEdges(),
+CheckNeighbour()</label>
+		</transition>
+		<transition>
+			<source ref="id57"/>
+			<target ref="id46"/>
+			<label kind="assignment" x="-127" y="374">newKnowledge = false,
+newNeighbour = -1</label>
+		</transition>
+		<transition>
+			<source ref="id53"/>
+			<target ref="id55"/>
+			<label kind="guard" x="425" y="187">nextHop != -1</label>
+			<label kind="synchronisation" x="425" y="255">transmit[nextHop]!</label>
+			<label kind="assignment" x="399" y="204">TransmitNewEdges(), neighbour = newNeighbour,
+first = firstPass, second = secondPass,
+sender = ID, comms++</label>
+			<nail x="442" y="187"/>
+			<nail x="646" y="187"/>
+		</transition>
+		<transition>
+			<source ref="id52"/>
+			<target ref="id53"/>
+			<label kind="guard" x="187" y="34">t &gt;= 1</label>
+			<label kind="synchronisation" x="187" y="144">transmit[newNeighbour]!</label>
+			<label kind="assignment" x="187" y="51">TransmitAllEdges(), UpdatePass(),
+first = firstPass, second = secondPass,
+neighbour = cwNeighbour,
+sender = ID, comms++,
+notifiedNewNode = true</label>
+		</transition>
+		<transition>
+			<source ref="id54"/>
+			<target ref="id46"/>
+			<label kind="synchronisation" x="-365" y="229">transmit[ID]?</label>
+			<label kind="assignment" x="-365" y="246">ProcessAllEdges(),
+firstPass = first,
+secondPass = second,
+cwNeighbour = neighbour,
+ccwNeighbour = sender</label>
+			<nail x="-374" y="340"/>
+		</transition>
+		<transition>
+			<source ref="id50"/>
+			<target ref="id54"/>
+			<label kind="guard" x="-365" y="178">IsNewNode()</label>
+		</transition>
+		<transition>
+			<source ref="id47"/>
+			<target ref="id52"/>
+			<label kind="guard" x="178" y="229">DiscoveredNewNode()</label>
+			<label kind="assignment" x="178" y="246">UpdateNetworkMap()</label>
+		</transition>
+		<transition>
+			<source ref="id49"/>
+			<target ref="id47"/>
+			<label kind="guard" x="-85" y="144">start == ID</label>
+			<label kind="assignment" x="-85" y="161">senderID = ccwNeighbour,
+NextHop()</label>
+			<nail x="136" y="204"/>
+		</transition>
+		<transition>
+			<source ref="id48"/>
+			<target ref="id51"/>
+			<label kind="guard" x="433" y="459">t &gt;= 1 &amp;&amp; nextHop != -1</label>
+			<label kind="synchronisation" x="433" y="527">transmit[nextHop]!</label>
+			<label kind="assignment" x="433" y="476">TransmitNewEdges(), UpdatePass(),
+first = firstPass, second = secondPass,
+neighbour = -1, sender = ID, comms++</label>
+			<nail x="442" y="459"/>
+			<nail x="646" y="459"/>
+		</transition>
+		<transition>
+			<source ref="id50"/>
+			<target ref="id49"/>
+			<label kind="guard" x="-238" y="144">!IsNewNode()</label>
+			<label kind="assignment" x="-255" y="161">ExistingNetwork(),
+AddNeighbours()</label>
+		</transition>
+		<transition>
+			<source ref="id49"/>
+			<target ref="id46"/>
+			<label kind="guard" x="-127" y="289">start != ID</label>
 		</transition>
 	</template>
 	<template>
@@ -1426,29 +2031,29 @@ bool IsNewNode(int node)
   }
   return false;
 }</declaration>
-		<location id="id46" x="-382" y="0">
+		<location id="id62" x="-382" y="0">
 			<name x="-421" y="-34">ChooseStart</name>
 			<committed/>
 		</location>
-		<location id="id47" x="-136" y="0">
+		<location id="id63" x="-136" y="0">
 			<name x="-146" y="-34">Done</name>
 		</location>
-		<location id="id48" x="-739" y="0">
+		<location id="id64" x="-739" y="0">
 			<name x="-751" y="-35">Init</name>
 			<committed/>
 		</location>
-		<location id="id49" x="-586" y="0">
+		<location id="id65" x="-586" y="0">
 			<name x="-603" y="-34">Setup</name>
 			<committed/>
 		</location>
-		<location id="id50" x="-646" y="102">
+		<location id="id66" x="-646" y="102">
 			<name x="-799" y="93">ChooseDiscoverNode</name>
 			<committed/>
 		</location>
-		<init ref="id48"/>
+		<init ref="id64"/>
 		<transition>
-			<source ref="id50"/>
-			<target ref="id49"/>
+			<source ref="id66"/>
+			<target ref="id65"/>
 			<label kind="select" x="-629" y="102">discovering : UID</label>
 			<label kind="guard" x="-629" y="119">!HasNewNeighbour(discovering) &amp;&amp; !IsNewNode(discovering)</label>
 			<label kind="assignment" x="-629" y="136">newNodesNeighbour[setup] = discovering,
@@ -1456,24 +2061,24 @@ setup++</label>
 			<nail x="-510" y="102"/>
 		</transition>
 		<transition>
-			<source ref="id49"/>
-			<target ref="id46"/>
+			<source ref="id65"/>
+			<target ref="id62"/>
 			<label kind="guard" x="-561" y="-25">setup == nrNewNodes</label>
 			<nail x="-450" y="0"/>
 		</transition>
 		<transition>
-			<source ref="id49"/>
-			<target ref="id50"/>
+			<source ref="id65"/>
+			<target ref="id66"/>
 			<label kind="guard" x="-756" y="34">setup &lt; nrNewNodes</label>
 		</transition>
 		<transition>
-			<source ref="id48"/>
-			<target ref="id49"/>
+			<source ref="id64"/>
+			<target ref="id65"/>
 			<label kind="assignment" x="-716" y="-25">AddNewNodes()</label>
 		</transition>
 		<transition>
-			<source ref="id46"/>
-			<target ref="id47"/>
+			<source ref="id62"/>
+			<target ref="id63"/>
 			<label kind="select" x="-289" y="-42">i : startNodes</label>
 			<label kind="assignment" x="-340" y="-25">start = newNodesNeighbour[i]</label>
 		</transition>
@@ -1535,45 +2140,45 @@ void SetHole(int hole)
   holeLink[0] = hole;
   holeLink[1] = n2;
 }</declaration>
-		<location id="id51" x="569" y="-170">
+		<location id="id67" x="569" y="-170">
 			<name x="535" y="-212">ChooseStart</name>
 			<committed/>
 		</location>
-		<location id="id52" x="790" y="-170">
+		<location id="id68" x="790" y="-170">
 			<name x="780" y="-204">Done</name>
 		</location>
-		<location id="id53" x="42" y="-170">
+		<location id="id69" x="42" y="-170">
 			<name x="34" y="-212">Init</name>
 			<committed/>
 		</location>
-		<location id="id54" x="195" y="-170">
+		<location id="id70" x="195" y="-170">
 			<name x="178" y="-212">Setup</name>
 			<committed/>
 		</location>
-		<location id="id55" x="135" y="-68">
+		<location id="id71" x="135" y="-68">
 			<name x="-18" y="-77">ChooseDiscoverNode</name>
 			<committed/>
 		</location>
-		<location id="id56" x="374" y="-170">
+		<location id="id72" x="374" y="-170">
 			<name x="331" y="-212">ChooseHole</name>
 			<committed/>
 		</location>
-		<init ref="id53"/>
+		<init ref="id69"/>
 		<transition>
-			<source ref="id56"/>
-			<target ref="id51"/>
+			<source ref="id72"/>
+			<target ref="id67"/>
 			<label kind="select" x="442" y="-221">hole : UID</label>
 			<label kind="guard" x="416" y="-204">!IsNewNode(hole)</label>
 			<label kind="assignment" x="433" y="-187">SetHole(hole)</label>
 		</transition>
 		<transition>
-			<source ref="id54"/>
-			<target ref="id56"/>
+			<source ref="id70"/>
+			<target ref="id72"/>
 			<label kind="guard" x="212" y="-195">setup == nrNewNodes</label>
 		</transition>
 		<transition>
-			<source ref="id55"/>
-			<target ref="id54"/>
+			<source ref="id71"/>
+			<target ref="id70"/>
 			<label kind="select" x="152" y="-68">discovering : UID</label>
 			<label kind="guard" x="152" y="-51">!HasNewNeighbour(discovering) &amp;&amp; !IsNewNode(discovering)</label>
 			<label kind="assignment" x="152" y="-34">newNodesNeighbour[setup] = discovering,
@@ -1581,24 +2186,84 @@ setup++</label>
 			<nail x="271" y="-68"/>
 		</transition>
 		<transition>
-			<source ref="id54"/>
-			<target ref="id55"/>
+			<source ref="id70"/>
+			<target ref="id71"/>
 			<label kind="guard" x="25" y="-136">setup &lt; nrNewNodes</label>
 		</transition>
 		<transition>
-			<source ref="id53"/>
-			<target ref="id54"/>
+			<source ref="id69"/>
+			<target ref="id70"/>
 			<label kind="assignment" x="65" y="-195">AddNewNodes()</label>
 		</transition>
 		<transition>
-			<source ref="id51"/>
-			<target ref="id52"/>
+			<source ref="id67"/>
+			<target ref="id68"/>
 			<label kind="select" x="637" y="-204">i : startNodes</label>
 			<label kind="assignment" x="586" y="-187">start = newNodesNeighbour[i]</label>
 		</transition>
 	</template>
-	<system>system TestRingNodeHole, DiscoveryHole;</system>
+	<system>system RingNodeSync, DiscoveryHole;</system>
 	<queries>
+		<query>
+			<formula>***** Communication QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>* Compelte Ring - Mutliple New Node*</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= nodes * 2 - 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= (nodes * 2) - 3</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>* Compelte Ring - One New Node*</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= nodes</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; comms - 1 &lt;= nodes &amp;&amp; (forall (i : UID) RingNodeSync(i).Verified || RingNodeSync(i).Wrong)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; comms - 1 &lt;= nodes &amp;&amp; (forall (i : UID) RingNodeAsync(i).Verified || RingNodeAsync(i).Wrong)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>* Broken Link *</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= (nodes-1) * 3</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
 		<query>
 			<formula>***** SYNC QUERIES *****</formula>
 			<comment></comment>
@@ -1624,39 +2289,11 @@ setup++</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
 			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Wrong || RingNodeSync(i).Verified</formula>
 			<comment></comment>
 		</query>
 		<query>
 			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] comms &lt;= nodes * 2 - 2</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] comms &lt;= (nodes * 2) - 3</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>* One New Node</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] comms &lt;= nodes</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>E&lt;&gt; comms - 1 &lt;= nodes &amp;&amp; (forall (i : UID) RingNodeSync(i).Verified || RingNodeSync(i).Wrong)</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -1685,18 +2322,6 @@ setup++</label>
 		</query>
 		<query>
 			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] comms &lt;= nodes * 2</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A[] comms &lt;= (nodes * 2) -1</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>E&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; comms &lt;= (nodes * 2) - 1</formula>
 			<comment></comment>
 		</query>
 		<query>
@@ -1756,23 +2381,11 @@ setup++</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] forall (i : UID) (TestRingNodeHole(i).Transmit imply (TestRingNodeHole(i).nextHop() != TestRingNodeHole(i).ccwNeighbour))</formula>
+			<formula>A[] forall (i : UID) (RingNodeSync(i).Transmit imply (RingNodeSync(i).nextHop != RingNodeSync(i).ccwNeighbour))</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>A[] forall (i : UID) (TestRingNodeHole(i).TransmitNeighbour imply (TestRingNodeHole(i).nextHop() != TestRingNodeHole(i).ccwNeighbour))</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula></formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>*** TEST NODE ***</formula>
-			<comment></comment>
-		</query>
-		<query>
-			<formula>A&lt;&gt; forall (i : UID) TestRingNodeHole(i).Verified</formula>
+			<formula>A[] forall (i : UID) (RingNodeSync(i).TransmitNeighbour imply (RingNodeSync(i).nextHop != RingNodeSync(i).ccwNeighbour))</formula>
 			<comment></comment>
 		</query>
 		<query>
