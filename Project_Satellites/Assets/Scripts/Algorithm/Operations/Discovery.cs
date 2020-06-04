@@ -274,7 +274,7 @@ public class Discovery
         if (myNode.Router.NetworkMap.GetEntryByID(myNode.Id).Neighbours
             .Any(neighbour => discoveredNeighbours.Contains(neighbour) == false))
         {
-            Heartbeat.CheckHeartbeat(myNode);
+            //Heartbeat.CheckHeartbeat(myNode);
         }
 
     }
