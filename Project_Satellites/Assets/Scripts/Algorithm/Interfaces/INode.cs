@@ -1,8 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Collections.Generic;
+using UnityEngine;
+using System.Linq;
+using System;
+using System.Threading.Tasks;
+using System.Threading;
+using Vector3 = System.Numerics.Vector3;
 
-public abstract class INode
+public abstract class INode: MonoBehaviour
 {
     public abstract Node.NodeState State { get; set; }
     public abstract ConstellationPlan ActivePlan { get; set; }

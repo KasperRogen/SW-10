@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design.Serialization;
+using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
@@ -8,6 +9,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using Timer = System.Threading.Timer;
+using UnityEngine;
+using Vector3 = System.Numerics.Vector3;
+using Object = System.Object;
+using System.Collections;
+
+
 
 public class Node : INode
 {
@@ -51,20 +58,18 @@ public class Node : INode
         Position = position;
         Active = true;
         GenerateRouter();
-        MainThread();
 
         heartbeatTimer = new System.Timers.Timer();
         discoveryTimer = new System.Timers.Timer();
     }
 
-    private void MainThread()
+    private void Start()
     {
-        new Thread(() =>
-        {
+        StartCoroutine(MainThread());
+    }
 
-
-
-
+    private IEnumerator MainThread()
+    {
             bool run = true;
             while (run)
             {
@@ -72,22 +77,22 @@ public class Node : INode
                 {
                     TimersSetup = true;
                     ResettingTimers = true;
-                    Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(t => SetupHeartbeat());
-                    Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TimeScale).ContinueWith(t => SetupDiscovery());
+                    StartCoroutine(SetupHeartbeat());
+                    StartCoroutine(SetupDiscovery());
                 }
-
-                Thread.Sleep(1000 / Constants.TimeScale);
+                yield return new WaitForSeconds(1000 / Constants.TimeScale);
                 Request request = CommsModule.FetchNextRequest();
                 if (request != null)
                 {
                     Communicate(request);
                 }
             }
-        }).Start();
     }
 
-    private void SetupHeartbeat()
+    private IEnumerator SetupHeartbeat()
     {
+        yield return new WaitForSeconds((int) Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale);
+
         heartbeatTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
         heartbeatTimer.Elapsed += OnHeartbeatEvent;
         heartbeatTimer.Enabled = true;
@@ -101,8 +106,9 @@ public class Node : INode
         }
     }
 
-    private void SetupDiscovery()
+    private IEnumerator SetupDiscovery()
     {
+        yield return new WaitForSeconds((int) Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TimeScale);
         discoveryTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
         discoveryTimer.Elapsed += OnDiscoveryEvent;
         discoveryTimer.Enabled = true;

@@ -21,7 +21,9 @@ public class ConstellationGenerator : MonoBehaviour
 
         int satIndex = SatManager._instance.SatIndex;
 
-        INode node = new Node((uint?)satIndex, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
+        INode node = satellite.GetComponent<Node>();
+        node.Id = (uint?) satIndex;
+        node.Position = BackendHelpers.NumericsVectorFromUnity(satellite.transform.position);
         node.TargetPosition = node.Position;
         node.CommsModule = sim;
         node.PlaneNormalDir = BackendHelpers.NumericsVectorFromUnity(Vector3.up);
@@ -68,7 +70,10 @@ public class ConstellationGenerator : MonoBehaviour
                 GameObject satellite = Instantiate(SatellitePrefab, transform.position + instantiationVector, Quaternion.identity);
                 CommsSim sim = satellite.AddComponent<CommsSim>();
 
-                INode node = new Node(j, BackendHelpers.NumericsVectorFromUnity(satellite.transform.position));
+
+                INode node = satellite.GetComponent<Node>(); 
+                node.Id = j;
+                node.Position = BackendHelpers.NumericsVectorFromUnity(satellite.transform.position);
                 node.TargetPosition = node.Position;
                 node.CommsModule = sim;
                 node.PlaneNormalDir = BackendHelpers.NumericsVectorFromUnity(Vector3.up);
