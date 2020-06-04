@@ -11,7 +11,7 @@ public class CanvasHandler : MonoBehaviour
     public GameObject CallingNode { get; set; }
     public GameObject SatelliteButtons;
     public GameObject SatelliteToggles;
-    public static bool AutoChecksAllowed = true;
+    public static bool AutoChecksAllowed = false;
 
     bool interactionButtonsActive;
     // Start is called before the first frame update
