@@ -80,7 +80,7 @@ public class Node : INode
                     StartCoroutine(SetupHeartbeat());
                     StartCoroutine(SetupDiscovery());
                 }
-                yield return new WaitForSeconds(1000 / Constants.TimeScale);
+                yield return new WaitForSeconds(1 / Constants.TimeScale);
                 Request request = CommsModule.FetchNextRequest();
                 if (request != null)
                 {
