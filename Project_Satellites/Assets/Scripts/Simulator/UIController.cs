@@ -14,6 +14,7 @@ public class UIController : MonoBehaviour
 {
     public TMP_Text TimescaleLabel;
     public TMP_Text TimescaleSliderLabel;
+    public TMP_Text TimescaleSyncText;
     public Slider TimescaleSlider;
     private bool timeScaleSynchronizerRunning = false;
     private int desiredTimeScale;
@@ -28,8 +29,8 @@ public class UIController : MonoBehaviour
     IEnumerator TimeScaleSynchronizer()
     {
         timeScaleSynchronizerRunning = true;
-
-        while (SatManager._instance.satellites.Any(sat => sat.Node.SleepCount > 0) || Input.GetMouseButton(0))
+        TimescaleSyncText.enabled = true;
+        while (SatManager._instance.satellites.Any(sat => sat.Node.SleepCount > 0 || sat.Node.ResettingTimers) || Input.GetMouseButton(0))
         {
             yield return new WaitForEndOfFrame();
         }
@@ -39,6 +40,7 @@ public class UIController : MonoBehaviour
         SatManager._instance.satellites.ForEach(sat => sat.Node.ResetTimers());
 
         timeScaleSynchronizerRunning = false;
+        TimescaleSyncText.enabled = false;
     }
 
     private void Update()

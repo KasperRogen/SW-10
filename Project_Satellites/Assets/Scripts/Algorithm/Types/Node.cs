@@ -38,6 +38,8 @@ public class Node : INode
     public override NodeState State { get; set; }
     public override Router Router { get; set; }
 
+    public bool TimersSetup { get; set; }
+
     private bool active;
 
     private System.Timers.Timer heartbeatTimer, discoveryTimer;
@@ -59,13 +61,21 @@ public class Node : INode
     {
         new Thread(() =>
         {
-            Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(t => SetupHeartbeat());
-            Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TimeScale).ContinueWith(t => SetupDiscovery());
+
+
 
 
             bool run = true;
             while (run)
             {
+                if (AutoChecksAllowed && TimersSetup == false)
+                {
+                    TimersSetup = true;
+                    ResettingTimers = true;
+                    Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(t => SetupHeartbeat());
+                    Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TimeScale).ContinueWith(t => SetupDiscovery());
+                }
+
                 Thread.Sleep(1000 / Constants.TimeScale);
                 Request request = CommsModule.FetchNextRequest();
                 if (request != null)
@@ -96,6 +106,7 @@ public class Node : INode
         discoveryTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
         discoveryTimer.Elapsed += OnDiscoveryEvent;
         discoveryTimer.Enabled = true;
+        ResettingTimers = false;
     }
 
     private void OnDiscoveryEvent(Object source, ElapsedEventArgs e)
@@ -152,19 +163,27 @@ public class Node : INode
 
     public override void ResetTimers()
     {
+        if(AutoChecksAllowed == false)
+            return;
+
         discoveryTimer.Stop();
         heartbeatTimer.Stop();
+        ResettingTimers = true;
 
-        Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale);
-        Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale);
+        Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(delegate
+        {
 
+            discoveryTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
+            discoveryTimer.Start();
+        });
 
-        discoveryTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
-        discoveryTimer.Start();
+        Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(delegate
+        {
+            heartbeatTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
+            heartbeatTimer.Start();
+            ResettingTimers = false;
+        });
 
-
-        heartbeatTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
-        heartbeatTimer.Start();
     }
 
     private async void ExecuteRequest(Request request, bool isDependency)

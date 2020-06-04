@@ -18,6 +18,7 @@ public abstract class INode
     public bool ExecutingPlan;
     public string LastDiscoveryId;
     public Vector3 PlaneNormalDir { get; set; }
+    public bool ResettingTimers { get; set; }
 
     public abstract void GenerateRouter();
     public abstract void Communicate(Request message);
