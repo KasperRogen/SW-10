@@ -8,6 +8,7 @@ using System;
 using System.Threading.Tasks;
 using System.Threading;
 using Vector3 = System.Numerics.Vector3;
+using System.Collections;
 
 public abstract class INode: MonoBehaviour
 {
@@ -29,6 +30,6 @@ public abstract class INode: MonoBehaviour
 
     public abstract void GenerateRouter();
     public abstract void Communicate(Request message);
-    public abstract void ResetTimers();
+    public abstract IEnumerator ResetTimers();
     public int ReachableNodeCount;
 }

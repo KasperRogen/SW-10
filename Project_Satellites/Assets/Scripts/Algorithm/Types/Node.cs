@@ -5,8 +5,6 @@ using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Timers;
 using Timer = System.Threading.Timer;
 using UnityEngine;
@@ -59,39 +57,40 @@ public class Node : INode
         Active = true;
         GenerateRouter();
 
-        heartbeatTimer = new System.Timers.Timer();
-        discoveryTimer = new System.Timers.Timer();
     }
 
     private void Start()
     {
         StartCoroutine(MainThread());
+
+        heartbeatTimer = new System.Timers.Timer();
+        discoveryTimer = new System.Timers.Timer();
     }
 
     private IEnumerator MainThread()
     {
-            bool run = true;
-            while (run)
+        bool run = true;
+        while (run)
+        {
+            if (AutoChecksAllowed && TimersSetup == false)
             {
-                if (AutoChecksAllowed && TimersSetup == false)
-                {
-                    TimersSetup = true;
-                    ResettingTimers = true;
-                    StartCoroutine(SetupHeartbeat());
-                    StartCoroutine(SetupDiscovery());
-                }
-                yield return new WaitForSeconds(1 / Constants.TimeScale);
-                Request request = CommsModule.FetchNextRequest();
-                if (request != null)
-                {
-                    Communicate(request);
-                }
+                TimersSetup = true;
+                ResettingTimers = true;
+                StartCoroutine(SetupHeartbeat());
+                StartCoroutine(SetupDiscovery());
             }
+            yield return new WaitForSeconds(1 / Constants.TimeScale);
+            Request request = CommsModule.FetchNextRequest();
+            if (request != null)
+            {
+                Communicate(request);
+            }
+        }
     }
 
     private IEnumerator SetupHeartbeat()
     {
-        yield return new WaitForSeconds((int) Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale);
+        yield return new WaitForSeconds((int)Id * 60 / Constants.TimeScale);
 
         heartbeatTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
         heartbeatTimer.Elapsed += OnHeartbeatEvent;
@@ -108,7 +107,7 @@ public class Node : INode
 
     private IEnumerator SetupDiscovery()
     {
-        yield return new WaitForSeconds((int) Id * Constants.ONE_MINUTE_IN_MILLISECONDS * 2 / Constants.TimeScale);
+        yield return new WaitForSeconds((int)Id * 60 * 2 / Constants.TimeScale);
         discoveryTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
         discoveryTimer.Elapsed += OnDiscoveryEvent;
         discoveryTimer.Enabled = true;
@@ -139,57 +138,51 @@ public class Node : INode
         if (active == false)
             return;
 
-            if (request.DependencyRequests != null && request.DependencyRequests.Any())
+        if (request.DependencyRequests != null && request.DependencyRequests.Any())
+        {
+            foreach (Request dependencyRequest in request.DependencyRequests)
             {
-                foreach (Request dependencyRequest in request.DependencyRequests)
-                {
-                    ExecuteRequest(dependencyRequest, true);
-                }
+                ExecuteRequest(dependencyRequest, true);
             }
+        }
 
 
 
-            ExecuteRequest(request, false);
+        ExecuteRequest(request, false);
 
-            if (request.DestinationID != Id)
+        if (request.DestinationID != Id)
+        {
+            if (Router.NetworkMap.GetEntryByID(Id).Neighbours.Contains(request.DestinationID))
             {
-                if (Router.NetworkMap.GetEntryByID(Id).Neighbours.Contains(request.DestinationID))
-                {
-                    await CommsModule.SendAsync(request.DestinationID, request, Constants.COMMS_TIMEOUT, 3);
-                }
-                else
-                {
-                    uint? nextHop = Router.NextHop(Id, request.DestinationID);
-
-                    await CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, 3);
-                }
+                await CommsModule.SendAsync(request.DestinationID, request, Constants.COMMS_TIMEOUT, 3);
             }
+            else
+            {
+                uint? nextHop = Router.NextHop(Id, request.DestinationID);
+
+                await CommsModule.SendAsync(nextHop, request, Constants.COMMS_TIMEOUT, 3);
+            }
+        }
 
     }
 
-    public override void ResetTimers()
+    public override IEnumerator ResetTimers()
     {
-        if(AutoChecksAllowed == false)
-            return;
-
-        discoveryTimer.Stop();
-        heartbeatTimer.Stop();
-        ResettingTimers = true;
-
-        Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(delegate
+        if (AutoChecksAllowed == true)
         {
+            discoveryTimer.Stop();
+            heartbeatTimer.Stop();
+            ResettingTimers = true;
 
+            yield return new WaitForSeconds(60 / Constants.TimeScale);
             discoveryTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
             discoveryTimer.Start();
-        });
 
-        Task.Delay((int)Id * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale).ContinueWith(delegate
-        {
+            yield return new WaitForSeconds(60 / Constants.TimeScale);
             heartbeatTimer.Interval = Constants.NODES_PER_CYCLE * Constants.ONE_MINUTE_IN_MILLISECONDS / Constants.TimeScale;
             heartbeatTimer.Start();
             ResettingTimers = false;
-        });
-
+        }
     }
 
     private async void ExecuteRequest(Request request, bool isDependency)

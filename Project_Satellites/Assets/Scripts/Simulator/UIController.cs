@@ -30,14 +30,16 @@ public class UIController : MonoBehaviour
     {
         timeScaleSynchronizerRunning = true;
         TimescaleSyncText.enabled = true;
-        while (SatManager._instance.satellites.Any(sat => sat.Node.SleepCount > 0 || sat.Node.ResettingTimers) || Input.GetMouseButton(0))
+        bool resettingTimers = SatManager._instance.satellites.Any(sat => sat.Node.ResettingTimers);
+        bool sleepCount = SatManager._instance.satellites.Any(sat => sat.Node.SleepCount > 0);
+        while (resettingTimers || sleepCount || Input.GetMouseButton(0))
         {
             yield return new WaitForEndOfFrame();
         }
 
         Constants.TimeScale = desiredTimeScale;
 
-        SatManager._instance.satellites.ForEach(sat => sat.Node.ResetTimers());
+        SatManager._instance.satellites.ForEach(sat => StartCoroutine(sat.Node.ResetTimers()));
 
         timeScaleSynchronizerRunning = false;
         TimescaleSyncText.enabled = false;
