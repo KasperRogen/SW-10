@@ -18,7 +18,6 @@ public class ConstellationVisualiser : MonoBehaviour
     public Color HeartbeatMat;
 
 
-    public Node.NodeState state;
     public GameObject MessageGO;
 
     Dictionary<uint?, LineRenderer> commLineRenderes = new Dictionary<uint?, LineRenderer>();
@@ -72,40 +71,28 @@ public class ConstellationVisualiser : MonoBehaviour
     void Update()
     {
 
-        state = comms.Node.State;
+        //Message Object Handling
 
-        SatManager.MessageProps[] messageSnapshot = SatManager._instance.SentMessages.ToArray();
-
-        if (messageSnapshot.Length > 0)
+        foreach (SatManager.MessageProps props in SatManager._instance.SentMessages)
         {
-            foreach (SatManager.MessageProps props in messageSnapshot)
-            {
-                StartCoroutine(DisplayMessageSent(props.StartVect + Vector3.up, props.EndVect + Vector3.up, props.Duration, 0f, props.Color));
-            }
+            StartCoroutine(DisplayMessageSent(props.StartVect + Vector3.up, props.EndVect + Vector3.up, props.Duration, 0f, props.Color));
         }
-
-
         SatManager._instance.SentMessages.Clear();
-
-        reachableSats.Clear();
-
-
+        //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        
+        
+        
 
         KnownNeighbours = comms.Node.Router.NetworkMap.GetEntryByID(comms.Node.Id)?.Neighbours;
-
         reachableSats.Clear();
-
-
-        foreach (SatelliteComms node in reachableSats.Where(sat => KnownNeighbours.Contains(sat.Node.Id) == false))
-        {
-            reachableSats.Remove(node);
-        }
 
         uint? toRemove = null;
 
+        List<uint?> reachableSatsIDs = reachableSats.Select(sat => sat.Node.Id).ToList();
+
         foreach (uint? node in KnownNeighbours)
         {
-            if (reachableSats.Select(sat => sat.Node.Id).Contains(node) == false)
+            if (reachableSatsIDs.Contains(node) == false)
             {
                 if (SatManager._instance.satellites.Any(sat => sat.Node.Id == node) == false)
                 {
@@ -113,24 +100,23 @@ public class ConstellationVisualiser : MonoBehaviour
                 }
                 else
                 {
-                    Transform nodeTransform = SatManager._instance.satellites.Find(sat => sat.Node.Id == node).transform;
-                    reachableSats.Add(nodeTransform.GetComponent<SatelliteComms>());
+                    reachableSats.Add(SatManager._instance.satellites.Find(sat => sat.Node.Id == node));
                 }
 
             }
         }
+
+        reachableSatsIDs = reachableSats.Select(sat => sat.Node.Id).ToList();
 
         if (toRemove != null)
         {
             KnownNeighbours.Remove(toRemove);
         }
 
-        List<uint?> reachableSatsID = new List<uint?>();
 
         for (int i = 0; i < reachableSats?.Count; i++)
         {
             uint? id = reachableSats[i].Node.Id;
-            reachableSatsID.Add(id);
 
             if (commLineRenderes.ContainsKey(id) == false)
             {
@@ -182,7 +168,7 @@ public class ConstellationVisualiser : MonoBehaviour
 
             uint? key = commLineRenderes.ElementAt(i).Key;
 
-            if (reachableSatsID.Contains(key) == false)
+            if (reachableSatsIDs.Contains(key) == false)
             {
                 Destroy(commLineRenderes[key]);
                 commLineRenderes.Remove(key);

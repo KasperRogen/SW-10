@@ -9,6 +9,7 @@ using System.Threading;
 public class CommsSim : MonoBehaviour, ICommunicate
 {
     SatelliteComms comms;
+    Transform _transform;
     public Vector3 pos;
     public List<Request> RequestList { get; set; } = new List<Request>();
     public SatelliteComms ActiveCommSat = null;
@@ -22,14 +23,14 @@ public class CommsSim : MonoBehaviour, ICommunicate
     {
         comms = GetComponent<SatelliteComms>();
         satMan = GameObject.FindGameObjectWithTag("SatelliteManager").GetComponent<SatManager>();
+        _transform = transform;
     }
 
     private void Update()
     {
-        sleepCount = comms.Node.SleepCount;
-        comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(transform.position);
+        comms.Node.Position = BackendHelpers.NumericsVectorFromUnity(_transform.position);
 
-        ReachableNodes = comms.Node.Router.ReachableSats(comms.Node).Select(node => (uint)node).ToList();
+        //ReachableNodes = comms.Node.Router.ReachableSats(comms.Node).Select(node => (uint)node).ToList();
 
         if (Constants.EnableDebug)
         {
@@ -319,7 +320,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
 
         new Task(() =>
         {
-            Debug.LogWarning("ITS WORKING");
+
             Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TimeScale);
 
             if (response.DestinationID == comms.Node.Id)

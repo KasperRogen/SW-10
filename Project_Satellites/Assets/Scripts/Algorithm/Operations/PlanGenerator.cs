@@ -2,9 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using Vector3 = System.Numerics.Vector3;
+using UnityEngine;
+using System.Diagnostics;
+using System.IO;
 
-public class PlanGenerator
+public class PlanGenerator : MonoBehaviour
 {
+    
     /// <summary>Performs work in order to find optimum location in new constellation for given node
     /// <para>Recieves planrequest, finds best free location, or trades locations with other node in order to optimize net cost</para>
     /// </summary>
@@ -107,8 +112,10 @@ public class PlanGenerator
     {
         List<NodeLocationMatch> matches = new List<NodeLocationMatch>();
 
+        List<uint?> reachables = myNode.Router.ReachableSats(myNode);
+
         List<NetworkMapEntry> ReachableSats = myNode.Router.NetworkMap.Entries
-            .Where(entry => myNode.Router.ReachableSats(myNode).Contains(entry.ID)).ToList();
+            .Where(entry => reachables.Contains(entry.ID)).ToList();
 
         foreach (NetworkMapEntry node in ReachableSats)
         {
