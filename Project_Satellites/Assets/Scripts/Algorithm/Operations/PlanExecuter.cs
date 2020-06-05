@@ -41,10 +41,10 @@ public static class PlanExecuter
             uint? maxTravelID = FindMaxTravelID(myNode, request);
 
             // If the found ID is this node's, then discovery should be started when the node is at its new location.
-            if (maxTravelID == myNode.Id)
-            {
-                DiscoveryIfNewNeighboursAfterExecuting(myNode);
-            }
+            //if (maxTravelID == myNode.Id)
+            //{
+            //    DiscoveryIfNewNeighboursAfterExecuting(myNode);
+            //}
 
             myNode.ActivePlan = request.Plan;
 
