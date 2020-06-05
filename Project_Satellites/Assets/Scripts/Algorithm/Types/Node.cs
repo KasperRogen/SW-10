@@ -43,6 +43,8 @@ public class Node : INode
     public override NodeState State { get; set; }
     public override Router Router { get; set; }
 
+    public bool IsResettingTimers;
+
     public bool TimersSetup { get; set; }
 
     private bool active;
@@ -65,6 +67,11 @@ public class Node : INode
 
         heartbeatTimer = new System.Timers.Timer();
         discoveryTimer = new System.Timers.Timer();
+    }
+
+    private void Update()
+    {
+        IsResettingTimers = ResettingTimers;
     }
 
     private IEnumerator MainThread()

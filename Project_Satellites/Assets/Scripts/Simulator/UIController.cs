@@ -34,7 +34,9 @@ public class UIController : MonoBehaviour
         bool sleepCount = SatManager._instance.satellites.Any(sat => sat.Node.SleepCount > 0);
         while (resettingTimers || sleepCount || Input.GetMouseButton(0))
         {
-            yield return new WaitForEndOfFrame();
+            yield return new WaitForSeconds(1);
+            resettingTimers = SatManager._instance.satellites.Any(sat => sat.Node.ResettingTimers);
+            sleepCount = SatManager._instance.satellites.Any(sat => sat.Node.SleepCount > 0);
         }
 
         Constants.TimeScale = desiredTimeScale;
