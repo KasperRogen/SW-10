@@ -43,7 +43,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
         if (comms.Node.Active == false)
             return;
 
-        new Thread(() =>
+        new Task(() =>
         {
 
 
@@ -189,7 +189,7 @@ public class CommsSim : MonoBehaviour, ICommunicate
             }
         }
 
-        new Thread(() =>
+        new Task(() =>
         {
 
             OnResponseReceived += GetResponse;
@@ -317,9 +317,9 @@ public class CommsSim : MonoBehaviour, ICommunicate
             (response as FailureDetectionResponse).DeadEdges.ForEach(edge => comms.Node.Router.DeleteEdge(edge.Item1, edge.Item2));
         }
 
-        new Thread(() =>
+        new Task(() =>
         {
-
+            Debug.LogWarning("ITS WORKING");
             Thread.Sleep(Constants.SEND_DURATION_TIME / Constants.TimeScale);
 
             if (response.DestinationID == comms.Node.Id)
