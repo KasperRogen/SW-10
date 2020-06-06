@@ -94,6 +94,11 @@ public class PlanGenerator : MonoBehaviour
         //Order by distance to my node
         FreeEntries.OrderBy(entry => Vector3.Distance(myNode.Position, entry.Position));
 
+        if(FreeEntries.Count == 0)
+        {
+            int a = 2;
+        }
+
         //Lowest distance is my best entry.
         ConstellationPlanEntry bestEntry = FreeEntries.First();
         bestEntry = request.Plan.Entries.Find(entry => entry.Position == bestEntry.Position);
@@ -110,6 +115,7 @@ public class PlanGenerator : MonoBehaviour
 
     private static List<NodeLocationMatch> CalculatePositions(INode myNode, PlanRequest Request)
     {
+
         List<NodeLocationMatch> matches = new List<NodeLocationMatch>();
 
         List<uint?> reachables = myNode.Router.ReachableSats(myNode);
@@ -123,15 +129,16 @@ public class PlanGenerator : MonoBehaviour
                 continue;
 
 
+
             //Find all locations
             List<Vector3> OrderedPositions = Request.Plan.Entries
                 .Where(entry => entry.NodeID == null)
                 .Select(entry => entry.Position).ToList();
 
 
+          
             //Find closest location for given node
             OrderedPositions = OrderedPositions.OrderBy(position => Vector3.Distance(node.Position, position)).ToList();
-
 
             //Save node-location match
             matches.Add(new NodeLocationMatch(node.ID, OrderedPositions.First(), Vector3.Distance(node.Position, OrderedPositions.First())));

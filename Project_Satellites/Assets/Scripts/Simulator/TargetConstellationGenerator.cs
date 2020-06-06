@@ -146,6 +146,8 @@ public class TargetConstellationGenerator : MonoBehaviour
             Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, float.MaxValue, ManualDesignMask) &&  
             plan.Entries.TrueForAll(entry => nodes.Any(node => System.Numerics.Vector3.Distance(node.Position, entry.Position) < 0.1f))){
 
+            SatManager._instance.satellites.ForEach(sat => sat.Node.State = Node.NodeState.PLANNING);
+
             if(EnableManualDesign == false)
             {
                 Clear();

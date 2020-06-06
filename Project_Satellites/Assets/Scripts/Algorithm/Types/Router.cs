@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using System.Xml;
 using Dijkstra.NET.Graph;
 using Dijkstra.NET.ShortestPath;
+using UnityEngine;
+using Vector3 = System.Numerics.Vector3;
 
 public class Router : IRouter
 {
@@ -56,11 +59,11 @@ public class Router : IRouter
 
         List<NetworkMapEntry> neighbourEntries = source.Router.NetworkMap.Entries.Where(entry =>
         source.Router.NetworkMap.GetEntryByID(source.Id).Neighbours.Contains(entry.ID)).ToList();
+        neighbourEntries.RemoveAll(entry => entry.ID == source.Id);
+
         //
         //The "up" vector for the constellation plan is calculated.      //(B - A) cross (C - B)
         
-        List<uint?> NeighbourIDs = NetworkMap.GetEntryByID(source.Id).Neighbours;
-       
         Vector3 SatClockwiseVector = Vector3.Cross(EarthPosition - source.Position, source.PlaneNormalDir);
 
         
@@ -76,19 +79,20 @@ public class Router : IRouter
         {
             if(dir == CommDir.CW)
             {
-                return neighbourEntries[angles.IndexOf(angles.Where(angle => angle > 0).Min())].ID;
+                return neighbourEntries[angles.IndexOf(angles.Where(angle => angle > 0f).Min())].ID;
             } else if(dir == CommDir.CCW)
             {
-                return neighbourEntries[angles.IndexOf(angles.Where(angle => angle < 0).Max())].ID;
+                return neighbourEntries[angles.IndexOf(angles.Where(angle => angle < 0f).Max())].ID;
             }
         }
 
         return null;
     }
 
-
+    //check nextseq i hver dir
     public List<uint?> ReachableSats(INode requestingNode)
     {
+
         List<uint?> checkedNodes = new List<uint?>();
         List<uint?> nodesToCheck = new List<uint?>();
         List<uint?> reachableNodes = new List<uint?>();
@@ -98,21 +102,26 @@ public class Router : IRouter
         reachableNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.Id).Neighbours);
         nodesToCheck.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(requestingNode.Id).Neighbours);
 
-
+        int count = 0;
         while (nodesToCheck.Count > 0)
         {
-            uint? node = nodesToCheck[0];
+            uint? node = nodesToCheck.First();
             checkedNodes.Add(node);
             nodesToCheck.RemoveAt(0);
 
             List<uint?> newNodes = new List<uint?>(); 
-            if(requestingNode.Router.NetworkMap.Entries.Any(entry => entry.ID == node))
-                newNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(node).Neighbours);
-            newNodes = newNodes.Except(checkedNodes).ToList();
+
+            newNodes.AddRange(requestingNode.Router.NetworkMap.GetEntryByID(node)?.Neighbours?.Where(neighbour => 
+            checkedNodes.Contains(neighbour) == false &&
+            nodesToCheck.Contains(neighbour) == false
+            ));
+
             nodesToCheck.AddRange(newNodes);
             reachableNodes.AddRange(newNodes);
+            count++;
         }
 
+        UnityEngine.Debug.Log(count);
         return reachableNodes.Distinct().ToList();
     }
 
@@ -139,12 +148,20 @@ public class Router : IRouter
 
     public override uint? NextHop(uint? source, uint? destination)
     {
-        ShortestPathResult result = graph.Dijkstra(NodeToNodeIDMapping[source], NodeToNodeIDMapping[destination]);
+        try
+        {
+            ShortestPathResult result = graph.Dijkstra(NodeToNodeIDMapping[source], NodeToNodeIDMapping[destination]);
 
-        IEnumerable<uint> path = result.GetPath();
-        uint? nextHop = NodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
+            IEnumerable<uint> path = result.GetPath();
+            uint? nextHop = NodeToNodeIDMapping.ToList().Find((x) => x.Value == path.ElementAt(1)).Key;
 
-        return nextHop;
+            return nextHop;
+        } catch (Exception ex)
+        {
+            UnityEngine.Debug.Log(ex);
+            return null;
+        }
+
     }
 
 

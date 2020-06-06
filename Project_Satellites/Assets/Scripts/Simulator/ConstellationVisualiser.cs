@@ -72,12 +72,19 @@ public class ConstellationVisualiser : MonoBehaviour
     {
 
         //Message Object Handling
-
-        foreach (SatManager.MessageProps props in SatManager._instance.SentMessages)
+        try
         {
-            StartCoroutine(DisplayMessageSent(props.StartVect + Vector3.up, props.EndVect + Vector3.up, props.Duration, 0f, props.Color));
+            if(SatManager._instance.SentMessages.Count > 0)
+            {
+                SatManager.MessageProps props = SatManager._instance.SentMessages[0];
+                StartCoroutine(DisplayMessageSent(props.StartVect + Vector3.up, props.EndVect + Vector3.up, props.Duration, 0f, props.Color));
+                SatManager._instance.SentMessages.Remove(props);
+            }
+        } catch(Exception ex)
+        {
+            UnityEngine.Debug.Log(ex);
         }
-        SatManager._instance.SentMessages.Clear();
+
         //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
         
         
