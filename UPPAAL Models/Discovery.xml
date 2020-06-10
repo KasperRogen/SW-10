@@ -2254,11 +2254,11 @@ setup++</label>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; comms - 1 &lt;= nodes &amp;&amp; (forall (i : UID) RingNodeSync(i).Verified || RingNodeSync(i).Wrong)</formula>
+			<formula>E&lt;&gt; comms &lt;= nodes - 1 &amp;&amp; (forall (i : UID) RingNodeSync(i).Verified || RingNodeSync(i).Wrong)</formula>
 			<comment></comment>
 		</query>
 		<query>
-			<formula>E&lt;&gt; comms - 1 &lt;= nodes &amp;&amp; (forall (i : UID) RingNodeAsync(i).Verified || RingNodeAsync(i).Wrong)</formula>
+			<formula>E&lt;&gt; comms &lt;= nodes - 1 &amp;&amp; (forall (i : UID) RingNodeAsync(i).Verified || RingNodeAsync(i).Wrong)</formula>
 			<comment></comment>
 		</query>
 		<query>

@@ -463,7 +463,7 @@ bool isSubdivided()
 		</location>
 		<location id="id21" x="-238" y="68">
 			<name x="-261" y="24">Respond</name>
-			<label kind="invariant" x="-256" y="38">t &lt;= 15</label>
+			<label kind="invariant" x="-255" y="34">t &lt;= 15</label>
 		</location>
 		<location id="id22" x="-408" y="-170">
 			<name x="-425" y="-204">Dead</name>

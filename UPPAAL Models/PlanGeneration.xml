@@ -721,7 +721,8 @@ nextPosition += distanceBetweenNodes</label>
 		<transition>
 			<source ref="id30"/>
 			<target ref="id31"/>
-			<label kind="assignment" x="-756" y="127">targetPositions[setup] = nextPosition + EvenOffset(1)</label>
+			<label kind="select" x="-671" y="110">offset : OffsetPosition</label>
+			<label kind="assignment" x="-756" y="127">targetPositions[setup] = nextPosition + EvenOffset(offset)</label>
 			<nail x="-680" y="102"/>
 		</transition>
 		<transition>
@@ -877,8 +878,8 @@ nextTargetPosition += distanceBetweenTargets</label>
 		<transition>
 			<source ref="id35"/>
 			<target ref="id34"/>
-			<label kind="select" x="-671" y="119">offset : OffsetPosition</label>
-			<label kind="assignment" x="-799" y="136">targetPositions[setup] = nextTargetPosition + ExtraOffset(offset)</label>
+			<label kind="select" x="-680" y="110">offset : OffsetPosition</label>
+			<label kind="assignment" x="-782" y="127">targetPositions[setup] = nextTargetPosition + ExtraOffset(offset)</label>
 			<nail x="-680" y="102"/>
 		</transition>
 		<transition>
