@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
-
+using UnityEngine.EventSystems;
 
 public class TargetConstellationGenerator : MonoBehaviour
 {
@@ -145,6 +145,11 @@ public class TargetConstellationGenerator : MonoBehaviour
         if (Input.GetMouseButtonDown(0) && 
             Physics.Raycast(Camera.main.ScreenPointToRay(Input.mousePosition), out RaycastHit hit, float.MaxValue, ManualDesignMask) &&  
             plan.Entries.TrueForAll(entry => nodes.Any(node => System.Numerics.Vector3.Distance(node.Position, entry.Position) < 0.1f))){
+
+            if (EventSystem.current.IsPointerOverGameObject()) 
+            {
+                return;
+            }
 
             SatManager._instance.satellites.ForEach(sat => sat.Node.State = Node.NodeState.PLANNING);
 
