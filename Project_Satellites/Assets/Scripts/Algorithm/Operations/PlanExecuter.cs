@@ -116,7 +116,6 @@ public static class PlanExecuter
         IEnumerable<Tuple<uint?, float>> travelDistanceByID = entriesZipped.Select(entry => new Tuple<uint?, float>(entry.Item1, Vector3.Distance(entry.Item2, entry.Item3)));
         // Find max travel distance and ID of node that has to travel that
         uint? maxTravelID = travelDistanceByID.OrderByDescending(x => x.Item2).First().Item1;
-
         return maxTravelID;
     }
 }

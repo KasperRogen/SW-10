@@ -121,7 +121,6 @@ public class Router : IRouter
             count++;
         }
 
-        UnityEngine.Debug.Log(count);
         return reachableNodes.Distinct().ToList();
     }
 

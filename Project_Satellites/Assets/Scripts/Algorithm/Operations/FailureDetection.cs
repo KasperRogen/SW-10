@@ -165,15 +165,17 @@ public static class FailureDetection
         // Find positions of nodes this node can reach
         List<Vector3> positions = new List<Vector3> { myNode.Position };
         List<uint?> nodesToVisit = new List<uint?> { myNode.Id };
-        
+        nodesToVisit.AddRange(myNode.Router.ReachableSats(myNode));
+
         while(nodesToVisit.Count > 0)
         {
             uint? nodeToVisit = nodesToVisit[0];
             nodesToVisit.RemoveAt(0);
             List<NetworkMapEntry> neighbourEntries = myNode.Router.NetworkMap.GetEntryByID(nodeToVisit).Neighbours.Select(x => myNode.Router.NetworkMap.GetEntryByID(x)).ToList();
-            nodesToVisit.AddRange(neighbourEntries.Where(x => positions.Contains(x.Position) == false).Select(x => x.ID));
             positions.AddRange(neighbourEntries.Where(x => positions.Contains(x.Position) == false).Select(x => x.Position));
         }
+
+        positions = positions.Distinct().ToList();
 
         // Calculate midpoint
         Vector3 midpoint = positions.Aggregate(Vector3.Zero, (x, y) => x + y);
