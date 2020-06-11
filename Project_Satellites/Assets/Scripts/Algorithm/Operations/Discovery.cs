@@ -107,12 +107,6 @@ public class Discovery
                 else
                 {
                     newRequest.firstPassDone = true;
-
-                    if (newRequest.Alterations.Any())
-                    {
-                        Recover(myNode);
-                        return;
-                    }
                 }
                 
             }

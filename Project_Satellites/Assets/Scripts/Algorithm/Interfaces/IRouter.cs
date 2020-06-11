@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
-public abstract class IRouter : MonoBehaviour
+public abstract class IRouter
 {
     public abstract NetworkMap NetworkMap { get; set; }
 
