@@ -1,0 +1,980 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>const int N = 40; // Number of satellites
+
+clock time;
+
+typedef int[0, N-1] UID;
+
+broadcast chan transmit[N];
+broadcast chan execute[N];
+broadcast chan complete;
+
+meta UID sender;
+meta bool failure;
+
+UID start; // The satellite that initiates
+
+// ------  PlanGeneration  ------
+
+typedef struct { int x; int y; int z; } pos;
+
+int[0, 2*N] comms;
+
+
+const int radius = 10000;
+int startPositions[N];
+int targetPositions[N];
+
+int chosenPos[N];
+</declaration>
+	<template>
+		<name x="9" y="9">RingNodeSync</name>
+		<parameter>const UID ID</parameter>
+		<declaration>clock t;
+
+int cost; // the cost to move to a target position
+int myBestCost = -1;
+int myBestCostPos;
+
+int possiblePos[N]; // the target positions that this node can take, and their cost
+int nodesBestCost[N]; // the best target positions that other nodes can take.
+
+
+UID nextHop() {
+  return (ID + 1) % N;
+}
+
+
+int minInt(int n1, int n2)
+{
+  if (n1 &lt; n2)
+  {
+    return n1;
+  }
+  {
+    return n2;
+  }  
+}
+
+
+int maxInt(int n1, int n2)
+{
+  if (n1 &gt; n2)
+  {
+    return n1;
+  }
+  {
+    return n2;
+  }
+}
+
+
+int Distance(int p1, int p2)
+{
+  int minP = minInt(p1, p2);
+  int maxP = maxInt(p1, p2);
+
+  int distance1 = maxP - minP;
+  int distance2 = (radius - maxP) + minP;
+
+  if ((distance1 &lt; distance2) &amp;&amp; (distance1 &gt;= 0))
+  {
+    return distance1;
+  }
+  else
+  {
+    return distance2;
+  }
+}
+
+
+// Check if node with id has already chosen a target postion
+bool isInPlan(int id)
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (id == chosenPos[i])
+    {
+      return true;
+    }
+  }
+  return false;
+}
+
+
+bool IsPlanFull()
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (chosenPos[i] == -1)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+// Calculate this node's cost to all target positions
+void CalculatePositions()
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    nodesBestCost[i] = -1; //initalize bestNodes
+
+    if (chosenPos[i] == -1)
+    {
+      int distance = Distance(startPositions[ID], targetPositions[i]);
+      possiblePos[i] = distance;
+      // store best cost
+      if (distance &lt; myBestCost || myBestCost == -1)
+      {
+        myBestCost = distance;
+        myBestCostPos = i;
+      }
+    }
+    else
+    {
+      possiblePos[i] = -1;
+    }
+  }
+}
+
+
+// Finds a node's best position, overwrites if its better than other nodes.
+void BestPosition(int id)
+{
+  int bestCost = -1;
+  int bestPos;
+  
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    int tempCost = Distance(startPositions[id], targetPositions[i]);
+
+    if (tempCost &lt; bestCost || bestCost == -1)
+    {
+      bestCost = tempCost;
+      bestPos = i;
+    }
+  }
+
+  if (bestCost &lt; nodesBestCost[bestPos] || nodesBestCost[bestPos] == -1)
+  {
+    nodesBestCost[bestPos] = bestCost;
+  } 
+
+}
+
+
+void ProcessPlan()
+{
+  int myChosenPos = -1;
+  int myCost = -1;
+
+  int i;  
+
+  // Calculates all remaining nodes best postition
+  for (i=0; i&lt;N; i++)
+  {
+    if (!isInPlan(i) &amp;&amp; i != ID)
+    {
+      BestPosition(i);
+    }
+  }
+
+  // Loop over all possible positions. Take the best target position, that isn't other nodes best.
+  for (i=0; i&lt;N; i++)
+  {
+    if (possiblePos[i] != -1 &amp;&amp; nodesBestCost[i] == -1)
+    {
+      
+      if (possiblePos[i] &lt; myCost || myCost == -1)
+      {
+        myChosenPos = i;
+        myCost = possiblePos[i];
+      }
+    }
+  }
+
+  chosenPos[myChosenPos] = ID;
+  cost = myCost;
+}
+
+
+// Choses this node's best target positions.
+void GreedyProcessPlan()
+{
+  int myChosenPos = -1;
+  int myCost = -1;
+
+  int i;
+  for(i=0; i&lt;N; i++)
+  {
+    if (possiblePos[i] != -1)
+    {
+      if (possiblePos[i] &lt; myCost || myCost == -1)
+      {
+        myCost = possiblePos[i];
+        myChosenPos = i;
+      }  
+    }
+  }
+
+  chosenPos[myChosenPos] = ID;
+  cost = myCost;
+}
+
+
+int ccNeighbour()
+{
+  int n = ID - 1;
+  if (n &lt; 0)
+  {
+    return N-1;
+  }
+  else
+  {
+    return n;
+  }
+}
+
+
+// Choses this node's best target position, that isn't its two neighbours best.
+void FriendlyNeighbourProcessPlan()
+{
+  int i;
+  int myChosenPos = -1;
+  int myCost = -1;
+
+  int neighbour1 = ccNeighbour();
+  int neighbour2 = nextHop();
+
+
+  if (!isInPlan(neighbour1))
+  {
+    BestPosition(i);
+  }
+
+  if (!isInPlan(neighbour2))
+  {
+    BestPosition(i);
+  }
+
+  for (i=0; i&lt;N; i++)
+  {
+    if (possiblePos[i] != -1 &amp;&amp; nodesBestCost[i] == -1)
+    {
+      if (possiblePos[i] &lt; myCost || myCost == -1)
+      {
+        myChosenPos = i;
+        myCost = possiblePos[i];
+      }
+    }
+  }
+  
+  chosenPos[myChosenPos] = ID;
+  cost = myCost;
+}
+
+
+void MostlyFriendlyNeighbourHood()
+{
+  int myChosenPos = -1;
+  int myCost = -1;
+
+  int i;  
+
+  // Calculates all remaining nodes best postition
+  for (i=0; i&lt;N; i++)
+  {
+    if (!isInPlan(i) &amp;&amp; i != ID)
+    {
+      BestPosition(i);
+    }
+  }
+
+  // Loop over all possible positions. Take the best target position, that isn't other nodes best.
+  for (i=0; i&lt;N; i++)
+  {
+    if (possiblePos[i] != -1 &amp;&amp; nodesBestCost[i] == -1)
+    {
+      
+      if (possiblePos[i] &lt; myCost || myCost == -1)
+      {
+        myChosenPos = i;
+        myCost = possiblePos[i];
+      }
+    }
+  }
+
+  if (myCost &lt; (5 * myBestCost))
+  {
+    chosenPos[myChosenPos] = ID;
+    cost = myCost;
+  }
+  else
+  {
+    chosenPos[myBestCostPos] = ID;
+    cost = myBestCost;
+  }
+
+}
+</declaration>
+		<location id="id0" x="0" y="0">
+			<name x="-25" y="17">Receive</name>
+		</location>
+		<location id="id1" x="136" y="0">
+			<name x="110" y="17">Calculate</name>
+			<urgent/>
+		</location>
+		<location id="id2" x="68" y="-51">
+			<name x="51" y="-85">Start</name>
+			<urgent/>
+		</location>
+		<location id="id3" x="306" y="0">
+			<name x="280" y="17">Process</name>
+			<committed/>
+		</location>
+		<location id="id4" x="476" y="0">
+			<name x="493" y="-8">CheckPlan</name>
+			<committed/>
+		</location>
+		<location id="id5" x="476" y="-102">
+			<name x="433" y="-153">StartExecute</name>
+			<label kind="invariant" x="459" y="-136">t &lt;= 1</label>
+		</location>
+		<location id="id6" x="476" y="102">
+			<name x="450" y="119">Transmit</name>
+			<label kind="invariant" x="459" y="136">t &lt;= 1</label>
+		</location>
+		<location id="id7" x="646" y="-102">
+			<name x="629" y="-144">Wait</name>
+		</location>
+		<location id="id8" x="646" y="102">
+		</location>
+		<location id="id9" x="748" y="-102">
+			<name x="722" y="-153">Complete</name>
+			<committed/>
+		</location>
+		<location id="id10" x="748" y="102">
+			<name x="714" y="119">SendExecute</name>
+			<label kind="invariant" x="739" y="136">t &lt;= 1</label>
+		</location>
+		<location id="id11" x="748" y="0">
+			<name x="765" y="-8">Terminate</name>
+		</location>
+		<init ref="id2"/>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id11"/>
+			<label kind="guard" x="756" y="34">t &gt;= 1</label>
+			<label kind="synchronisation" x="756" y="51">execute[nextHop()]!</label>
+			<label kind="assignment" x="756" y="68">comms++</label>
+		</transition>
+		<transition>
+			<source ref="id8"/>
+			<target ref="id10"/>
+			<label kind="synchronisation" x="663" y="68">execute[ID]?</label>
+			<label kind="assignment" x="680" y="85">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id8"/>
+			<label kind="guard" x="527" y="51">t &gt;= 1</label>
+			<label kind="synchronisation" x="493" y="68">transmit[nextHop()]!</label>
+			<label kind="assignment" x="527" y="85">comms++</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id6"/>
+			<label kind="guard" x="399" y="42">!IsPlanFull()</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id11"/>
+			<label kind="synchronisation" x="757" y="-59">complete!</label>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="655" y="-127">execute[ID]?</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id7"/>
+			<label kind="guard" x="544" y="-153">t &gt;= 1</label>
+			<label kind="synchronisation" x="501" y="-136">execute[nextHop()]!</label>
+			<label kind="assignment" x="535" y="-119">comms++</label>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="guard" x="399" y="-59">IsPlanFull()</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="assignment" x="238" y="-42">MostlyFriendlyNeighbourHood(), t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id3"/>
+			<label kind="assignment" x="161" y="-25">CalculatePositions()</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id1"/>
+			<label kind="guard" x="93" y="-68">ID == start</label>
+			<nail x="136" y="-51"/>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-25" y="-68">ID != start</label>
+			<nail x="0" y="-51"/>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="27" y="-23">transmit[ID]?</label>
+		</transition>
+	</template>
+	<template>
+		<name>PlanGeneration</name>
+		<declaration>int setup;
+const int distanceBetweenNodes = radius / N;
+typedef int[1, 3] OffsetPosition;
+
+int nextPosition = 0;
+
+// returns position close to even distribution
+int EvenOffset(OffsetPosition oP)
+{
+  
+  int offset = distanceBetweenNodes / 2;
+
+  if (oP == 1) // CounterClockwise
+  {
+    offset -= offset / 4;
+  }
+  else if(oP == 2) // Middle
+  {
+    // do nothing 
+  }
+  else if(oP == 3) // Clockwise
+  {
+        offset += offset / 4;
+  }
+  return offset;
+}
+
+
+bool AllTargetsChosen()
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (chosenPos[i] == -1)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Destinct(){
+  bool result = true;
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    int count = 0;
+    int j;
+    for (j=0; j&lt;N; j++)
+    {
+      if (chosenPos[j] == i)
+      { 
+        count++;
+      }
+    }
+    if (count &gt; 1)
+    {
+      result = false; 
+    }
+  }
+  return result;
+}
+
+bool Verify() {
+  return AllTargetsChosen() &amp;&amp; Destinct();
+}</declaration>
+		<location id="id12" x="-340" y="0">
+			<name x="-373" y="12">StartNode</name>
+			<committed/>
+		</location>
+		<location id="id13" x="-204" y="0">
+			<name x="-219" y="12">Wait</name>
+		</location>
+		<location id="id14" x="-68" y="0">
+			<name x="-51" y="-8">Complete</name>
+			<committed/>
+		</location>
+		<location id="id15" x="68" y="68">
+			<name x="85" y="59">Wrong</name>
+		</location>
+		<location id="id16" x="68" y="-68">
+			<name x="85" y="-76">Correct</name>
+		</location>
+		<location id="id17" x="-476" y="0">
+			<name x="-569" y="7">StartPositions</name>
+			<committed/>
+		</location>
+		<location id="id18" x="-476" y="102">
+			<name x="-461" y="92">TargetPositions</name>
+			<committed/>
+		</location>
+		<location id="id19" x="-680" y="0">
+			<name x="-758" y="-10">Increment</name>
+			<committed/>
+		</location>
+		<branchpoint id="id20" x="-297" y="0">
+		</branchpoint>
+		<branchpoint id="id21" x="-527" y="102">
+		</branchpoint>
+		<init ref="id17"/>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id19"/>
+			<label kind="select" x="-773" y="110">offset : OffsetPosition</label>
+			<label kind="assignment" x="-773" y="127">targetPositions[setup] = nextPosition + EvenOffset(offset)</label>
+			<label kind="probability" x="-773" y="93">1</label>
+			<nail x="-680" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id21"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id13"/>
+			<label kind="select" x="-289" y="-51">node: UID</label>
+			<label kind="assignment" x="-297" y="-34">start = node</label>
+			<label kind="probability" x="-272" y="-68">1</label>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id20"/>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-442" y="-34">setup == N</label>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id17"/>
+			<label kind="assignment" x="-707" y="-84">chosenPos[setup] = -1,
+setup++,
+nextPosition += distanceBetweenNodes</label>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-467" y="34">setup &lt; N</label>
+			<label kind="assignment" x="-467" y="51">startPositions[setup] = nextPosition</label>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id15"/>
+			<label kind="guard" x="-60" y="68">Verify() == false</label>
+			<nail x="-68" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id16"/>
+			<label kind="guard" x="-60" y="-93">Verify() == true</label>
+			<nail x="-68" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id14"/>
+			<label kind="synchronisation" x="-170" y="-25">complete?</label>
+		</transition>
+	</template>
+	<template>
+		<name>PlanGenerationHole</name>
+		<declaration>int setup;
+const int distanceBetweenNodes = radius / (N + 1);
+const int distanceBetweenTargets = radius / N;
+
+int nextNodePosition = distanceBetweenNodes;
+int nextTargetPosition = 0;
+
+
+typedef int[1, 3] OffsetPosition;
+
+// returns position close to even distribution
+int ExtraOffset(OffsetPosition oP)
+{
+  
+  int offset = distanceBetweenTargets;
+
+  if (oP == 1) // Even - do nothing
+  {
+    offset = 0;
+  }
+  else if(oP == 2) // close - extra 1/4
+  {
+    offset = offset / 4;
+  }
+  else if(oP == 3) // far away extra 3/4
+  {
+    offset = 3 * (offset / 4) ;
+  }
+  return offset;
+}
+
+
+bool AllTargetsChosen()
+{
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    if (chosenPos[i] == -1)
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+bool Destinct(){
+  bool result = true;
+  int i;
+  for (i=0; i&lt;N; i++)
+  {
+    int count = 0;
+    int j;
+    for (j=0; j&lt;N; j++)
+    {
+      if (chosenPos[j] == i)
+      { 
+        count++;
+      }
+    }
+    if (count &gt; 1)
+    {
+      result = false; 
+    }
+  }
+  return result;
+}
+
+bool Verify() {
+  return AllTargetsChosen() &amp;&amp; Destinct();
+}
+
+</declaration>
+		<location id="id22" x="-476" y="0">
+			<name x="-521" y="5">Setup</name>
+			<committed/>
+		</location>
+		<location id="id23" x="-340" y="0">
+			<name x="-370" y="14">StartNode</name>
+			<committed/>
+		</location>
+		<location id="id24" x="-680" y="0">
+			<name x="-761" y="-10">Increment</name>
+			<committed/>
+		</location>
+		<location id="id25" x="-476" y="102">
+			<name x="-456" y="96">TargetPosition</name>
+			<committed/>
+		</location>
+		<location id="id26" x="-204" y="0">
+			<name x="-221" y="17">Wait</name>
+		</location>
+		<location id="id27" x="-68" y="0">
+			<name x="-51" y="-8">Complete</name>
+			<committed/>
+		</location>
+		<location id="id28" x="68" y="68">
+			<name x="85" y="59">Wrong</name>
+		</location>
+		<location id="id29" x="68" y="-68">
+			<name x="85" y="-76">Correct</name>
+		</location>
+		<branchpoint id="id30" x="-297" y="0">
+		</branchpoint>
+		<branchpoint id="id31" x="-518" y="102">
+		</branchpoint>
+		<init ref="id22"/>
+		<transition>
+			<source ref="id30"/>
+			<target ref="id26"/>
+			<label kind="select" x="-297" y="-42">node : UID</label>
+			<label kind="assignment" x="-306" y="-25">start = node</label>
+			<label kind="probability" x="-272" y="-59">1</label>
+		</transition>
+		<transition>
+			<source ref="id23"/>
+			<target ref="id30"/>
+		</transition>
+		<transition>
+			<source ref="id31"/>
+			<target ref="id24"/>
+			<label kind="select" x="-671" y="119">offset : OffsetPosition</label>
+			<label kind="assignment" x="-773" y="136">targetPositions[setup] = nextTargetPosition + ExtraOffset(offset)</label>
+			<label kind="probability" x="-612" y="102">1</label>
+			<nail x="-680" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id25"/>
+			<target ref="id31"/>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id23"/>
+			<label kind="guard" x="-442" y="-25">setup == N</label>
+		</transition>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id22"/>
+			<label kind="assignment" x="-736" y="-97">chosenPos[setup] = -1,
+setup++,
+nextNodePosition += distanceBetweenNodes,
+nextTargetPosition += distanceBetweenTargets</label>
+		</transition>
+		<transition>
+			<source ref="id22"/>
+			<target ref="id25"/>
+			<label kind="guard" x="-467" y="34">setup &lt; N</label>
+			<label kind="assignment" x="-467" y="51">startPositions[setup] = nextNodePosition</label>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id28"/>
+			<label kind="guard" x="-60" y="68">Verify() == false</label>
+			<nail x="-68" y="68"/>
+		</transition>
+		<transition>
+			<source ref="id27"/>
+			<target ref="id29"/>
+			<label kind="guard" x="-60" y="-93">Verify() == true</label>
+			<nail x="-68" y="-68"/>
+		</transition>
+		<transition>
+			<source ref="id26"/>
+			<target ref="id27"/>
+			<label kind="synchronisation" x="-170" y="-25">complete?</label>
+		</transition>
+	</template>
+	<system>system RingNodeSync, PlanGeneration;</system>
+	<queries>
+		<query>
+			<formula>***** SMC *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>Pr[ &lt;= N*2](&lt;&gt; (PlanGeneration.Correct &amp;&amp; (sum(i: UID) RingNodeSync(i).cost) &lt; 5000))</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>Pr[ &lt;= N*2](&lt;&gt; (PlanGenerationHole.Correct &amp;&amp; (sum(i: UID) RingNodeSync(i).cost) &lt; 5000))</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E[ &lt;= N*2; 10000](max: sum(i: UID) RingNodeSync(i).cost)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>simulate [&lt;=N*2; 100] {sum (i : UID) RingNodeSync(i).cost}</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** SYNC QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Terminate</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** GENEREL QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGeneration.Correct</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGenerationHole.Correct</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] time &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; time &lt;= (N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGenerationHole.Complete &amp;&amp; time &lt;= (N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGenerationHole.Complete &amp;&amp; time &lt;= (N * 2) - 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= N</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGeneration.Complete &amp;&amp; comms &lt;= (N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGenerationHole.Complete &amp;&amp; comms &lt;= ((N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** DEBUG QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] forall (i: UID) RingNodeSync(i).Wait imply start == RingNodeSync(i).ID</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] == i</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) chosenPos[i] != -1 &amp;&amp; RingNodeSync(i).Terminate</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; exists (i : UID) chosenPos[i] == -1 &amp;&amp; RingNodeSync(i).Terminate</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; PlanGeneration.Complete</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; PlanGeneration.Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] !PlanGeneration.Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (!PlanGeneration.Correct &amp;&amp; !PlanGeneration.Wrong)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (!PlanGenerationHole.Correct &amp;&amp; !PlanGenerationHole.Wrong)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock</formula>
+			<comment></comment>
+		</query>
+	</queries>
+</nta>

@@ -1,0 +1,675 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>const int N = 5; // Number of satellites
+
+clock time;
+
+typedef int[0, N-1] UID;
+typedef struct { int a; int b; } edge;
+
+UID start; // The satellite that initiates
+
+int[0, (3*N)] comms;
+
+chan transmit[N];
+
+meta int[0, N] len;
+meta edge edgeList[N];
+
+
+
+
+
+
+
+</declaration>
+	<template>
+		<name>RingNodeSync</name>
+		<parameter>const UID ID</parameter>
+		<declaration>clock t;
+
+int[0, N] mapLen = 0;
+edge networkMap[N];
+
+bool secondPass = false;
+bool isTerminated = false;
+
+
+UID nextHop () {
+  return (ID + 1) % N;
+}
+
+
+int IntClamp(int n)
+{
+  if (n &lt; 0) { return N - 1; }
+  else { return n % N; }
+}
+
+
+// Adds a node's two neighbours to its networkMap as its start knowledge.
+void AddNeighbours() 
+{
+  int nb1 = IntClamp(ID + 1);
+  int nb2 = IntClamp(ID - 1);
+
+  edge e1 = {ID, nb1};
+  edge e2 = {ID, nb2};
+
+  networkMap[mapLen++] = e1;
+  networkMap[mapLen++] = e2;
+}
+
+
+// Checks if a edge is equal to another edge - {1,2} and {2,1} are considered equal.
+bool EdgeEqual(edge e1, edge e2)
+{
+  return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
+}
+
+// Checks if a given edge already exists in the networkmap
+bool ExistsInNetwork(edge e)
+{
+  int i;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    bool check = EdgeEqual(e, networkMap[i]);
+    if (check == true) 
+    {
+      return true;
+    } 
+  }
+  return false;
+}
+
+
+// Checks if a given edge exist in networkMap and stops if its true.
+void TryAdd(edge e)
+{
+  bool exist = ExistsInNetwork(e);
+
+  if (exist == false)
+  {
+    networkMap[mapLen++] = e;
+  }
+  else 
+  {
+    return;
+  }
+}
+
+
+// Look at the transmitted edgeList, add all edges that we it didn't have knowledge about
+void ProcessEdges()
+{
+  int i;
+  for (i=0; i&lt;len; i++)
+  {
+    TryAdd(edgeList[i]);
+  }
+}
+
+
+// Reset the edgeList and len variable and fills it with this nodes edge knowledge
+void TransmitEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    edgeList[len++] = networkMap[i];
+  }
+}
+
+
+// Verification - Build the expected complete network map and check if they all exist in the node's network map
+bool Verify()
+{
+  int i;
+
+  for (i=0; i&lt;N; i++)
+  {
+    edge e = {i, IntClamp(i+1)};
+    bool exist = ExistsInNetwork(e);
+
+    if (exist == false) { return false; }
+  }
+
+  return true;
+}</declaration>
+		<location id="id0" x="-102" y="340">
+			<name x="-170" y="332">Receive</name>
+		</location>
+		<location id="id1" x="34" y="340">
+			<name x="8" y="357">Process</name>
+			<committed/>
+		</location>
+		<location id="id2" x="170" y="340">
+			<name x="144" y="357">Transmit</name>
+			<label kind="invariant" x="153" y="374">t &lt;= 1</label>
+		</location>
+		<location id="id3" x="374" y="340">
+			<committed/>
+		</location>
+		<location id="id4" x="-102" y="442">
+			<committed/>
+		</location>
+		<location id="id5" x="34" y="238">
+			<name x="17" y="102">Start</name>
+			<urgent/>
+		</location>
+		<location id="id6" x="34" y="136">
+			<committed/>
+		</location>
+		<location id="id7" x="544" y="340">
+			<name x="510" y="357">Done</name>
+			<committed/>
+		</location>
+		<location id="id8" x="773" y="280">
+			<name x="747" y="238">Verified</name>
+		</location>
+		<location id="id9" x="773" y="391">
+			<name x="756" y="416">Wrong</name>
+		</location>
+		<location id="id10" x="688" y="340">
+			<name x="705" y="331">Terminate</name>
+			<committed/>
+		</location>
+		<location id="id11" x="544" y="238">
+			<name x="534" y="204">TermWait</name>
+		</location>
+		<init ref="id6"/>
+		<transition>
+			<source ref="id11"/>
+			<target ref="id7"/>
+			<label kind="synchronisation" x="442" y="204">transmit[ID]?</label>
+			<label kind="assignment" x="391" y="221">isTerminated = true</label>
+			<nail x="467" y="238"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id11"/>
+			<label kind="guard" x="552" y="255">start == ID &amp;&amp;
+!isTerminated</label>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id9"/>
+			<label kind="guard" x="654" y="391">Verify() == false</label>
+			<nail x="688" y="391"/>
+		</transition>
+		<transition>
+			<source ref="id10"/>
+			<target ref="id8"/>
+			<label kind="guard" x="662" y="255">Verify() == true</label>
+			<nail x="688" y="280"/>
+		</transition>
+		<transition>
+			<source ref="id7"/>
+			<target ref="id10"/>
+			<label kind="guard" x="569" y="340">start != ID ||
+isTerminated</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id2"/>
+			<label kind="guard" x="59" y="212">start == ID</label>
+			<nail x="170" y="238"/>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id7"/>
+			<label kind="guard" x="391" y="315">secondPass == true</label>
+		</transition>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="guard" x="68" y="416">secondPass == false</label>
+			<nail x="374" y="442"/>
+		</transition>
+		<transition>
+			<source ref="id6"/>
+			<target ref="id5"/>
+			<label kind="assignment" x="42" y="170">AddNeighbours()</label>
+		</transition>
+		<transition>
+			<source ref="id5"/>
+			<target ref="id0"/>
+			<label kind="guard" x="-76" y="212">start != ID</label>
+			<nail x="-102" y="238"/>
+		</transition>
+		<transition>
+			<source ref="id4"/>
+			<target ref="id0"/>
+			<label kind="assignment" x="-93" y="382">secondPass = true</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="guard" x="255" y="280">t &gt;= 1</label>
+			<label kind="synchronisation" x="212" y="314">transmit[nextHop()]!</label>
+			<label kind="assignment" x="187" y="297">TransmitEdges(), comms++</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="assignment" x="51" y="297">ProcessEdges(),
+t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-76" y="314">transmit[ID]?</label>
+		</transition>
+	</template>
+	<template>
+		<name>RingNodeAsync</name>
+		<parameter>const UID ID</parameter>
+		<declaration>clock t;
+
+int[0, N] mapLen = 0;
+edge networkMap[N];
+
+bool secondPass = false;
+bool isTerminated = false;
+
+UID nextHop () {
+  return (ID + 1) % N;
+}
+
+
+int IntClamp(int n)
+{
+  if (n &lt; 0) { return N - 1; }
+  else { return n % N; }
+}
+
+
+// Adds a node's two neighbours to its networkMap as its start knowledge.
+void AddNeighbours() 
+{
+  int nb1 = IntClamp(ID + 1);
+  int nb2 = IntClamp(ID - 1);
+
+  edge e1 = {ID, nb1};
+  edge e2 = {ID, nb2};
+
+  networkMap[mapLen++] = e1;
+  networkMap[mapLen++] = e2;
+}
+
+
+// Checks if a edge is equal to another edge - {1,2} and {2,1} are considered equal.
+bool EdgeEqual(edge e1, edge e2)
+{
+  return (e1.a == e2.a &amp;&amp; e1.b == e2.b) || (e1.a == e2.b &amp;&amp; e1.b == e2.a);
+}
+
+
+// Checks if a given edge already exists in the networkmap
+bool ExistsInNetwork(edge e)
+{
+  int i;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    bool check = EdgeEqual(e, networkMap[i]);
+    if (check == true)
+    { 
+      return true;
+    } 
+  }
+  return false;
+}
+
+
+// Checks if a given edge exist in networkMap and stops if its true.
+void TryAdd(edge e)
+{
+  bool exist = ExistsInNetwork(e);
+
+  if (exist == false) { networkMap[mapLen++] = e; }
+  else { return; }
+  
+}
+
+
+// Look at the transmitted edgeList, add all edges that we it didn't have knowledge about
+void ProcessEdges()
+{
+  int i;
+  for (i=0; i&lt;len; i++)
+  {
+    TryAdd(edgeList[i]);
+  }
+}
+
+
+// Reset the edgeList and len variable and fill it with this nodes edge knowledge
+void TransmitEdges()
+{
+  int i;
+  len = 0;
+  for (i=0; i&lt;mapLen; i++)
+  {
+    edgeList[len++] = networkMap[i];
+  }
+}
+
+
+// Verification - Build the expected complete network map and check if they all exist in the node's network map
+bool Verify()
+{
+  int i;
+
+  for (i=0; i&lt;N; i++)
+  {
+    edge e = {i, IntClamp(i+1)};
+    bool exist = ExistsInNetwork(e);
+
+    if (exist == false) { return false; }
+  }
+
+  return true;
+}</declaration>
+		<location id="id12" x="-442" y="0">
+			<name x="-510" y="-8">Receive</name>
+		</location>
+		<location id="id13" x="-306" y="0">
+			<name x="-332" y="17">Process</name>
+			<committed/>
+		</location>
+		<location id="id14" x="-170" y="0">
+			<name x="-187" y="17">Wait</name>
+			<label kind="invariant" x="-187" y="34">t &lt;= 10</label>
+		</location>
+		<location id="id15" x="34" y="0">
+			<committed/>
+		</location>
+		<location id="id16" x="-442" y="102">
+			<committed/>
+		</location>
+		<location id="id17" x="-306" y="-102">
+			<name x="-323" y="-238">Start</name>
+			<urgent/>
+		</location>
+		<location id="id18" x="-306" y="-204">
+			<committed/>
+		</location>
+		<location id="id19" x="204" y="-102">
+			<name x="194" y="-136">TermWait</name>
+		</location>
+		<location id="id20" x="204" y="0">
+			<name x="170" y="17">Done</name>
+			<committed/>
+		</location>
+		<location id="id21" x="348" y="0">
+			<name x="365" y="-9">Terminate</name>
+			<committed/>
+		</location>
+		<location id="id22" x="433" y="51">
+			<name x="416" y="76">Wrong</name>
+		</location>
+		<location id="id23" x="433" y="-60">
+			<name x="407" y="-102">Verified</name>
+		</location>
+		<init ref="id18"/>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id20"/>
+			<label kind="guard" x="51" y="-25">secondPass == true</label>
+		</transition>
+		<transition>
+			<source ref="id14"/>
+			<target ref="id15"/>
+			<label kind="guard" x="-85" y="-59">t &gt;= 1</label>
+			<label kind="synchronisation" x="-127" y="-25">transmit[nextHop()]!</label>
+			<label kind="assignment" x="-153" y="-42">TransmitEdges(), comms++</label>
+			<nail x="-68" y="0"/>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id14"/>
+			<label kind="guard" x="-280" y="-127">start == ID</label>
+			<nail x="-170" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id15"/>
+			<target ref="id16"/>
+			<label kind="guard" x="-280" y="76">secondPass == false</label>
+			<nail x="34" y="102"/>
+		</transition>
+		<transition>
+			<source ref="id18"/>
+			<target ref="id17"/>
+			<label kind="assignment" x="-298" y="-170">AddNeighbours()</label>
+		</transition>
+		<transition>
+			<source ref="id17"/>
+			<target ref="id12"/>
+			<label kind="guard" x="-408" y="-127">start != ID</label>
+			<nail x="-442" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id16"/>
+			<target ref="id12"/>
+			<label kind="assignment" x="-433" y="42">secondPass = true</label>
+		</transition>
+		<transition>
+			<source ref="id13"/>
+			<target ref="id14"/>
+			<label kind="assignment" x="-289" y="-42">ProcessEdges(),
+t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id12"/>
+			<target ref="id13"/>
+			<label kind="synchronisation" x="-416" y="-25">transmit[ID]?</label>
+		</transition>
+		<transition>
+			<source ref="id19"/>
+			<target ref="id20"/>
+			<label kind="synchronisation" x="102" y="-136">transmit[ID]?</label>
+			<label kind="assignment" x="51" y="-119">isTerminated = true</label>
+			<nail x="127" y="-102"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id19"/>
+			<label kind="guard" x="212" y="-68">start == ID &amp;&amp;
+!isTerminated</label>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id22"/>
+			<label kind="guard" x="314" y="51">Verify() == false</label>
+			<nail x="348" y="51"/>
+		</transition>
+		<transition>
+			<source ref="id21"/>
+			<target ref="id23"/>
+			<label kind="guard" x="322" y="-85">Verify() == true</label>
+			<nail x="348" y="-60"/>
+		</transition>
+		<transition>
+			<source ref="id20"/>
+			<target ref="id21"/>
+			<label kind="guard" x="238" y="0">start != ID ||
+isTerminated</label>
+		</transition>
+	</template>
+	<template>
+		<name>Discovery</name>
+		<location id="id24" x="-272" y="0">
+			<committed/>
+		</location>
+		<location id="id25" x="-136" y="0">
+		</location>
+		<init ref="id24"/>
+		<transition>
+			<source ref="id24"/>
+			<target ref="id25"/>
+			<label kind="select" x="-229" y="-42">i : UID</label>
+			<label kind="assignment" x="-230" y="-25">start = i</label>
+		</transition>
+	</template>
+	<system>system RingNodeSync, Discovery;</system>
+	<queries>
+		<query>
+			<formula>***** SYNC QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] time &lt;= (N * 2)</formula>
+			<comment>Tjekker om tiden altid er mindre ind N*2. Da tiden kan gå uendeligt i Verified, ville alle noder's tid være større eller lig med N*2. Kan det verificiers på en anden måde måske? stopwatches?</comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Verified &amp;&amp; time &lt;= N * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeSync(i).Verified &amp;&amp; time &lt;= (N * 2) -1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] forall (i : UID) RingNodeSync(i).Start imply RingNodeSync(i).Terminate</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeSync(i).Wrong || RingNodeSync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= N * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeSync(i).Verified &amp;&amp; comms &lt;= (N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** ASYNC QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; time &lt;= N * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Start imply RingNodeAsync(i).Terminate</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A&lt;&gt; forall (i : UID) RingNodeAsync(i).Wrong || RingNodeAsync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>A[] comms &lt;= N * 2</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified &amp;&amp; comms &lt;= (N * 2) - 1</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>***** DEBUG QUERIES *****</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (forall (i: UID) !RingNodeSync(i).Wrong &amp;&amp; !RingNodeSync(i).Verified)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; deadlock &amp;&amp; (forall (i: UID) !RingNodeAsync(i).Wrong &amp;&amp; !RingNodeAsync(i).Verified)</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; exists (i : UID) RingNodeSync(i).Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; exists (i : UID) RingNodeAsync(i).Wrong</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeSync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>E&lt;&gt; forall (i : UID) RingNodeAsync(i).Verified</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment>Tjekker deadlock. Er opfyldt da systemet er deadlocked når alle noder er Verified</comment>
+		</query>
+	</queries>
+</nta>
