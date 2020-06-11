@@ -28,6 +28,10 @@ meta UID failedNode;
 meta bool isFailed;
 
 
+UID ClockwiseNode(int n)
+{
+  return n % N;
+}
 </declaration>
 	<template>
 		<name x="5" y="5">RingNodeSync</name>
@@ -711,6 +715,18 @@ deadNodes[0] = deadNode1</label>
 			<comment></comment>
 		</query>
 		<query>
+			<formula>FailureDetection.Subdivided  --&gt; (exists (i : UID) (RingNodeSync(i).Subdivided &amp;&amp; i == ClockwiseNode(deadNodes[1] + 1)))</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>FailureDetection.Split       --&gt; (exists (i : UID) (RingNodeSync(i).Split &amp;&amp; i == ClockwiseNode(deadNodes[1] + 1)))</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>FailureDetection.SingleSplit --&gt; (exists (i : UID) (RingNodeSync(i).Split &amp;&amp; i == ClockwiseNode(deadNodes[0] + 1)))</formula>
+			<comment></comment>
+		</query>
+		<query>
 			<formula></formula>
 			<comment></comment>
 		</query>
@@ -764,6 +780,22 @@ deadNodes[0] = deadNode1</label>
 		</query>
 		<query>
 			<formula>FailureDetection.SingleSplit --&gt; (exists (i : UID) RingNodeAsync(i).Split) </formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula></formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>FailureDetection.Subdivided  --&gt; (exists (i : UID) (RingNodeAsync(i).Subdivided &amp;&amp; i == ClockwiseNode(deadNodes[1] + 1)))</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>FailureDetection.Split       --&gt; (exists (i : UID) (RingNodeAsync(i).Split &amp;&amp; i == ClockwiseNode(deadNodes[1] + 1)))</formula>
+			<comment></comment>
+		</query>
+		<query>
+			<formula>FailureDetection.SingleSplit --&gt; (exists (i : UID) (RingNodeAsync(i).Split &amp;&amp; i == ClockwiseNode(deadNodes[0] + 1)))</formula>
 			<comment></comment>
 		</query>
 		<query>
