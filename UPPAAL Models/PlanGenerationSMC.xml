@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
 <nta>
-	<declaration>const int N = 20; // Number of satellites
+	<declaration>const int N = 40; // Number of satellites
 
 clock time;
 
@@ -35,6 +35,8 @@ int chosenPos[N];
 		<declaration>clock t;
 
 int cost; // the cost to move to a target position
+int myBestCost = -1;
+int myBestCostPos;
 
 int possiblePos[N]; // the target positions that this node can take, and their cost
 int nodesBestCost[N]; // the best target positions that other nodes can take.
@@ -127,7 +129,14 @@ void CalculatePositions()
 
     if (chosenPos[i] == -1)
     {
-      possiblePos[i] = Distance(startPositions[ID], targetPositions[i]);
+      int distance = Distance(startPositions[ID], targetPositions[i]);
+      possiblePos[i] = distance;
+      // store best cost
+      if (distance &lt; myBestCost || myBestCost == -1)
+      {
+        myBestCost = distance;
+        myBestCostPos = i;
+      }
     }
     else
     {
@@ -272,6 +281,50 @@ void FriendlyNeighbourProcessPlan()
   chosenPos[myChosenPos] = ID;
   cost = myCost;
 }
+
+
+void MostlyFriendlyNeighbourHood()
+{
+  int myChosenPos = -1;
+  int myCost = -1;
+
+  int i;  
+
+  // Calculates all remaining nodes best postition
+  for (i=0; i&lt;N; i++)
+  {
+    if (!isInPlan(i) &amp;&amp; i != ID)
+    {
+      BestPosition(i);
+    }
+  }
+
+  // Loop over all possible positions. Take the best target position, that isn't other nodes best.
+  for (i=0; i&lt;N; i++)
+  {
+    if (possiblePos[i] != -1 &amp;&amp; nodesBestCost[i] == -1)
+    {
+      
+      if (possiblePos[i] &lt; myCost || myCost == -1)
+      {
+        myChosenPos = i;
+        myCost = possiblePos[i];
+      }
+    }
+  }
+
+  if (myCost &lt; (5 * myBestCost))
+  {
+    chosenPos[myChosenPos] = ID;
+    cost = myCost;
+  }
+  else
+  {
+    chosenPos[myBestCostPos] = ID;
+    cost = myBestCost;
+  }
+
+}
 </declaration>
 		<location id="id0" x="0" y="0">
 			<name x="-25" y="17">Receive</name>
@@ -367,7 +420,7 @@ void FriendlyNeighbourProcessPlan()
 		<transition>
 			<source ref="id3"/>
 			<target ref="id4"/>
-			<label kind="assignment" x="273" y="-40">GreedyProcessPlan(), t = 0</label>
+			<label kind="assignment" x="238" y="-42">MostlyFriendlyNeighbourHood(), t = 0</label>
 		</transition>
 		<transition>
 			<source ref="id1"/>
